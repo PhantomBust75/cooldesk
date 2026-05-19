@@ -1,0 +1,7 @@
+{
+  "name": "cooldesk-workspace",
+  "private": true,
+  "scripts": {
+    "start:all": "node scripts/start-all.mjs"
+  }
+}

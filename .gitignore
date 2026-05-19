@@ -1,0 +1,83 @@
+# ─── Dependencies ────────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ─── Build Output ─────────────────────────────────────────────────────────────
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# ─── Environment Variables ────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── Security & Secret Artifacts ──────────────────────────────────────────────
+*.pem
+*.key
+*.crt
+
+# ─── TypeScript ───────────────────────────────────────────────────────────────
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ─── Testing & Coverage ───────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+*.lcov
+
+# ─── NestJS ───────────────────────────────────────────────────────────────────
+.nest/
+
+# ─── Next.js ──────────────────────────────────────────────────────────────────
+next-env.d.ts
+
+# ─── Package Manager Caches ───────────────────────────────────────────────────
+.npm/
+.yarn/
+.pnpm-store/
+.cache/
+
+# ─── Database ─────────────────────────────────────────────────────────────────
+*.sql.bak
+*.dump
+*.pgdump
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ─── Local Runtime Artifacts ──────────────────────────────────────────────────
+tmp/
+temp/
+backups/
+*.pid
+*.pid.lock
+*.sql.gz
+
+# ─── IDE & Editor ─────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini

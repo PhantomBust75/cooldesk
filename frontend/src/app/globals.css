@@ -1,0 +1,28 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-inter, 'Inter', -apple-system, 'Segoe UI', sans-serif);
+  font-size: 13px;
+  color: #171717;
+  background-color: #FAFAFA;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D4D4D4; border-radius: 9999px; }
+
+/* Font inheritance for form elements */
+button { font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+
+/* Monospace utility for job IDs */
+.font-mono {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
