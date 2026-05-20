@@ -31,6 +31,7 @@ export default function DashboardPage() {
   const metrics = analyticsQuery.data;
   const needsRevisitJobs = needsRevisitQuery.data?.jobs ?? [];
   const recentJobs = recentJobsQuery.data?.jobs ?? [];
+  const now = Date.now();
 
   return (
     <RoleGate allowedRoles={["owner", "office_staff", "technician", "dealer"]}>
@@ -78,7 +79,7 @@ export default function DashboardPage() {
                         <td style={{ padding: "10px 12px", fontFamily: '"JetBrains Mono", monospace', fontSize: "12px", color: "#525252" }}>{job.id}</td>
                         <td style={{ padding: "10px 12px", fontSize: "13px", color: "#404040" }}>{job.customerName}</td>
                         <td style={{ padding: "10px 12px", fontSize: "13px", color: "#404040" }}>{job.assignedTechnicianName ?? "—"}</td>
-                        <td style={{ padding: "10px 12px", fontSize: "13px", color: "#404040" }}>{Math.max(1, Math.ceil((Date.now() - new Date(job.createdAt).getTime()) / (1000 * 60 * 60 * 24)))}d</td>
+                        <td style={{ padding: "10px 12px", fontSize: "13px", color: "#404040" }}>{Math.max(1, Math.ceil((now - new Date(job.createdAt).getTime()) / (1000 * 60 * 60 * 24)))}d</td>
                         <td style={{ padding: "10px 12px" }}><TagChip label="Needs revisit" variant="chronic" /></td>
                       </tr>
                     ))}

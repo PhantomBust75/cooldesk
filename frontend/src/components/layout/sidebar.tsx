@@ -5,10 +5,10 @@ import {
   BarChart2,
   Bell,
   Briefcase,
-  ChevronRight,
   Clock,
   CreditCard,
   LayoutDashboard,
+  Menu,
   Settings,
   Users,
   Building2,
@@ -48,9 +48,11 @@ function isActiveRoute(pathname: string, href: string): boolean {
 export function Sidebar({
   collapsed,
   onToggle,
+  onNavigate,
 }: {
   collapsed: boolean;
   onToggle: () => void;
+  onNavigate?: () => void;
 }) {
   const pathname = usePathname();
   const { session } = useAuth();
@@ -93,10 +95,32 @@ export function Sidebar({
           gap: "8px",
         }}
       >
-        <Zap size={18} strokeWidth={1.5} color="#0A0A0A" />
+        {!collapsed ? <Zap size={18} strokeWidth={1.5} color="#0A0A0A" /> : null}
         {!collapsed ? (
           <span style={{ fontSize: "15px", color: "#0A0A0A", fontWeight: 500 }}>CoolDesk</span>
         ) : null}
+        <button
+          type="button"
+          onClick={onToggle}
+          style={{
+            marginLeft: "auto",
+            width: "32px",
+            height: "32px",
+            borderRadius: "8px",
+            border: "1px solid #E5E5E5",
+            backgroundColor: "#fff",
+            color: "#525252",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
+        >
+          <Menu size={collapsed ? 18 : 16} strokeWidth={1.5} />
+        </button>
       </div>
 
       <nav style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "10px 8px" }}>
@@ -108,11 +132,13 @@ export function Sidebar({
             <Link
               key={item.href}
               href={item.href}
+              onClick={onNavigate}
               style={{
                 borderRadius: "8px",
-                padding: collapsed ? "9px 11px" : "9px 12px",
+                padding: collapsed ? "10px 0" : "9px 12px",
                 display: "flex",
                 alignItems: "center",
+                justifyContent: collapsed ? "center" : "flex-start",
                 gap: "9px",
                 textDecoration: "none",
                 backgroundColor: active ? "#F5F5F5" : "transparent",
@@ -124,7 +150,7 @@ export function Sidebar({
               }}
               title={collapsed ? item.label : undefined}
             >
-              <Icon size={16} strokeWidth={1.5} />
+              <Icon size={collapsed ? 20 : 16} strokeWidth={1.6} />
               <span
                 style={{
                   opacity: collapsed ? 0 : 1,
@@ -138,33 +164,6 @@ export function Sidebar({
           );
         })}
       </nav>
-
-      <button
-        type="button"
-        onClick={onToggle}
-        style={{
-          position: "absolute",
-          left: "8px",
-          bottom: "8px",
-          width: "40px",
-          height: "40px",
-          borderRadius: "8px",
-          border: "1px solid #E5E5E5",
-          backgroundColor: "#fff",
-          color: "#525252",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-        }}
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-      >
-        <ChevronRight
-          size={16}
-          strokeWidth={1.5}
-          style={{ transform: collapsed ? "rotate(0deg)" : "rotate(180deg)", transition: "transform 220ms ease" }}
-        />
-      </button>
     </aside>
   );
 }

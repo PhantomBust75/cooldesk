@@ -4,7 +4,7 @@ import { ApiError } from "@/lib/api/client";
 import { createBrand, fetchOfficeBrands } from "@/lib/api/operations";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 
 export default function BrandsAdminPage() {
   const queryClient = useQueryClient();
@@ -165,11 +165,11 @@ export default function BrandsAdminPage() {
                         width: "24px",
                         height: "24px",
                         borderRadius: "6px",
-                        backgroundColor: "colorHex" in brand ? (brand as any).colorHex : "#1E40AF",
+                        backgroundColor: brand.colorHex ?? "#1E40AF",
                         border: "1px solid #E5E5E5",
                       }}
                     />
-                    <span style={{ fontSize: "12px", color: "#737373" }}>{"colorHex" in brand ? (brand as any).colorHex : "#1E40AF"}</span>
+                    <span style={{ fontSize: "12px", color: "#737373" }}>{brand.colorHex ?? "#1E40AF"}</span>
                   </div>
                 </td>
                 <td style={{ padding: "12px", textAlign: "center" }}>

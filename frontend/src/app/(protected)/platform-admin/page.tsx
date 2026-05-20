@@ -3,8 +3,8 @@
 import { useAuth } from "@/contexts/auth-context";
 import { apiClient } from "@/lib/api/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Building2, CheckCircle, XCircle, LogOut, Shield } from "lucide-react";
-import { useState } from "react";
+import { Building2, CheckCircle, XCircle, LogOut, Menu, Shield } from "lucide-react";
+import { useState, useSyncExternalStore } from "react";
 
 type OrgRow = {
   id: string;
@@ -28,10 +28,32 @@ const SIDEBAR_ITEMS = [
   { label: "Organizations", icon: Building2 },
 ];
 
+const MOBILE_SIDEBAR_QUERY = "(max-width: 768px)";
+
+function subscribeToMobileSidebarQuery(callback: () => void) {
+  const mediaQuery = window.matchMedia(MOBILE_SIDEBAR_QUERY);
+  mediaQuery.addEventListener("change", callback);
+  return () => mediaQuery.removeEventListener("change", callback);
+}
+
+function getMobileSidebarSnapshot() {
+  return window.matchMedia(MOBILE_SIDEBAR_QUERY).matches;
+}
+
+function getMobileSidebarServerSnapshot() {
+  return false;
+}
+
 export default function PlatformAdminPage() {
   const { session, logout } = useAuth();
   const queryClient = useQueryClient();
-  const [collapsed, setCollapsed] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const isSmallScreen = useSyncExternalStore(
+    subscribeToMobileSidebarQuery,
+    getMobileSidebarSnapshot,
+    getMobileSidebarServerSnapshot,
+  );
 
   const { data: orgs = [], isLoading, error } = useQuery({
     queryKey: ["platform", "organizations"],
@@ -44,6 +66,7 @@ export default function PlatformAdminPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["platform", "organizations"] }),
   });
 
+  const collapsed = isSmallScreen ? !mobileOpen : desktopCollapsed;
   const sidebarWidth = collapsed ? 56 : 220;
 
   return (
@@ -76,12 +99,41 @@ export default function PlatformAdminPage() {
             flexShrink: 0,
           }}
         >
-          <Shield size={17} strokeWidth={1.5} color="#6366F1" />
+          {!collapsed ? <Shield size={17} strokeWidth={1.5} color="#6366F1" /> : null}
           {!collapsed && (
             <span style={{ fontSize: "14px", color: "#0A0A0A", fontWeight: 500, whiteSpace: "nowrap" }}>
               Platform
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => {
+              if (isSmallScreen) {
+                setMobileOpen((prev) => !prev);
+                return;
+              }
+
+              setDesktopCollapsed((prev) => !prev);
+            }}
+            style={{
+              marginLeft: "auto",
+              width: "32px",
+              height: "32px",
+              borderRadius: "8px",
+              border: "1px solid #E5E5E5",
+              backgroundColor: "#fff",
+              color: "#525252",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!collapsed}
+          >
+            <Menu size={collapsed ? 18 : 16} strokeWidth={1.5} />
+          </button>
         </div>
 
         <nav style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "10px 8px", flex: 1 }}>
@@ -92,9 +144,10 @@ export default function PlatformAdminPage() {
                 key={item.label}
                 style={{
                   borderRadius: "8px",
-                  padding: collapsed ? "9px 11px" : "9px 12px",
+                  padding: collapsed ? "10px 0" : "9px 12px",
                   display: "flex",
                   alignItems: "center",
+                  justifyContent: collapsed ? "center" : "flex-start",
                   gap: "9px",
                   backgroundColor: "#F5F5F5",
                   color: "#171717",
@@ -106,7 +159,7 @@ export default function PlatformAdminPage() {
                 }}
                 title={collapsed ? item.label : undefined}
               >
-                <Icon size={16} strokeWidth={1.5} />
+                <Icon size={collapsed ? 20 : 16} strokeWidth={1.6} />
                 <span
                   style={{
                     opacity: collapsed ? 0 : 1,
@@ -120,40 +173,6 @@ export default function PlatformAdminPage() {
             );
           })}
         </nav>
-
-        <button
-          type="button"
-          onClick={() => setCollapsed((prev) => !prev)}
-          style={{
-            margin: "8px",
-            width: "40px",
-            height: "40px",
-            borderRadius: "8px",
-            border: "1px solid #E5E5E5",
-            backgroundColor: "#fff",
-            color: "#525252",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            flexShrink: 0,
-          }}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{ transform: collapsed ? "rotate(0deg)" : "rotate(180deg)", transition: "transform 220ms ease" }}
-          >
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </button>
       </aside>
 
       {/* Main area */}

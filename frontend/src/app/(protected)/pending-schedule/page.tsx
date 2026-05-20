@@ -99,6 +99,7 @@ export default function PendingSchedulePage() {
   });
 
   const queue = useMemo(() => pendingScheduleQuery.data ?? [], [pendingScheduleQuery.data]);
+  const now = Date.now();
   const selectedJob = useMemo(
     () => queue.find((job) => job.id === selectedJobId) ?? null,
     [queue, selectedJobId],
@@ -199,7 +200,7 @@ export default function PendingSchedulePage() {
             <tbody>
               {queue.map((job) => {
                 const selected = selectedJobId === job.id;
-                const days = Math.max(0, Math.floor((Date.now() - new Date(job.createdAt).getTime()) / (1000 * 60 * 60 * 24)));
+                const days = Math.max(0, Math.floor((now - new Date(job.createdAt).getTime()) / (1000 * 60 * 60 * 24)));
 
                 return (
                   <tr key={job.id} style={{ borderBottom: "1px solid #F5F5F5", backgroundColor: selected ? "#FAFAFA" : "#fff" }}>

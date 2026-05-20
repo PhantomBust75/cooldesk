@@ -5,16 +5,38 @@ import { useQuery } from "@tanstack/react-query";
 import { Bell, ChevronDown, LogOut, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { Sidebar } from "./sidebar";
+
+const MOBILE_SIDEBAR_QUERY = "(max-width: 768px)";
+
+function subscribeToMobileSidebarQuery(callback: () => void) {
+  const mediaQuery = window.matchMedia(MOBILE_SIDEBAR_QUERY);
+  mediaQuery.addEventListener("change", callback);
+  return () => mediaQuery.removeEventListener("change", callback);
+}
+
+function getMobileSidebarSnapshot() {
+  return window.matchMedia(MOBILE_SIDEBAR_QUERY).matches;
+}
+
+function getMobileSidebarServerSnapshot() {
+  return false;
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { session, logout } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const isSmallScreen = useSyncExternalStore(
+    subscribeToMobileSidebarQuery,
+    getMobileSidebarSnapshot,
+    getMobileSidebarServerSnapshot,
+  );
 
   const audience = useMemo(() => {
     return session?.user.role === "dealer" ? "dealer" : "user";
@@ -30,11 +52,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   });
 
   const unreadCount = unreadCountQuery.data?.count ?? 0;
+  const collapsed = isSmallScreen ? !mobileOpen : desktopCollapsed;
   const sidebarWidth = collapsed ? 56 : 240;
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#FAFAFA", color: "#171717" }}>
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((prev) => !prev)} />
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => {
+          if (isSmallScreen) {
+            setMobileOpen((prev) => !prev);
+            return;
+          }
+
+          setDesktopCollapsed((prev) => !prev);
+        }}
+        onNavigate={() => {
+          if (isSmallScreen) {
+            setMobileOpen(false);
+          }
+        }}
+      />
 
       <div
         style={{

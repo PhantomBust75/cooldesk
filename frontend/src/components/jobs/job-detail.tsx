@@ -30,7 +30,7 @@ import {
   Wrench,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 
 const TERMINAL_OR_CLOSED = new Set(["completed", "resolved", "resolved_on_revisit", "cancelled"]);
 const OWNER_STATUSES = [
@@ -132,14 +132,16 @@ export function JobDetail({ jobId }: { jobId: string }) {
   }, [undoSecondsLeft]);
 
   useEffect(() => {
-    if (!detailQuery.data?.payment) {
-      setPaymentMethodId("");
-      setPaymentAmount("");
-      return;
-    }
-
-    setPaymentMethodId(detailQuery.data.payment.paymentMethodId ?? "");
-    setPaymentAmount(String(detailQuery.data.payment.amount));
+    const payment = detailQuery.data?.payment;
+    startTransition(() => {
+      if (!payment) {
+        setPaymentMethodId("");
+        setPaymentAmount("");
+        return;
+      }
+      setPaymentMethodId(payment.paymentMethodId ?? "");
+      setPaymentAmount(String(payment.amount));
+    });
   }, [detailQuery.data?.payment]);
 
   const transitionMutation = useMutation({

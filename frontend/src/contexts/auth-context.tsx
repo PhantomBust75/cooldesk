@@ -2,7 +2,7 @@
 
 import { apiClient, ApiError, SESSION_STORAGE_KEY } from "@/lib/api/client";
 import type { LoginRequest, LoginResponse, SessionState, UserRole } from "@/types/auth";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 type AuthContextValue = {
   isReady: boolean;
@@ -61,8 +61,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    setSession(readStoredSession());
-    setIsReady(true);
+    const stored = readStoredSession();
+    startTransition(() => {
+      setSession(stored);
+      setIsReady(true);
+    });
   }, []);
 
   const login = useCallback(async (credentials: LoginRequest) => {
