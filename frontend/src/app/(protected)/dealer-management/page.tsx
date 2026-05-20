@@ -152,10 +152,17 @@ export default function DealerManagementPage() {
           {!dealersQuery.isLoading && filteredDealers.length === 0 ? <div style={{ backgroundColor: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", padding: "18px", fontSize: "13px", color: "#737373", display: "flex", alignItems: "center", gap: "8px" }}><Building2 size={14} strokeWidth={1.5} /> No dealers found.</div> : null}
 
           {filteredDealers.map((dealer) => (
-            <button
+            <div
               key={dealer.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => setSelectedDealerId(dealer.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setSelectedDealerId(dealer.id);
+                }
+              }}
               style={{ backgroundColor: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", textAlign: "left", cursor: "pointer" }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -188,7 +195,7 @@ export default function DealerManagementPage() {
                 </RoleGate>
                 <ChevronRight size={16} strokeWidth={1.5} color="#A3A3A3" />
               </div>
-            </button>
+            </div>
           ))}
         </div>
 

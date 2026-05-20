@@ -8,6 +8,8 @@ export type QuickCreateJobInput = {
   issueDescription?: string;
   installationNotes?: string;
   dealerId?: string;
+  scheduledAt?: string;
+  units?: Array<{ label: string; notes?: string }>;
 };
 
 export type QuickCreateJobResult = {

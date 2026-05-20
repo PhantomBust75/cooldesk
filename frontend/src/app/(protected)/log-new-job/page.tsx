@@ -7,6 +7,7 @@ import type { QuickCreateJobInput } from "@/types/operations";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, CheckCircle, Minus, Plus, Search } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 
 type Step = 1 | 2 | 3 | 4;
@@ -63,12 +64,12 @@ function StepHeader({ current, total }: { current: Step; total: number }) {
 }
 
 export default function LogNewJobPage() {
+  const router = useRouter();
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<QuickCreateJobInput>(INITIAL_FORM);
   const [scheduledAt, setScheduledAt] = useState("");
   const [units, setUnits] = useState<UnitRow[]>(INITIAL_UNITS);
   const [vcidResult, setVcidResult] = useState<"searching" | "found" | "not_found" | null>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const dealersQuery = useQuery({
@@ -84,12 +85,7 @@ export default function LogNewJobPage() {
   const createMutation = useMutation({
     mutationFn: (payload: QuickCreateJobInput) => createQuickJob(payload),
     onSuccess: (result) => {
-      setErrorMessage(null);
-      setFeedback(`Job ${result.id} created with status ${result.status}.`);
-      setForm(INITIAL_FORM);
-      setScheduledAt("");
-      setUnits(INITIAL_UNITS);
-      setStep(1);
+      router.push(`/jobs?created=${result.id}`);
     },
     onError: (error) => {
       if (error instanceof ApiError) {
@@ -161,7 +157,6 @@ export default function LogNewJobPage() {
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setFeedback(null);
     setErrorMessage(null);
 
     const payload: QuickCreateJobInput = {
@@ -169,6 +164,14 @@ export default function LogNewJobPage() {
       dealerId: dealerRequired ? form.dealerId : undefined,
       issueDescription: form.type === "complaint" ? form.issueDescription : undefined,
       installationNotes: form.type === "installation" ? form.installationNotes : undefined,
+      scheduledAt: form.type === "installation" && scheduledAt ? scheduledAt : undefined,
+      units: units
+        .filter((u) => u.model.trim())
+        .flatMap((u) =>
+          Array.from({ length: Math.max(1, u.num_units) }, () => ({
+            label: [u.model.trim(), u.unit_type.trim()].filter(Boolean).join(" – "),
+          })),
+        ),
     };
 
     createMutation.mutate(payload);
@@ -341,7 +344,6 @@ export default function LogNewJobPage() {
                 ))}
               </div>
 
-              {feedback ? <div style={{ borderRadius: "8px", border: "1px solid #BBF7D0", backgroundColor: "#F0FDF4", padding: "12px", color: "#166534", fontSize: "13px", marginBottom: "12px" }}>{feedback}</div> : null}
               {errorMessage ? <div style={{ borderRadius: "8px", border: "1px solid #FECACA", backgroundColor: "#FEF2F2", padding: "12px", color: "#991B1B", fontSize: "13px", marginBottom: "12px" }}>{errorMessage}</div> : null}
             </div>
           ) : null}

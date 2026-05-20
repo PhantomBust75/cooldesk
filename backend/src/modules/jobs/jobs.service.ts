@@ -103,14 +103,14 @@ export class JobsService {
     private readonly configService: TenantConfigService,
   ) {}
 
-  async createByUser(input: CreateJobDto, ctx: RequestContext): Promise<{ jobId: string }> {
+  async createByUser(input: CreateJobDto, ctx: RequestContext): Promise<{ id: string; status: string; version: number }> {
     return this.db.withTransaction(async (client) => {
       await this.validateCreationInput(client, input, ctx.organizationId);
       const linkResolution = await this.resolveVcid(client, input, ctx.organizationId);
       const flags = await this.calculateComplaintFlags(client, input.type, linkResolution.vcid, ctx.organizationId);
       const status = this.resolveInitialStatus(input);
 
-      const jobInsert = await client.query<{ id: string }>(
+      const jobInsert = await client.query<{ id: string; status: string; version: number }>(
         `
         INSERT INTO jobs (
           organization_id,
@@ -137,7 +137,7 @@ export class JobsService {
         VALUES (
           $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,NULL
         )
-        RETURNING id
+        RETURNING id, status, version
         `,
         [
           ctx.organizationId,
@@ -162,13 +162,13 @@ export class JobsService {
         ],
       );
 
-      const jobId = jobInsert.rows[0].id;
+      const { id, status: jobStatus, version } = jobInsert.rows[0];
 
-      await this.insertUnits(client, input.units ?? [], jobId, ctx.organizationId);
-      await this.insertLinkageTimelineByUser(client, jobId, ctx, linkResolution);
-      await this.dispatchRepeatNotifications(client, jobId, ctx.organizationId, flags);
+      await this.insertUnits(client, input.units ?? [], id, ctx.organizationId);
+      await this.insertLinkageTimelineByUser(client, id, ctx, linkResolution);
+      await this.dispatchRepeatNotifications(client, id, ctx.organizationId, flags);
 
-      return { jobId };
+      return { id, status: jobStatus, version };
     });
   }
 
