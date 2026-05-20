@@ -294,6 +294,40 @@ export class DealersService {
     }
   }
 
+  async listDealerJobsForOffice(
+    dealerId: string,
+    ctx: RequestContext,
+  ): Promise<Record<string, unknown>[]> {
+    const dealerCheck = await this.db.query<{ id: string }>(
+      `SELECT id FROM dealers WHERE id = $1 AND organization_id = $2 AND is_deleted = FALSE LIMIT 1`,
+      [dealerId, ctx.organizationId],
+    );
+
+    if (dealerCheck.rows.length === 0) {
+      throw new NotFoundException('Dealer not found');
+    }
+
+    const result = await this.db.query(
+      `
+      SELECT
+        j.id,
+        j.type,
+        j.status,
+        j.customer_name,
+        j.created_at
+      FROM jobs j
+      WHERE j.dealer_id = $1
+        AND j.organization_id = $2
+        AND j.is_deleted = FALSE
+      ORDER BY j.created_at DESC
+      LIMIT 200
+      `,
+      [dealerId, ctx.organizationId],
+    );
+
+    return result.rows as Record<string, unknown>[];
+  }
+
   private hashPassword(password: string): string {
     const salt = randomBytes(16).toString('hex');
     const hash = scryptSync(password, salt, 64).toString('hex');

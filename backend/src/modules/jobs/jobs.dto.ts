@@ -420,6 +420,122 @@ export class TriggerUnacknowledgedScanDto {
   thresholdMins?: number;
 }
 
+export class OfficeJobsQueryDto {
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsEnum(['installation', 'complaint'])
+  type?: JobType;
+
+  @IsOptional()
+  @IsUUID()
+  technicianId?: string;
+
+  @IsOptional()
+  @IsISO8601()
+  dateFrom?: string;
+
+  @IsOptional()
+  @IsISO8601()
+  dateTo?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  limit?: number;
+}
+
+export class OfficeTransitionJobDto {
+  @IsString()
+  @IsNotEmpty()
+  toStatus!: string;
+
+  @IsInt()
+  @Min(0)
+  expectedVersion!: number;
+
+  @IsOptional()
+  @IsString()
+  reason?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  paymentAmount?: number;
+
+  @IsOptional()
+  @IsUUID()
+  paymentMethodId?: string;
+
+  @IsOptional()
+  @IsEnum(['part_unavailable', 'customer_not_home', 'issue_recurring', 'further_diagnosis_required', 'custom'])
+  revisitReason?: RevisitReason;
+
+  @IsOptional()
+  @IsString()
+  customRevisitReason?: string;
+}
+
+export class OfficeRollbackJobDto {
+  @IsInt()
+  @Min(0)
+  expectedVersion!: number;
+
+  @IsString()
+  @IsNotEmpty()
+  reason!: string;
+}
+
+export class OfficeOverrideJobDto {
+  @IsString()
+  @IsNotEmpty()
+  toStatus!: string;
+
+  @IsInt()
+  @Min(0)
+  expectedVersion!: number;
+
+  @IsOptional()
+  @IsString()
+  reason?: string;
+
+  @IsOptional()
+  @IsEnum(['retain', 'void'])
+  paymentDecision?: 'retain' | 'void';
+}
+
+export class PatchJobPaymentDto {
+  @IsOptional()
+  @IsUUID()
+  paymentMethodId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  amount?: number;
+}
+
+export class TimelineQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  limit?: number;
+}
+
 export class ScheduleRevisitDto {
   @IsUUID()
   revisitId!: string;

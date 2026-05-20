@@ -29,6 +29,7 @@ import { AuthService } from './auth/auth.service';
 import { BrandsController } from './brands/brands.controller';
 import { BrandsService } from './brands/brands.service';
 import { HealthController } from './health/health.controller';
+import { SettingsController } from './settings/settings.controller';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { HealthController } from './health/health.controller';
     ReviewsController,
     AuthController,
     BrandsController,
+    SettingsController,
   ],
   providers: [
     AppConfigService,

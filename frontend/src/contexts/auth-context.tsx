@@ -22,7 +22,8 @@ function mapLoginResponseToSession(payload: LoginResponse): SessionState {
   const role = payload.user?.role ?? payload.role;
   const name = payload.user?.name ?? payload.name;
 
-  if (!accessToken || !userId || !organizationId || !role) {
+  const isPlatformAdmin = role === "platform_admin";
+  if (!accessToken || !userId || !role || (!organizationId && !isPlatformAdmin)) {
     throw new ApiError("Invalid login response shape", 500, payload);
   }
 
@@ -30,7 +31,7 @@ function mapLoginResponseToSession(payload: LoginResponse): SessionState {
     accessToken,
     user: {
       userId,
-      organizationId,
+      organizationId: organizationId ?? null,
       role,
       name,
     },

@@ -8,6 +8,7 @@ import {
   Query,
   Req,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 import { DealerGuard } from '../security/dealer.guard';
 import { RequestContext, DealerRequestContext } from '../security/request-context';
@@ -23,11 +24,17 @@ import {
   DealerCancellationRequestDto,
   ListJobsQueryDto,
   MobileSyncActionDto,
+  OfficeJobsQueryDto,
+  OfficeOverrideJobDto,
+  OfficeRollbackJobDto,
+  OfficeTransitionJobDto,
+  PatchJobPaymentDto,
   PendingScheduleQueryDto,
   QuickEntryJobDto,
   RescheduleJobDto,
   SchedulePendingJobDto,
   ScheduleRevisitDto,
+  TimelineQueryDto,
   TriggerUnacknowledgedScanDto,
   UndoJobActionDto,
   UpdateJobStatusDto,
@@ -276,5 +283,117 @@ export class JobsController {
     @Req() req: UserRequest,
   ) {
     return this.jobsService.scheduleRevisit(id, body, req.context);
+  }
+
+  // Office dashboard routes — frontend-facing with pagination, joins, and search
+  @Get('office/jobs')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff')
+  listOfficeJobs(@Query() query: OfficeJobsQueryDto, @Req() req: UserRequest) {
+    return this.jobsService.listOfficeJobs(query, req.context);
+  }
+
+  @Get('office/jobs/:id/timeline')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff', 'technician')
+  getOfficeJobTimeline(
+    @Param('id') id: string,
+    @Query() query: TimelineQueryDto,
+    @Req() req: UserRequest,
+  ) {
+    return this.jobsService.getJobTimeline(id, req.context, query.limit ?? 100);
+  }
+
+  @Get('office/jobs/:id/revisits')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff')
+  getOfficeJobRevisits(@Param('id') id: string, @Req() req: UserRequest) {
+    return this.jobsService.getJobRevisits(id, req.context);
+  }
+
+  @Get('office/jobs/:id')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff', 'technician')
+  getOfficeJob(@Param('id') id: string, @Req() req: UserRequest) {
+    return this.jobsService.findByIdForOffice(id, req.context);
+  }
+
+  @Post('office/jobs/:id/transition')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff', 'technician')
+  transitionOfficeJob(
+    @Param('id') id: string,
+    @Body() body: OfficeTransitionJobDto,
+    @Req() req: UserRequest,
+  ) {
+    return this.jobsService.updateStatus(
+      id,
+      {
+        targetStatus: body.toStatus as any,
+        expectedVersion: body.expectedVersion,
+        reason: body.reason,
+        paymentAmount: body.paymentAmount,
+        paymentMethodId: body.paymentMethodId,
+        revisitReason: body.revisitReason,
+        customRevisitReason: body.customRevisitReason,
+      },
+      req.context,
+    );
+  }
+
+  @Post('office/jobs/:id/rollback')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff')
+  rollbackOfficeJob(
+    @Param('id') id: string,
+    @Body() body: OfficeRollbackJobDto,
+    @Req() req: UserRequest,
+  ) {
+    return this.jobsService.updateStatus(
+      id,
+      {
+        targetStatus: 'cancelled' as any,
+        expectedVersion: body.expectedVersion,
+        reason: body.reason,
+      },
+      { ...req.context, role: 'office_staff' },
+    );
+  }
+
+  @Post('office/jobs/:id/override-status')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner')
+  overrideOfficeJobStatus(
+    @Param('id') id: string,
+    @Body() body: OfficeOverrideJobDto,
+    @Req() req: UserRequest,
+  ) {
+    return this.jobsService.updateStatus(
+      id,
+      {
+        targetStatus: body.toStatus as any,
+        expectedVersion: body.expectedVersion,
+        reason: body.reason,
+      },
+      req.context,
+    );
+  }
+
+  @Patch('office/jobs/:id/payment')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff')
+  patchOfficeJobPayment(
+    @Param('id') id: string,
+    @Body() body: PatchJobPaymentDto,
+    @Req() req: UserRequest,
+  ) {
+    return this.jobsService.patchJobPayment(id, body, req.context);
+  }
+
+  @Get('users/:id/stats')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff')
+  getTechnicianStats(@Param('id') id: string, @Req() req: UserRequest) {
+    return this.jobsService.getTechnicianStats(id, req.context);
   }
 }

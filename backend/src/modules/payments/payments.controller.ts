@@ -72,4 +72,10 @@ export class PaymentsController {
   ) {
     return this.paymentsService.decideOwnerPaymentReversal(id, body, req.context);
   }
+
+  @Patch('payment-methods/:id/toggle')
+  @Roles('owner')
+  togglePaymentMethod(@Param('id') id: string, @Req() req: UserRequest) {
+    return this.paymentsService.togglePaymentMethod(id, req.context);
+  }
 }

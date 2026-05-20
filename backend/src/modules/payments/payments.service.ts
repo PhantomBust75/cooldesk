@@ -67,21 +67,17 @@ export class PaymentsService {
     input: UpdatePaymentMethodDto,
     ctx: RequestContext,
   ): Promise<{ ok: true; isActive: boolean }> {
-    if (input.isActive !== false) {
-      throw new BadRequestException('Only deactivation is supported for payment methods');
-    }
-
     const update = await this.db.query<{ is_active: boolean }>(
       `
       UPDATE payment_methods
-      SET is_active = FALSE,
+      SET is_active = $3,
           updated_at = NOW()
       WHERE id = $1
         AND organization_id = $2
         AND is_deleted = FALSE
       RETURNING is_active
       `,
-      [paymentMethodId, ctx.organizationId],
+      [paymentMethodId, ctx.organizationId, input.isActive ?? false],
     );
 
     if (update.rows.length === 0) {
@@ -89,6 +85,29 @@ export class PaymentsService {
     }
 
     return { ok: true, isActive: update.rows[0].is_active };
+  }
+
+  async togglePaymentMethod(
+    paymentMethodId: string,
+    ctx: RequestContext,
+  ): Promise<{ ok: true }> {
+    const result = await this.db.query(
+      `
+      UPDATE payment_methods
+      SET is_active = NOT is_active,
+          updated_at = NOW()
+      WHERE id = $1
+        AND organization_id = $2
+        AND is_deleted = FALSE
+      `,
+      [paymentMethodId, ctx.organizationId],
+    );
+
+    if ((result.rowCount ?? 0) === 0) {
+      throw new NotFoundException('Payment method not found');
+    }
+
+    return { ok: true };
   }
 
   async updatePayment(

@@ -84,4 +84,11 @@ export class DealersController {
   getDealerJob(@Param('id') id: string, @Req() req: DealerRequest) {
     return this.dealersService.getDealerJobById(id, req.dealerContext);
   }
+
+  @Get('dealers/:id/jobs')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff')
+  listDealerJobsForOffice(@Param('id') id: string, @Req() req: UserRequest) {
+    return this.dealersService.listDealerJobsForOffice(id, req.context);
+  }
 }

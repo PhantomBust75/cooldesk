@@ -24,6 +24,16 @@ export class ReviewsController {
     return this.reviewsService.generateReviewLink(id, req.context);
   }
 
+  @Get('reviews/public/:token')
+  getReviewByToken(@Param('token') token: string) {
+    return this.reviewsService.getByToken(token);
+  }
+
+  @Post('reviews/public/:token')
+  submitReviewByPublicToken(@Param('token') token: string, @Body() body: SubmitReviewDto) {
+    return this.reviewsService.submitByToken(token, body);
+  }
+
   @Post('reviews/:token')
   submitByToken(@Param('token') token: string, @Body() body: SubmitReviewDto) {
     return this.reviewsService.submitByToken(token, body);

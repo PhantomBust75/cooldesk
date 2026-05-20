@@ -1,10 +1,10 @@
-export const USER_ROLES = ["owner", "office_staff", "technician", "dealer"] as const;
+export const USER_ROLES = ["owner", "office_staff", "technician", "dealer", "platform_admin"] as const;
 
 export type UserRole = (typeof USER_ROLES)[number];
 
 export interface SessionUser {
   userId: string;
-  organizationId: string;
+  organizationId: string | null;
   role: UserRole;
   name?: string;
 }

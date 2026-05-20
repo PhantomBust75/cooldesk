@@ -335,6 +335,160 @@ export class AnalyticsService {
     }
   }
 
+  async getBusinessOverview(
+    days: number,
+    ctx: RequestContext,
+  ): Promise<Record<string, unknown>> {
+    const result = await this.db.query<{
+      total_jobs: string;
+      resolved_or_completed: string;
+      cancelled: string;
+      revisit_pending: string;
+      avg_star_rating: string | null;
+    }>(
+      `
+      SELECT
+        COUNT(*) AS total_jobs,
+        COUNT(*) FILTER (WHERE status IN ('completed', 'resolved', 'resolved_on_revisit')) AS resolved_or_completed,
+        COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled,
+        COUNT(*) FILTER (WHERE status IN ('needs_revisit', 'revisit_scheduled')) AS revisit_pending,
+        (
+          SELECT ROUND(AVG(star_rating)::numeric, 2)
+          FROM customer_reviews
+          WHERE organization_id = $1
+            AND submitted_at IS NOT NULL
+            AND submitted_at >= NOW() - ($2::text || ' days')::interval
+        ) AS avg_star_rating
+      FROM jobs
+      WHERE organization_id = $1
+        AND is_deleted = FALSE
+        AND created_at >= NOW() - ($2::text || ' days')::interval
+      `,
+      [ctx.organizationId, days],
+    );
+
+    const row = result.rows[0];
+    return {
+      total_jobs: Number(row.total_jobs),
+      resolved_or_completed: Number(row.resolved_or_completed),
+      cancelled: Number(row.cancelled),
+      revisit_pending: Number(row.revisit_pending),
+      avg_star_rating: row.avg_star_rating !== null ? Number(row.avg_star_rating) : null,
+    };
+  }
+
+  async getTechnicianAnalytics(
+    days: number,
+    ctx: RequestContext,
+  ): Promise<Record<string, unknown>[]> {
+    const result = await this.db.query(
+      `
+      SELECT
+        u.id AS technician_id,
+        u.full_name AS technician_name,
+        COUNT(j.id)::int AS total_jobs,
+        CASE
+          WHEN COUNT(j.id) = 0 THEN 0
+          ELSE ROUND(
+            COUNT(j.id) FILTER (WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit'))::numeric
+            / COUNT(j.id)::numeric * 100, 2
+          )
+        END AS completion_rate,
+        (
+          SELECT ROUND(AVG(cr.star_rating)::numeric, 2)
+          FROM customer_reviews cr
+          INNER JOIN jobs jj ON jj.id = cr.job_id AND jj.organization_id = cr.organization_id
+          WHERE jj.technician_id = u.id
+            AND jj.organization_id = $1
+            AND cr.submitted_at IS NOT NULL
+            AND cr.submitted_at >= NOW() - ($2::text || ' days')::interval
+        ) AS avg_star_rating
+      FROM users u
+      LEFT JOIN jobs j
+        ON j.technician_id = u.id
+        AND j.organization_id = $1
+        AND j.is_deleted = FALSE
+        AND j.created_at >= NOW() - ($2::text || ' days')::interval
+      WHERE u.organization_id = $1
+        AND u.role = 'technician'
+        AND u.is_deleted = FALSE
+      GROUP BY u.id, u.full_name
+      ORDER BY total_jobs DESC
+      `,
+      [ctx.organizationId, days],
+    );
+
+    return result.rows as Record<string, unknown>[];
+  }
+
+  async getBrandAnalytics(
+    days: number,
+    ctx: RequestContext,
+  ): Promise<Record<string, unknown>[]> {
+    const result = await this.db.query(
+      `
+      SELECT
+        b.id AS brand_id,
+        b.name AS brand_name,
+        COUNT(j.id)::int AS total_jobs,
+        CASE
+          WHEN COUNT(j.id) = 0 THEN 0
+          ELSE ROUND(
+            COUNT(j.id) FILTER (WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit'))::numeric
+            / COUNT(j.id)::numeric * 100, 2
+          )
+        END AS completion_rate
+      FROM brands b
+      LEFT JOIN jobs j
+        ON j.brand_id = b.id
+        AND j.organization_id = $1
+        AND j.is_deleted = FALSE
+        AND j.created_at >= NOW() - ($2::text || ' days')::interval
+      WHERE b.organization_id = $1
+        AND b.is_deleted = FALSE
+      GROUP BY b.id, b.name
+      ORDER BY total_jobs DESC
+      `,
+      [ctx.organizationId, days],
+    );
+
+    return result.rows as Record<string, unknown>[];
+  }
+
+  async getDealerAnalytics(
+    days: number,
+    ctx: RequestContext,
+  ): Promise<Record<string, unknown>[]> {
+    const result = await this.db.query(
+      `
+      SELECT
+        d.id AS dealer_id,
+        d.name AS dealer_name,
+        COUNT(j.id)::int AS total_jobs,
+        CASE
+          WHEN COUNT(j.id) = 0 THEN 0
+          ELSE ROUND(
+            COUNT(j.id) FILTER (WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit'))::numeric
+            / COUNT(j.id)::numeric * 100, 2
+          )
+        END AS completion_rate
+      FROM dealers d
+      LEFT JOIN jobs j
+        ON j.dealer_id = d.id
+        AND j.organization_id = $1
+        AND j.is_deleted = FALSE
+        AND j.created_at >= NOW() - ($2::text || ' days')::interval
+      WHERE d.organization_id = $1
+        AND d.is_deleted = FALSE
+      GROUP BY d.id, d.name
+      ORDER BY total_jobs DESC
+      `,
+      [ctx.organizationId, days],
+    );
+
+    return result.rows as Record<string, unknown>[];
+  }
+
   private async applyPaymentRecorded(
     client: PoolClient,
     organizationId: string,

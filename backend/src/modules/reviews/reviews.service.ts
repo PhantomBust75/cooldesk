@@ -253,6 +253,45 @@ export class ReviewsService {
     );
   }
 
+  async getByToken(token: string): Promise<{
+    token: string;
+    job_id: string;
+    expires_at: string;
+    is_submitted: boolean;
+  }> {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(token)) {
+      throw new NotFoundException('Review token not found');
+    }
+
+    const result = await this.db.query<{
+      review_token: string;
+      job_id: string;
+      expires_at: string;
+      submitted_at: string | null;
+    }>(
+      `
+      SELECT review_token, job_id, expires_at, submitted_at
+      FROM customer_reviews
+      WHERE review_token = $1::uuid
+      LIMIT 1
+      `,
+      [token],
+    );
+
+    if (result.rows.length === 0) {
+      throw new NotFoundException('Review token not found');
+    }
+
+    const row = result.rows[0];
+    return {
+      token: row.review_token,
+      job_id: row.job_id,
+      expires_at: row.expires_at,
+      is_submitted: row.submitted_at !== null,
+    };
+  }
+
   private async notifyOwnerOfficeUsers(
     client: PoolClient,
     organizationId: string,

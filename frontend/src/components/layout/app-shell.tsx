@@ -20,10 +20,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return session?.user.role === "dealer" ? "dealer" : "user";
   }, [session?.user.role]);
 
+  const isPlatformAdmin = session?.user.role === "platform_admin";
+
   const unreadCountQuery = useQuery({
     queryKey: ["notifications", audience, "unread-count", "shell"],
     queryFn: () => fetchUnreadNotificationCount(audience),
     staleTime: 30_000,
+    enabled: !isPlatformAdmin,
   });
 
   const unreadCount = unreadCountQuery.data?.count ?? 0;

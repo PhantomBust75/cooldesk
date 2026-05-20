@@ -3568,4 +3568,308 @@ export class JobsService {
 
     return punctualityUpdate.rows[0];
   }
+
+  async listOfficeJobs(
+    query: {
+      status?: string;
+      type?: string;
+      technicianId?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      search?: string;
+      page?: number;
+      limit?: number;
+    },
+    ctx: RequestContext,
+  ): Promise<{ jobs: Record<string, unknown>[]; total: number; page: number; limit: number; totalPages: number }> {
+    const page = Math.max(1, query.page ?? 1);
+    const limit = Math.min(Math.max(1, query.limit ?? 10), 100);
+    const offset = (page - 1) * limit;
+
+    const conditions: string[] = ['j.organization_id = $1', 'j.is_deleted = FALSE'];
+    const params: unknown[] = [ctx.organizationId];
+
+    const add = (sql: string, value: unknown): void => {
+      params.push(value);
+      conditions.push(sql.replace(':p', `$${params.length}`));
+    };
+
+    if (query.status) add('j.status = :p', query.status);
+    if (query.type) add('j.type = :p', query.type);
+    if (query.technicianId) add('j.technician_id = :p', query.technicianId);
+    if (query.dateFrom) add('j.created_at >= :p::timestamptz', query.dateFrom);
+    if (query.dateTo) add('j.created_at <= :p::timestamptz', query.dateTo);
+    if (query.search) {
+      params.push(`%${query.search}%`);
+      conditions.push(
+        `(j.customer_name ILIKE $${params.length} OR j.phone ILIKE $${params.length} OR j.address ILIKE $${params.length})`,
+      );
+    }
+
+    const where = conditions.join(' AND ');
+
+    const countResult = await this.db.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM jobs j WHERE ${where}`,
+      params,
+    );
+    const total = Number.parseInt(countResult.rows[0].count, 10);
+
+    params.push(limit);
+    params.push(offset);
+
+    const result = await this.db.query(
+      `
+      SELECT
+        j.id,
+        j.type,
+        j.status,
+        j.source,
+        j.brand_id,
+        b.name AS brand_name,
+        j.dealer_id,
+        d.name AS dealer_name,
+        j.technician_id AS assigned_technician_id,
+        u.full_name AS assigned_technician_name,
+        j.customer_name,
+        j.phone,
+        j.address,
+        j.scheduled_at,
+        j.created_at,
+        j.version
+      FROM jobs j
+      LEFT JOIN brands b ON b.id = j.brand_id
+      LEFT JOIN dealers d ON d.id = j.dealer_id
+      LEFT JOIN users u ON u.id = j.technician_id
+      WHERE ${where}
+      ORDER BY j.created_at DESC
+      LIMIT $${params.length - 1} OFFSET $${params.length}
+      `,
+      params,
+    );
+
+    return {
+      jobs: result.rows as Record<string, unknown>[],
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit) || 1,
+    };
+  }
+
+  async findByIdForOffice(jobId: string, ctx: RequestContext): Promise<Record<string, unknown>> {
+    const result = await this.db.query(
+      `
+      SELECT
+        j.id,
+        j.type,
+        j.status,
+        j.source,
+        j.brand_id,
+        b.name AS brand_name,
+        j.dealer_id,
+        d.name AS dealer_name,
+        j.technician_id AS assigned_technician_id,
+        u.full_name AS assigned_technician_name,
+        j.customer_name,
+        j.phone,
+        j.address,
+        j.issue_description,
+        j.installation_notes,
+        j.scheduled_at,
+        j.is_repeat,
+        j.is_frequent,
+        j.is_chronic,
+        j.created_at,
+        j.updated_at,
+        j.version,
+        CASE WHEN p.id IS NULL THEN NULL ELSE jsonb_build_object(
+          'id', p.id,
+          'amount', p.amount,
+          'payment_method_id', p.payment_method_id,
+          'payment_method_name', pm.name,
+          'status', p.status,
+          'recorded_by_name', rb.full_name,
+          'recorded_at', p.created_at
+        ) END AS payment
+      FROM jobs j
+      LEFT JOIN brands b ON b.id = j.brand_id
+      LEFT JOIN dealers d ON d.id = j.dealer_id
+      LEFT JOIN users u ON u.id = j.technician_id
+      LEFT JOIN payments p ON p.job_id = j.id AND p.organization_id = j.organization_id AND p.is_deleted = FALSE
+      LEFT JOIN payment_methods pm ON pm.id = p.payment_method_id
+      LEFT JOIN users rb ON rb.id = p.recorded_by
+      WHERE j.id = $1
+        AND j.organization_id = $2
+        AND j.is_deleted = FALSE
+      LIMIT 1
+      `,
+      [jobId, ctx.organizationId],
+    );
+
+    if (result.rows.length === 0) {
+      throw new NotFoundException('Job not found');
+    }
+
+    return result.rows[0] as Record<string, unknown>;
+  }
+
+  async getJobTimeline(
+    jobId: string,
+    ctx: RequestContext,
+    limit = 100,
+  ): Promise<Record<string, unknown>[]> {
+    const jobCheck = await this.db.query<{ id: string }>(
+      `SELECT id FROM jobs WHERE id = $1 AND organization_id = $2 AND is_deleted = FALSE LIMIT 1`,
+      [jobId, ctx.organizationId],
+    );
+    if (jobCheck.rows.length === 0) {
+      throw new NotFoundException('Job not found');
+    }
+
+    const result = await this.db.query(
+      `
+      SELECT
+        jt.id,
+        jt.event_type,
+        jt.actor_user_id,
+        jt.actor_dealer_id,
+        jt.previous_value,
+        jt.new_value,
+        jt.reason,
+        jt.occurred_at
+      FROM job_timeline jt
+      WHERE jt.job_id = $1
+        AND jt.organization_id = $2
+      ORDER BY jt.occurred_at ASC
+      LIMIT $3
+      `,
+      [jobId, ctx.organizationId, Math.min(limit, 500)],
+    );
+
+    return result.rows as Record<string, unknown>[];
+  }
+
+  async getJobRevisits(jobId: string, ctx: RequestContext): Promise<Record<string, unknown>[]> {
+    const jobCheck = await this.db.query<{ id: string }>(
+      `SELECT id FROM jobs WHERE id = $1 AND organization_id = $2 AND is_deleted = FALSE LIMIT 1`,
+      [jobId, ctx.organizationId],
+    );
+    if (jobCheck.rows.length === 0) {
+      throw new NotFoundException('Job not found');
+    }
+
+    const result = await this.db.query(
+      `
+      SELECT
+        r.id,
+        r.sequence_number,
+        r.reason,
+        r.custom_reason,
+        CASE WHEN ra.is_active THEN 'assigned' ELSE 'unassigned' END AS status,
+        u.full_name AS assigned_technician_name,
+        r.created_at
+      FROM revisits r
+      LEFT JOIN revisit_assignments ra
+        ON ra.revisit_id = r.id AND ra.is_active = TRUE
+      LEFT JOIN users u ON u.id = ra.technician_id
+      WHERE r.job_id = $1
+        AND r.organization_id = $2
+        AND r.is_deleted = FALSE
+      ORDER BY r.sequence_number ASC
+      `,
+      [jobId, ctx.organizationId],
+    );
+
+    return result.rows as Record<string, unknown>[];
+  }
+
+  async patchJobPayment(
+    jobId: string,
+    input: { paymentMethodId?: string; amount?: number },
+    ctx: RequestContext,
+  ): Promise<{ ok: true }> {
+    const updates: string[] = [];
+    const params: unknown[] = [jobId, ctx.organizationId];
+
+    if (input.paymentMethodId !== undefined) {
+      params.push(input.paymentMethodId);
+      updates.push(`payment_method_id = $${params.length}`);
+    }
+    if (input.amount !== undefined) {
+      params.push(input.amount);
+      updates.push(`amount = $${params.length}`);
+    }
+
+    if (updates.length === 0) {
+      return { ok: true };
+    }
+
+    updates.push('updated_at = NOW()');
+
+    const result = await this.db.query(
+      `
+      UPDATE payments
+      SET ${updates.join(', ')}
+      WHERE job_id = $1
+        AND organization_id = $2
+        AND is_deleted = FALSE
+      `,
+      params,
+    );
+
+    if ((result.rowCount ?? 0) === 0) {
+      throw new NotFoundException('Payment record not found for this job');
+    }
+
+    return { ok: true };
+  }
+
+  async getTechnicianStats(
+    technicianId: string,
+    ctx: RequestContext,
+  ): Promise<{ active_jobs: number; completion_rate: number | null }> {
+    const techCheck = await this.db.query<{ id: string }>(
+      `SELECT id FROM users WHERE id = $1 AND organization_id = $2 AND role = 'technician' AND is_deleted = FALSE LIMIT 1`,
+      [technicianId, ctx.organizationId],
+    );
+    if (techCheck.rows.length === 0) {
+      throw new NotFoundException('Technician not found');
+    }
+
+    const activeResult = await this.db.query<{ active_jobs: string }>(
+      `
+      SELECT COUNT(*)::text AS active_jobs
+      FROM job_assignments ja
+      INNER JOIN jobs j ON j.id = ja.job_id AND j.organization_id = ja.organization_id
+      WHERE ja.technician_id = $1
+        AND ja.organization_id = $2
+        AND ja.is_active = TRUE
+        AND j.is_deleted = FALSE
+        AND j.status NOT IN ('cancelled', 'completed', 'resolved', 'resolved_on_revisit')
+      `,
+      [technicianId, ctx.organizationId],
+    );
+
+    const totalResult = await this.db.query<{ total: string; completed: string }>(
+      `
+      SELECT
+        COUNT(*)::text AS total,
+        COUNT(*) FILTER (WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit'))::text AS completed
+      FROM job_assignments ja
+      INNER JOIN jobs j ON j.id = ja.job_id AND j.organization_id = ja.organization_id
+      WHERE ja.technician_id = $1
+        AND ja.organization_id = $2
+        AND j.is_deleted = FALSE
+      `,
+      [technicianId, ctx.organizationId],
+    );
+
+    const total = Number.parseInt(totalResult.rows[0].total, 10);
+    const completed = Number.parseInt(totalResult.rows[0].completed, 10);
+
+    return {
+      active_jobs: Number.parseInt(activeResult.rows[0].active_jobs, 10),
+      completion_rate: total > 0 ? Math.round((completed / total) * 100) / 100 : null,
+    };
+  }
 }
