@@ -18,9 +18,9 @@ ALTER TABLE payments
   ADD COLUMN IF NOT EXISTS retained_note TEXT,
   ADD COLUMN IF NOT EXISTS version INT NOT NULL DEFAULT 0;
 
-ALTER TABLE payments
-  ALTER COLUMN status TYPE payment_status USING status::payment_status,
-  ALTER COLUMN status SET DEFAULT 'pending'::payment_status;
+ALTER TABLE payments ALTER COLUMN status DROP DEFAULT;
+ALTER TABLE payments ALTER COLUMN status TYPE payment_status USING status::payment_status;
+ALTER TABLE payments ALTER COLUMN status SET DEFAULT 'pending'::payment_status;
 
 ALTER TABLE payments
   DROP CONSTRAINT IF EXISTS chk_void_meta;

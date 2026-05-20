@@ -27,17 +27,17 @@ export class AuthService {
     accessToken: string;
     user: {
       id: string;
-      organization_id: string;
-      role: UserRole;
+      organization_id: string | null;
+      role: UserRole | 'platform_admin';
       name: string;
       email: string;
     };
   }> {
     const email = input.email.trim().toLowerCase();
 
-    let result: { rows: UserRow[] };
+    let userResult: { rows: UserRow[] };
     try {
-      result = await this.db.query<UserRow>(
+      userResult = await this.db.query<UserRow>(
         `
         SELECT u.id, u.organization_id, u.role, u.full_name, u.email, u.password_hash
         FROM users u
@@ -57,35 +57,57 @@ export class AuthService {
           'Database connection failed. Verify DATABASE_URL user/password/host and that PostgreSQL is running.',
         );
       }
-
       throw error;
     }
 
-    const user = result.rows[0];
-    if (!user || !this.verifyPassword(input.password, user.password_hash)) {
+    const user = userResult.rows[0];
+
+    if (user) {
+      if (!this.verifyPassword(input.password, user.password_hash)) {
+        throw new UnauthorizedException('Invalid email or password');
+      }
+
+      const accessToken = await this.jwtService.signAsync(
+        { sub: user.id, organization_id: user.organization_id, role: user.role },
+        { secret: this.appConfig.jwtUserSecret, expiresIn: '8h' },
+      );
+
+      return {
+        accessToken,
+        user: {
+          id: user.id,
+          organization_id: user.organization_id,
+          role: user.role,
+          name: user.full_name,
+          email: user.email,
+        },
+      };
+    }
+
+    // Fall through: check platform_admins
+    const adminResult = await this.db.query<{ id: string; full_name: string; email: string; password_hash: string }>(
+      `SELECT id, full_name, email, password_hash FROM platform_admins WHERE LOWER(email) = $1 AND is_active = TRUE LIMIT 1`,
+      [email],
+    );
+
+    const admin = adminResult.rows[0];
+    if (!admin || !this.verifyPassword(input.password, admin.password_hash)) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
     const accessToken = await this.jwtService.signAsync(
-      {
-        sub: user.id,
-        organization_id: user.organization_id,
-        role: user.role,
-      },
-      {
-        secret: this.appConfig.jwtUserSecret,
-        expiresIn: '8h',
-      },
+      { sub: admin.id, type: 'platform_admin' },
+      { secret: this.appConfig.jwtPlatformSecret, expiresIn: '8h' },
     );
 
     return {
       accessToken,
       user: {
-        id: user.id,
-        organization_id: user.organization_id,
-        role: user.role,
-        name: user.full_name,
-        email: user.email,
+        id: admin.id,
+        organization_id: null,
+        role: 'platform_admin',
+        name: admin.full_name,
+        email: admin.email,
       },
     };
   }

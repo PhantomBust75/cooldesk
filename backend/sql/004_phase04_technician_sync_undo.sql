@@ -56,6 +56,26 @@ CREATE TABLE IF NOT EXISTS revisits (
   UNIQUE (organization_id, job_id, sequence_number)
 );
 
+-- REVISIT ASSIGNMENTS (depends on revisits created above)
+CREATE TABLE IF NOT EXISTS revisit_assignments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    revisit_id UUID NOT NULL,
+    technician_id UUID NOT NULL,
+    organization_id UUID NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    unassigned_at TIMESTAMPTZ,
+    acknowledged_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by UUID,
+    CONSTRAINT fk_revisit FOREIGN KEY (revisit_id) REFERENCES revisits(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_technician FOREIGN KEY (technician_id) REFERENCES users(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_revisit_assignments_active
+    ON revisit_assignments (revisit_id) WHERE is_active = TRUE;
+
 ALTER TABLE jobs
   ADD COLUMN IF NOT EXISTS actual_arrival TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS visit_outcome visit_outcome_type,

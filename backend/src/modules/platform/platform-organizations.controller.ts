@@ -13,18 +13,25 @@ import {
 } from './platform-organizations.dto';
 import { PlatformOrganizationsService } from './platform-organizations.service';
 import { PlatformAdminGuard } from '../security/platform-admin.guard';
+import { LoginDto } from '../auth/auth.dto';
 
-@Controller('platform/organizations')
-@UseGuards(PlatformAdminGuard)
+@Controller('platform')
 export class PlatformOrganizationsController {
   constructor(private readonly platformOrganizationsService: PlatformOrganizationsService) {}
 
-  @Post()
+  @Post('auth/login')
+  platformLogin(@Body() body: LoginDto): Promise<{ accessToken: string }> {
+    return this.platformOrganizationsService.platformLogin(body.email, body.password);
+  }
+
+  @Post('organizations')
+  @UseGuards(PlatformAdminGuard)
   create(@Body() body: CreatePlatformOrganizationDto): Promise<{ organizationId: string }> {
     return this.platformOrganizationsService.createOrganization(body);
   }
 
-  @Patch(':id')
+  @Patch('organizations/:id')
+  @UseGuards(PlatformAdminGuard)
   async updateStatus(
     @Param('id') id: string,
     @Body() body: UpdateOrganizationStatusDto,
@@ -33,7 +40,8 @@ export class PlatformOrganizationsController {
     return { ok: true };
   }
 
-  @Get()
+  @Get('organizations')
+  @UseGuards(PlatformAdminGuard)
   list() {
     return this.platformOrganizationsService.listOrganizations();
   }

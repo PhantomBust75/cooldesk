@@ -50,12 +50,16 @@ ALTER TABLE customer_reviews
     END
   ) STORED;
 
+CREATE OR REPLACE FUNCTION immutable_add_48h(ts TIMESTAMPTZ)
+RETURNS TIMESTAMPTZ LANGUAGE SQL IMMUTABLE
+AS $$ SELECT ts + INTERVAL '48 hours' $$;
+
 ALTER TABLE customer_reviews
   DROP COLUMN IF EXISTS expires_at;
 
 ALTER TABLE customer_reviews
   ADD COLUMN expires_at TIMESTAMPTZ GENERATED ALWAYS AS
-    (link_generated_at + INTERVAL '48 hours') STORED;
+    (immutable_add_48h(link_generated_at)) STORED;
 
 ALTER TABLE customer_reviews
   ALTER COLUMN star_rating DROP NOT NULL;

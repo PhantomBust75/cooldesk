@@ -1,7 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { randomBytes, scryptSync } from 'crypto';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { PoolClient } from 'pg';
+import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../../shared/database.service';
+import { AppConfigService } from '../../shared/app-config.service';
 import {
   CreatePlatformOrganizationDto,
   UpdateOrganizationStatusDto,
@@ -23,7 +25,30 @@ const DEFAULT_OWNER_PASSWORD = 'password';
 
 @Injectable()
 export class PlatformOrganizationsService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly jwtService: JwtService,
+    private readonly appConfig: AppConfigService,
+  ) {}
+
+  async platformLogin(email: string, password: string): Promise<{ accessToken: string }> {
+    const result = await this.db.query<{ id: string; password_hash: string }>(
+      `SELECT id, password_hash FROM platform_admins WHERE email = LOWER($1) AND is_active = TRUE LIMIT 1`,
+      [email.trim().toLowerCase()],
+    );
+
+    const admin = result.rows[0];
+    if (!admin || !this.verifyPassword(password, admin.password_hash)) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    const accessToken = await this.jwtService.signAsync(
+      { sub: admin.id, type: 'platform_admin' },
+      { secret: this.appConfig.jwtPlatformSecret, expiresIn: '8h' },
+    );
+
+    return { accessToken };
+  }
 
   async createOrganization(input: CreatePlatformOrganizationDto): Promise<{ organizationId: string }> {
     return this.db.withTransaction(async (client) => {
@@ -166,5 +191,16 @@ export class PlatformOrganizationsService {
     const salt = randomBytes(16).toString('hex');
     const hash = scryptSync(password, salt, 64).toString('hex');
     return `${salt}:${hash}`;
+  }
+
+  private verifyPassword(password: string, storedHash: string): boolean {
+    const sep = storedHash.indexOf(':');
+    if (sep === -1) return password === storedHash;
+    const salt = storedHash.slice(0, sep);
+    const expectedHex = storedHash.slice(sep + 1);
+    const derived = Buffer.from(scryptSync(password, salt, 64).toString('hex'), 'hex');
+    const expected = Buffer.from(expectedHex, 'hex');
+    if (derived.length !== expected.length) return false;
+    return timingSafeEqual(derived, expected);
   }
 }
