@@ -89,7 +89,7 @@ export default function LoginPage() {
             Sign in to your account
           </h2>
 
-          <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }} suppressHydrationWarning>
             <div>
               <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
                 Email address <span style={{ color: "#EF4444" }}>*</span>
@@ -104,6 +104,7 @@ export default function LoginPage() {
                 placeholder="you@company.com"
                 autoComplete="email"
                 required
+                suppressHydrationWarning
               />
             </div>
 
