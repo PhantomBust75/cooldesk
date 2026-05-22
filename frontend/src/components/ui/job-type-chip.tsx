@@ -1,4 +1,9 @@
-import { ArrowRight, Building2, MessageCircleWarning, Wrench } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  MessageCircleWarning,
+  Wrench,
+} from "lucide-react";
 
 type JobType = "installation" | "complaint";
 type JobSource = "direct" | "via_dealer";
@@ -54,9 +59,19 @@ export function SourceChip({ source, dealerName }: SourceChipProps) {
       title={!isDirect ? label : undefined}
     >
       {isDirect ? (
-        <ArrowRight size={14} color="#737373" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+        <ArrowRight
+          size={14}
+          color="#737373"
+          strokeWidth={1.5}
+          style={{ flexShrink: 0 }}
+        />
       ) : (
-        <Building2 size={14} color="#737373" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+        <Building2
+          size={14}
+          color="#737373"
+          strokeWidth={1.5}
+          style={{ flexShrink: 0 }}
+        />
       )}
       {label}
     </span>
@@ -101,10 +116,9 @@ export function TagChip({
 
 export function BrandSwatch({
   name,
-  colorHex: _colorHex,
 }: {
   name: string;
-  colorHex: string | null;
+  colorHex?: string | null;
 }) {
   return (
     <span
