@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { isTerminalStatus } from "@/lib/job-status-groups";
 import { fetchJobs } from "@/lib/api/jobs";
 import { fetchOfficeTechnicians } from "@/lib/api/office";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import type { JobListFilter, JobListQuery } from "@/types/jobs";
 import { Briefcase, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
@@ -22,6 +23,7 @@ const PAGE_SIZE = 10;
 export function JobsList() {
   const { session } = useAuth();
   const router = useRouter();
+  const isMobile = useMobileBreakpoint();
   const isTechnician = session?.user.role === "technician";
   const isDealer = session?.user.role === "dealer";
   const [filter, setFilter] = useState<JobListFilter>({});
@@ -141,7 +143,7 @@ export function JobsList() {
   const safePage = Math.min(page, totalPages);
 
   return (
-    <section style={{ padding: "24px", maxWidth: "1400px" }}>
+    <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "1400px" }}>
       <div
         style={{
           display: "flex",
@@ -282,7 +284,7 @@ export function JobsList() {
             style={{
               padding: "16px",
               display: "grid",
-              gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+              gridTemplateColumns: isMobile ? "1fr" : "repeat(6, minmax(0, 1fr))",
               gap: "12px",
             }}
           >
@@ -515,7 +517,8 @@ export function JobsList() {
             overflow: "hidden",
           }}
         >
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
                 {[
@@ -599,6 +602,7 @@ export function JobsList() {
               ))}
             </tbody>
           </table>
+            </div>
         </div>
       )}
 
