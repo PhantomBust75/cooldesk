@@ -6,17 +6,24 @@ import {
   BrandSwatch,
   SourceChip,
 } from "@/components/ui/job-type-chip";
+import { useAuth } from "@/contexts/auth-context";
+import { isTerminalStatus } from "@/lib/job-status-groups";
 import { fetchJobs } from "@/lib/api/jobs";
 import { fetchOfficeTechnicians } from "@/lib/api/office";
 import type { JobListFilter, JobListQuery } from "@/types/jobs";
 import { Briefcase, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 const PAGE_SIZE = 10;
 
 export function JobsList() {
+  const { session } = useAuth();
+  const router = useRouter();
+  const isTechnician = session?.user.role === "technician";
+  const isDealer = session?.user.role === "dealer";
   const [filter, setFilter] = useState<JobListFilter>({});
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -25,10 +32,11 @@ export function JobsList() {
     () => ({
       ...filter,
       search: search.trim() || undefined,
+      technicianId: isTechnician ? session?.user.userId : filter.technicianId,
       page,
       limit: PAGE_SIZE,
     }),
-    [filter, search, page],
+    [filter, search, page, isTechnician, session?.user.userId],
   );
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -40,6 +48,12 @@ export function JobsList() {
     queryKey: ["office-technicians"],
     queryFn: () => fetchOfficeTechnicians(),
   });
+
+  const displayedJobs = useMemo(() => {
+    const jobs = data?.jobs ?? [];
+    if (!isTechnician) return jobs;
+    return jobs.filter((job) => !isTerminalStatus(job.status));
+  }, [data?.jobs, isTechnician]);
 
   if (isLoading) return <div>Loading jobs…</div>;
   if (error) {
@@ -72,20 +86,22 @@ export function JobsList() {
               0 jobs
             </p>
           </div>
-          <Link
-            href="/log-new-job"
-            style={{
-              border: "1px solid #E5E5E5",
-              borderRadius: "8px",
-              padding: "7px 14px",
-              backgroundColor: "#0A0A0A",
-              color: "#fff",
-              textDecoration: "none",
-              fontSize: "13px",
-            }}
-          >
-            Log new job
-          </Link>
+          {!isTechnician ? (
+            <Link
+              href="/log-new-job"
+              style={{
+                border: "1px solid #E5E5E5",
+                borderRadius: "8px",
+                padding: "7px 14px",
+                backgroundColor: "#0A0A0A",
+                color: "#fff",
+                textDecoration: "none",
+                fontSize: "13px",
+              }}
+            >
+              Log new job
+            </Link>
+          ) : null}
         </div>
         <div
           style={{
@@ -121,7 +137,6 @@ export function JobsList() {
     );
   }
 
-  const jobs = data?.jobs ?? [];
   const totalPages = Math.max(1, data?.page.totalPages ?? 1);
   const safePage = Math.min(page, totalPages);
 
@@ -159,21 +174,61 @@ export function JobsList() {
             {data?.total ?? 0} jobs
           </p>
         </div>
-        <Link
-          href="/log-new-job"
-          style={{
-            border: "1px solid #E5E5E5",
-            borderRadius: "8px",
-            padding: "7px 14px",
-            backgroundColor: "#0A0A0A",
-            color: "#fff",
-            textDecoration: "none",
-            fontSize: "13px",
-          }}
-        >
-          Log new job
-        </Link>
+        {!isTechnician ? (
+          <Link
+            href="/log-new-job"
+            style={{
+              border: "1px solid #E5E5E5",
+              borderRadius: "8px",
+              padding: "7px 14px",
+              backgroundColor: "#0A0A0A",
+              color: "#fff",
+              textDecoration: "none",
+              fontSize: "13px",
+            }}
+          >
+            Log new job
+          </Link>
+        ) : null}
       </div>
+
+      {isTechnician ? (
+        <div style={{ display: "flex", gap: "4px", marginBottom: "20px", borderBottom: "1px solid #E5E5E5", paddingBottom: "0" }}>
+          <button
+            type="button"
+            style={{
+              padding: "8px 16px",
+              fontSize: "13px",
+              fontWeight: 500,
+              color: "#171717",
+              backgroundColor: "transparent",
+              border: "none",
+              borderBottom: "2px solid #0A0A0A",
+              cursor: "pointer",
+              marginBottom: "-1px",
+            }}
+          >
+            Active jobs
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push("/jobs/history")}
+            style={{
+              padding: "8px 16px",
+              fontSize: "13px",
+              fontWeight: 400,
+              color: "#737373",
+              backgroundColor: "transparent",
+              border: "none",
+              borderBottom: "2px solid transparent",
+              cursor: "pointer",
+              marginBottom: "-1px",
+            }}
+          >
+            History
+          </button>
+        </div>
+      ) : null}
 
       <div
         style={{
@@ -296,30 +351,32 @@ export function JobsList() {
               <option value="cancelled">Cancelled</option>
             </select>
 
-            <select
-              value={filter.technicianId ?? ""}
-              onChange={(event) => {
-                const value = event.target.value;
-                setFilter((prev) => ({
-                  ...prev,
-                  technicianId: value || undefined,
-                }));
-                setPage(1);
-              }}
-              style={{
-                border: "1px solid #E5E5E5",
-                borderRadius: "8px",
-                padding: "9px 12px",
-                fontSize: "13px",
-              }}
-            >
-              <option value="">All technicians</option>
-              {techniciansQuery.data?.map((technician) => (
-                <option key={technician.id} value={technician.id}>
-                  {technician.name}
-                </option>
-              ))}
-            </select>
+            {!isTechnician ? (
+              <select
+                value={filter.technicianId ?? ""}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setFilter((prev) => ({
+                    ...prev,
+                    technicianId: value || undefined,
+                  }));
+                  setPage(1);
+                }}
+                style={{
+                  border: "1px solid #E5E5E5",
+                  borderRadius: "8px",
+                  padding: "9px 12px",
+                  fontSize: "13px",
+                }}
+              >
+                <option value="">All technicians</option>
+                {techniciansQuery.data?.map((technician) => (
+                  <option key={technician.id} value={technician.id}>
+                    {technician.name}
+                  </option>
+                ))}
+              </select>
+            ) : null}
 
             <select
               value={filter.dateFrom ?? ""}
@@ -418,7 +475,7 @@ export function JobsList() {
         </div>
       </div>
 
-      {jobs.length === 0 ? (
+      {displayedJobs.length === 0 ? (
         <div
           style={{
             backgroundColor: "#fff",
@@ -486,7 +543,7 @@ export function JobsList() {
               </tr>
             </thead>
             <tbody>
-              {jobs.map((job) => (
+              {displayedJobs.map((job) => (
                 <tr
                   key={job.id}
                   style={{
@@ -556,7 +613,7 @@ export function JobsList() {
         }}
       >
         <span>
-          Total (API): {data?.total ?? 0} · Showing: {jobs.length}
+          Total (API): {data?.total ?? 0} · Showing: {displayedJobs.length}
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <button
