@@ -88,6 +88,7 @@ export default function LogNewJobPage() {
   const dealersQuery = useQuery({
     queryKey: ["dealers", "quick-create"],
     queryFn: fetchDealers,
+    enabled: !isDealer,
   });
 
   const brandsQuery = useQuery({
@@ -346,7 +347,7 @@ export default function LogNewJobPage() {
                         </option>
                       ))}
                     </select>
-                    {!technicianId || !scheduledAt ? (
+                    {!technicianId || (form.type === "installation" && !scheduledAt) ? (
                       <p style={{ fontSize: "12px", color: "#737373", margin: "4px 0 0" }}>
                         Job will enter the Schedule &amp; Assign queue if technician or schedule is missing.
                       </p>
