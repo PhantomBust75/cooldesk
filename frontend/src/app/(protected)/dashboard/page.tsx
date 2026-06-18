@@ -11,10 +11,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [now] = useState(() => Date.now());
+  const isMobile = useMobileBreakpoint();
 
   const analyticsQuery = useQuery({
     queryKey: ["dashboard", "analytics", 7],
@@ -37,7 +39,7 @@ export default function DashboardPage() {
 
   return (
     <RoleGate allowedRoles={["owner", "office_staff", "technician", "dealer"]}>
-      <section style={{ padding: "24px", maxWidth: "1400px" }}>
+      <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "1400px" }}>
         <div style={{ marginBottom: "24px" }}>
           <h1
             style={{
@@ -66,7 +68,7 @@ export default function DashboardPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+            gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, minmax(0, 1fr))",
             gap: "16px",
             marginBottom: "20px",
           }}
