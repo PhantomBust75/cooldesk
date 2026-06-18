@@ -13,6 +13,7 @@ import type {
   PendingScheduleJob,
   SchedulePendingJobInput,
 } from "@/types/office";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Calendar,
@@ -42,6 +43,7 @@ function toIsoStringFromLocal(value: string): string {
 }
 
 export default function PendingSchedulePage() {
+  const isMobile = useMobileBreakpoint();
   const queryClient = useQueryClient();
 
   const [batchMode, setBatchMode] = useState(false);
@@ -186,7 +188,7 @@ export default function PendingSchedulePage() {
   }
 
   return (
-    <section style={{ padding: "24px", maxWidth: "1100px" }}>
+    <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "1100px" }}>
       <div
         style={{
           display: "flex",
@@ -292,7 +294,8 @@ export default function PendingSchedulePage() {
         ) : null}
 
         {queue.length > 0 ? (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "560px" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
                 {batchMode ? (
@@ -427,13 +430,14 @@ export default function PendingSchedulePage() {
               })}
             </tbody>
           </table>
+          </div>
         ) : null}
       </div>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 340px",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 340px",
           gap: "20px",
         }}
       >
@@ -462,8 +466,9 @@ export default function PendingSchedulePage() {
           <form
             onSubmit={submitLookup}
             style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr auto auto",
+              display: isMobile ? "flex" : "grid",
+              flexDirection: isMobile ? "column" : undefined,
+              gridTemplateColumns: isMobile ? undefined : "1fr 1fr auto auto",
               gap: "10px",
               marginTop: "16px",
             }}
