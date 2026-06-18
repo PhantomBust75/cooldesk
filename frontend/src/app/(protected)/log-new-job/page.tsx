@@ -2,6 +2,7 @@
 
 import { RoleGate } from "@/components/auth/role-gate";
 import { useAuth } from "@/contexts/auth-context";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import { ApiError } from "@/lib/api/client";
 import { fetchOfficeTechnicians } from "@/lib/api/office";
 import { createQuickJob, fetchDealers, fetchOfficeBrands } from "@/lib/api/operations";
@@ -66,6 +67,7 @@ function StepHeader({ current, total }: { current: Step; total: number }) {
 }
 
 export default function LogNewJobPage() {
+  const isMobile = useMobileBreakpoint();
   const router = useRouter();
   const { session } = useAuth();
   const isDealer = session?.user.role === "dealer";
@@ -198,7 +200,7 @@ export default function LogNewJobPage() {
 
   return (
     <RoleGate allowedRoles={["owner", "office_staff", "dealer"]}>
-      <section style={{ padding: "24px", maxWidth: "720px" }}>
+      <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "720px" }}>
         <div style={{ marginBottom: "20px" }}>
           <Link href="/jobs" style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", color: "#525252", textDecoration: "none", marginBottom: "12px" }}>
             <ArrowLeft size={13} strokeWidth={1.5} /> Back to jobs
@@ -207,7 +209,7 @@ export default function LogNewJobPage() {
           <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0", fontWeight: 400 }}>Step {step} of {totalSteps}</p>
         </div>
 
-        <form onSubmit={onSubmit} style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "28px" }}>
+        <form onSubmit={onSubmit} style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: isMobile ? "20px" : "28px" }}>
           <StepHeader current={step} total={totalSteps} />
 
           {step === 1 ? (
@@ -371,7 +373,7 @@ export default function LogNewJobPage() {
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>Unit details <span style={{ color: "#EF4444" }}>*</span></label>
                   {units.map((unit, index) => (
-                    <div key={`${index}-${unit.model}`} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 80px 32px", gap: "8px", marginBottom: "8px", alignItems: "center" }}>
+                    <div key={`${index}-${unit.model}`} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 56px 28px" : "1fr 1fr 80px 32px", gap: "8px", marginBottom: "8px", alignItems: "center" }}>
                       <input placeholder="Model" value={unit.model} onChange={(event) => updateUnit(index, "model", event.target.value)} style={{ padding: "7px 8px", border: "1px solid #E5E5E5", borderRadius: "6px", fontSize: "13px", outline: "none", color: "#171717" }} />
                       <input placeholder="Unit type" value={unit.unit_type} onChange={(event) => updateUnit(index, "unit_type", event.target.value)} style={{ padding: "7px 8px", border: "1px solid #E5E5E5", borderRadius: "6px", fontSize: "13px", outline: "none", color: "#171717" }} />
                       <input type="number" min={1} value={unit.num_units} onChange={(event) => updateUnit(index, "num_units", Number(event.target.value))} style={{ padding: "7px 8px", border: "1px solid #E5E5E5", borderRadius: "6px", fontSize: "13px", outline: "none", color: "#171717" }} />
