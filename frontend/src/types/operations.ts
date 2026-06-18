@@ -9,6 +9,7 @@ export type QuickCreateJobInput = {
   installationNotes?: string;
   dealerId?: string;
   scheduledAt?: string;
+  technicianId?: string;
   units?: Array<{ label: string; notes?: string }>;
 };
 
