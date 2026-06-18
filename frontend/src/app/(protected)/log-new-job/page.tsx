@@ -1,7 +1,9 @@
 "use client";
 
 import { RoleGate } from "@/components/auth/role-gate";
+import { useAuth } from "@/contexts/auth-context";
 import { ApiError } from "@/lib/api/client";
+import { fetchOfficeTechnicians } from "@/lib/api/office";
 import { createQuickJob, fetchDealers, fetchOfficeBrands } from "@/lib/api/operations";
 import type { QuickCreateJobInput } from "@/types/operations";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -65,9 +67,20 @@ function StepHeader({ current, total }: { current: Step; total: number }) {
 
 export default function LogNewJobPage() {
   const router = useRouter();
+  const { session } = useAuth();
+  const isDealer = session?.user.role === "dealer";
+  const canAssign = session?.user.role === "owner" || session?.user.role === "office_staff";
+  const totalSteps: Step = isDealer ? 3 : 4;
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<QuickCreateJobInput>(INITIAL_FORM);
   const [scheduledAt, setScheduledAt] = useState("");
+  const [technicianId, setTechnicianId] = useState("");
+
+  const techniciansQuery = useQuery({
+    queryKey: ["office", "technicians", "job-create"],
+    queryFn: fetchOfficeTechnicians,
+    enabled: canAssign,
+  });
   const [units, setUnits] = useState<UnitRow[]>(INITIAL_UNITS);
   const [vcidResult, setVcidResult] = useState<"searching" | "found" | "not_found" | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -100,16 +113,19 @@ export default function LogNewJobPage() {
   const notesLabel = form.type === "complaint" ? "Issue Description" : "Installation Notes";
   const reviewRows: Array<[string, string] | null> = [
     ["Job type", form.type || "—"],
-    ["Source", form.source || "—"],
-    ["Dealer", form.dealerId ? (dealersQuery.data ?? []).find((dealer) => dealer.id === form.dealerId)?.name ?? "—" : "N/A"],
+    !isDealer ? ["Source", form.source || "—"] : null,
+    !isDealer ? ["Dealer", form.dealerId ? (dealersQuery.data ?? []).find((dealer) => dealer.id === form.dealerId)?.name ?? "—" : "N/A"] : null,
     ["Customer", form.customerName || "—"],
     ["Phone", form.phone || "—"],
     ["Address", form.address || "—"],
     ["Brand", form.brandId ? (brandsQuery.data ?? []).find((brand) => brand.id === form.brandId)?.name ?? "—" : "—"],
-    form.type === "installation" ? ["Scheduled at", scheduledAt || "Pending schedule"] : null,
+    !isDealer && form.type === "installation" ? ["Scheduled at", scheduledAt || "Pending schedule"] : null,
+    canAssign && technicianId ? ["Technician", (techniciansQuery.data ?? []).find((t) => t.id === technicianId)?.name ?? "—"] : null,
     form.type === "complaint" ? ["Issue", form.issueDescription || "—"] : null,
   ];
-  const step1Valid = Boolean(form.type && form.source && (!dealerRequired || form.dealerId));
+  const step1Valid = isDealer
+    ? Boolean(form.type)
+    : Boolean(form.type && form.source && (!dealerRequired || form.dealerId));
   const step2Valid = Boolean(form.customerName && form.phone && form.address);
   const step3Valid = Boolean(
     form.brandId &&
@@ -161,10 +177,12 @@ export default function LogNewJobPage() {
 
     const payload: QuickCreateJobInput = {
       ...form,
-      dealerId: dealerRequired ? form.dealerId : undefined,
+      source: isDealer ? "via_dealer" : form.source,
+      dealerId: isDealer ? undefined : (form.source === "via_dealer" ? form.dealerId : undefined),
       issueDescription: form.type === "complaint" ? form.issueDescription : undefined,
       installationNotes: form.type === "installation" ? form.installationNotes : undefined,
-      scheduledAt: form.type === "installation" && scheduledAt ? scheduledAt : undefined,
+      scheduledAt: !isDealer && form.type === "installation" && scheduledAt ? scheduledAt : undefined,
+      technicianId: !isDealer && technicianId ? technicianId : undefined,
       units: units
         .filter((u) => u.model.trim())
         .flatMap((u) =>
@@ -185,17 +203,21 @@ export default function LogNewJobPage() {
             <ArrowLeft size={13} strokeWidth={1.5} /> Back to jobs
           </Link>
           <h1 style={{ fontSize: "18px", fontWeight: 600, color: "#171717", margin: 0 }}>Log new job</h1>
-          <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0", fontWeight: 400 }}>Step {step} of 4</p>
+          <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0", fontWeight: 400 }}>Step {step} of {totalSteps}</p>
         </div>
 
         <form onSubmit={onSubmit} style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "28px" }}>
-          <StepHeader current={step} total={4} />
+          <StepHeader current={step} total={totalSteps} />
 
           {step === 1 ? (
             <div>
-              <h2 style={{ fontSize: "15px", fontWeight: 500, color: "#171717", marginBottom: "20px", marginTop: 0 }}>Job type & source</h2>
+              <h2 style={{ fontSize: "15px", fontWeight: 500, color: "#171717", marginBottom: "20px", marginTop: 0 }}>
+                Job type{isDealer ? "" : " & source"}
+              </h2>
               <div style={{ marginBottom: "20px" }}>
-                <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>Job type <span style={{ color: "#EF4444" }}>*</span></label>
+                <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
+                  Job type <span style={{ color: "#EF4444" }}>*</span>
+                </label>
                 <div style={{ display: "flex", gap: "10px" }}>
                   {(["installation", "complaint"] as const).map((type) => (
                     <label key={type} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "16px", border: `1px solid ${form.type === type ? "#0A0A0A" : "#E5E5E5"}`, borderRadius: "8px", cursor: "pointer", backgroundColor: form.type === type ? "#FAFAFA" : "#fff" }}>
@@ -206,28 +228,36 @@ export default function LogNewJobPage() {
                 </div>
               </div>
 
-              <div style={{ marginBottom: "20px" }}>
-                <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>Source <span style={{ color: "#EF4444" }}>*</span></label>
-                <div style={{ display: "flex", gap: "10px" }}>
-                  {(["direct", "via_dealer"] as const).map((source) => (
-                    <label key={source} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "16px", border: `1px solid ${form.source === source ? "#0A0A0A" : "#E5E5E5"}`, borderRadius: "8px", cursor: "pointer", backgroundColor: form.source === source ? "#FAFAFA" : "#fff" }}>
-                      <input type="radio" name="source" value={source} checked={form.source === source} onChange={() => setForm((prev) => ({ ...prev, source }))} style={{ display: "none" }} />
-                      <span style={{ fontSize: "13px", fontWeight: form.source === source ? 500 : 400, color: form.source === source ? "#0A0A0A" : "#525252" }}>{source === "direct" ? "Direct" : "Via dealer"}</span>
+              {!isDealer ? (
+                <>
+                  <div style={{ marginBottom: "20px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
+                      Source <span style={{ color: "#EF4444" }}>*</span>
                     </label>
-                  ))}
-                </div>
-              </div>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      {(["direct", "via_dealer"] as const).map((source) => (
+                        <label key={source} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "16px", border: `1px solid ${form.source === source ? "#0A0A0A" : "#E5E5E5"}`, borderRadius: "8px", cursor: "pointer", backgroundColor: form.source === source ? "#FAFAFA" : "#fff" }}>
+                          <input type="radio" name="source" value={source} checked={form.source === source} onChange={() => setForm((prev) => ({ ...prev, source }))} style={{ display: "none" }} />
+                          <span style={{ fontSize: "13px", fontWeight: form.source === source ? 500 : 400, color: form.source === source ? "#0A0A0A" : "#525252" }}>{source === "direct" ? "Direct" : "Via dealer"}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
 
-              {dealerRequired ? (
-                <div>
-                  <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>Dealer <span style={{ color: "#EF4444" }}>*</span></label>
-                  <select value={form.dealerId ?? ""} onChange={(event) => setForm((prev) => ({ ...prev, dealerId: event.target.value }))} style={{ width: "100%", padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", color: "#171717" }}>
-                    <option value="">Select dealer…</option>
-                    {(dealersQuery.data ?? []).filter((dealer) => dealer.isActive).map((dealer) => (
-                      <option key={dealer.id} value={dealer.id}>{dealer.name}</option>
-                    ))}
-                  </select>
-                </div>
+                  {dealerRequired ? (
+                    <div>
+                      <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
+                        Dealer <span style={{ color: "#EF4444" }}>*</span>
+                      </label>
+                      <select value={form.dealerId ?? ""} onChange={(event) => setForm((prev) => ({ ...prev, dealerId: event.target.value }))} style={{ width: "100%", padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", color: "#171717" }}>
+                        <option value="">Select dealer…</option>
+                        {(dealersQuery.data ?? []).filter((dealer) => dealer.isActive).map((dealer) => (
+                          <option key={dealer.id} value={dealer.id}>{dealer.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
+                </>
               ) : null}
             </div>
           ) : null}
@@ -290,10 +320,37 @@ export default function LogNewJobPage() {
                   </select>
                 </div>
 
-                {form.type === "installation" ? (
+                {!isDealer && form.type === "installation" ? (
                   <div>
-                    <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>Scheduled at <span style={{ color: "#A3A3A3", fontWeight: 400 }}>(optional)</span></label>
+                    <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
+                      Scheduled at <span style={{ color: "#A3A3A3", fontWeight: 400 }}>(optional)</span>
+                    </label>
                     <input type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} style={{ width: "100%", padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", color: "#171717" }} />
+                  </div>
+                ) : null}
+
+                {canAssign ? (
+                  <div>
+                    <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
+                      Assign technician <span style={{ color: "#A3A3A3", fontWeight: 400 }}>(optional)</span>
+                    </label>
+                    <select
+                      value={technicianId}
+                      onChange={(event) => setTechnicianId(event.target.value)}
+                      style={{ width: "100%", padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", color: "#171717" }}
+                    >
+                      <option value="">No assignment — goes to queue</option>
+                      {(techniciansQuery.data ?? []).map((tech) => (
+                        <option key={tech.id} value={tech.id}>
+                          {tech.name} ({tech.activeAssignments} active)
+                        </option>
+                      ))}
+                    </select>
+                    {!technicianId || !scheduledAt ? (
+                      <p style={{ fontSize: "12px", color: "#737373", margin: "4px 0 0" }}>
+                        Job will enter the Schedule &amp; Assign queue if technician or schedule is missing.
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
 
@@ -355,7 +412,7 @@ export default function LogNewJobPage() {
               </button>
             ) : <div />}
 
-            {step < 4 ? (
+            {step < totalSteps ? (
               <button
                 type="button"
                 onClick={() => setStep((current) => (current + 1) as Step)}
