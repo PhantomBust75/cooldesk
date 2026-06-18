@@ -11,6 +11,7 @@ import {
   updateJobPayment,
 } from "@/lib/api/jobs";
 import { useAuth } from "@/contexts/auth-context";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import { fetchPaymentMethods, fetchSystemConfig } from "@/lib/api/operations";
 import { ApiError } from "@/lib/api/client";
 import { getAllowedNextStatuses } from "@/lib/jobs-state-machine";
@@ -68,6 +69,7 @@ function prettyJson(value: unknown): string {
 
 export function JobDetail({ jobId }: { jobId: string }) {
   const { session } = useAuth();
+  const isMobile = useMobileBreakpoint();
   const queryClient = useQueryClient();
   const [toStatus, setToStatus] = useState("");
   const [reason, setReason] = useState("");
@@ -261,7 +263,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
   const requiresPaymentDecision = hasPayment && isPaidCompletion;
 
   return (
-    <section style={{ padding: "24px", maxWidth: "1160px" }}>
+    <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "1160px" }}>
       <header style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", padding: "18px", marginBottom: "14px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
           <div>
@@ -280,7 +282,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
         </div>
       </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "14px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: "14px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <article style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", padding: "16px" }}>
             <h3 style={{ margin: "0 0 12px", fontSize: "13px", fontWeight: 600, color: "#171717", display: "inline-flex", alignItems: "center", gap: "6px" }}><UserRound size={13} strokeWidth={1.5} /> Customer</h3>
@@ -312,7 +314,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
           <article style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", padding: "16px" }}>
             <h3 style={{ margin: "0 0 12px", fontSize: "13px", fontWeight: 600, color: "#171717" }}>Status transition</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr auto", gap: "10px", alignItems: "end" }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr auto", gap: "10px", alignItems: "end" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "12px", color: "#737373" }}>
                 Next status
                 <select
