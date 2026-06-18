@@ -39,4 +39,4 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
-      - run: npm test -- --testPathPattern='\.spec\.ts$' --testPathIgnorePatterns='integration'
+      - run: npm test -- --testPathPatterns='\.spec\.ts$' --testPathIgnorePatterns='integration'
