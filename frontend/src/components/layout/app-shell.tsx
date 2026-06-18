@@ -168,20 +168,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               ) : null}
             </button>
 
-            <Link
-              href="/log-new-job"
-              style={{
-                border: "1px solid #E5E5E5",
-                borderRadius: "8px",
-                padding: "7px 12px",
-                backgroundColor: "#fff",
-                color: "#404040",
-                fontSize: "13px",
-                textDecoration: "none",
-              }}
-            >
-              Log new job
-            </Link>
+            {session?.user.role !== "technician" ? (
+              <Link
+                href="/log-new-job"
+                style={{
+                  border: "1px solid #E5E5E5",
+                  borderRadius: "8px",
+                  padding: "7px 12px",
+                  backgroundColor: "#fff",
+                  color: "#404040",
+                  fontSize: "13px",
+                  textDecoration: "none",
+                }}
+              >
+                Log new job
+              </Link>
+            ) : null}
 
             <div style={{ position: "relative" }} ref={menuRef}>
               <button

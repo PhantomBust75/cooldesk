@@ -28,7 +28,8 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
-  { href: "/pending-schedule", label: "Pending Schedule", icon: Clock, roles: ["owner", "office_staff"] },
+  { href: "/jobs/history", label: "History", icon: Clock, roles: ["technician"] },
+  { href: "/pending-schedule", label: "Schedule & Assign", icon: Clock, roles: ["owner", "office_staff"] },
   { href: "/technicians", label: "Technicians", icon: Users, roles: ["owner", "office_staff"] },
   { href: "/dealer-management", label: "Dealers", icon: Building2, roles: ["owner", "office_staff"] },
   { href: "/analytics", label: "Analytics", icon: BarChart2, roles: ["owner", "office_staff"] },
