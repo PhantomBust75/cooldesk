@@ -171,7 +171,7 @@ export function JobsList() {
               fontWeight: 400,
             }}
           >
-            {data?.total ?? 0} jobs
+            {isTechnician ? displayedJobs.length : (data?.total ?? 0)} jobs
           </p>
         </div>
         {!isTechnician ? (

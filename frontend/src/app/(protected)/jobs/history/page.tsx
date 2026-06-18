@@ -74,7 +74,7 @@ export default function JobsHistoryPage() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
-                  {["Customer", "Type", "Status", "Scheduled", "Completed"].map((heading) => (
+                  {["Customer", "Type", "Status", "Scheduled", "Logged"].map((heading) => (
                     <th key={heading} style={{ padding: "10px 12px", textAlign: "left", fontSize: "12px", fontWeight: 500, color: "#525252" }}>
                       {heading}
                     </th>
