@@ -106,6 +106,11 @@ export class JobsService {
   async createByUser(input: CreateJobDto, ctx: RequestContext): Promise<{ id: string; status: string; version: number }> {
     return this.db.withTransaction(async (client) => {
       await this.validateCreationInput(client, input, ctx.organizationId);
+
+      if (input.technicianId) {
+        await this.assertTechnicianBelongsToOrg(client, input.technicianId, ctx.organizationId);
+      }
+
       const linkResolution = await this.resolveVcid(client, input, ctx.organizationId);
       const flags = await this.calculateComplaintFlags(client, input.type, linkResolution.vcid, ctx.organizationId);
       const status = this.resolveInitialStatus(input);
@@ -126,6 +131,7 @@ export class JobsService {
           issue_description,
           installation_notes,
           scheduled_at,
+          technician_id,
           is_repeat,
           is_frequent,
           repeat_window_days_used,
@@ -135,7 +141,7 @@ export class JobsService {
           created_by_dealer_id
         )
         VALUES (
-          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,NULL
+          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,NULL
         )
         RETURNING id, status, version
         `,
@@ -153,6 +159,7 @@ export class JobsService {
           input.issueDescription ?? null,
           input.installationNotes ?? null,
           input.scheduledAt ?? null,
+          input.technicianId ?? null,
           flags.isRepeat,
           flags.isFrequent,
           flags.repeatWindowDaysUsed,
@@ -162,13 +169,36 @@ export class JobsService {
         ],
       );
 
-      const { id, status: jobStatus, version } = jobInsert.rows[0];
+      const { id, version } = jobInsert.rows[0];
 
       await this.insertUnits(client, input.units ?? [], id, ctx.organizationId);
       await this.insertLinkageTimelineByUser(client, id, ctx, linkResolution);
+
+      let finalStatus: string = status;
+      if (input.technicianId) {
+        finalStatus = 'assigned';
+        await client.query(
+          `
+          INSERT INTO job_assignments (organization_id, job_id, technician_id, assigned_at, is_active)
+          VALUES ($1, $2, $3, NOW(), TRUE)
+          `,
+          [ctx.organizationId, id, input.technicianId],
+        );
+        await this.insertTimelineByUser(
+          client, id, ctx, 'technician_assigned',
+          { technician_id: null },
+          { technician_id: input.technicianId },
+          null,
+        );
+        await client.query(
+          `UPDATE jobs SET status = $2, updated_at = NOW(), version = version + 1 WHERE id = $1 AND organization_id = $3 AND is_deleted = FALSE`,
+          [id, 'assigned', ctx.organizationId],
+        );
+      }
+
       await this.dispatchRepeatNotifications(client, id, ctx.organizationId, flags);
 
-      return { id, status: jobStatus, version };
+      return { id, status: finalStatus, version };
     });
   }
 

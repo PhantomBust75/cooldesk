@@ -67,6 +67,10 @@ export class CreateJobDto {
   @IsUUID()
   dealerId?: string;
 
+  @IsOptional()
+  @IsUUID()
+  technicianId?: string;
+
   @IsString()
   @IsNotEmpty()
   @Length(1, 120)
