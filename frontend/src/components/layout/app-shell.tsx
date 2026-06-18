@@ -5,25 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Bell, ChevronDown, LogOut, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import { Sidebar } from "./sidebar";
 
-const MOBILE_SIDEBAR_QUERY = "(max-width: 768px)";
-
-function subscribeToMobileSidebarQuery(callback: () => void) {
-  const mediaQuery = window.matchMedia(MOBILE_SIDEBAR_QUERY);
-  mediaQuery.addEventListener("change", callback);
-  return () => mediaQuery.removeEventListener("change", callback);
-}
-
-function getMobileSidebarSnapshot() {
-  return window.matchMedia(MOBILE_SIDEBAR_QUERY).matches;
-}
-
-function getMobileSidebarServerSnapshot() {
-  return false;
-}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -32,11 +18,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const isSmallScreen = useSyncExternalStore(
-    subscribeToMobileSidebarQuery,
-    getMobileSidebarSnapshot,
-    getMobileSidebarServerSnapshot,
-  );
+  const isSmallScreen = useMobileBreakpoint();
 
   const audience = useMemo(() => {
     return session?.user.role === "dealer" ? "dealer" : "user";
@@ -57,6 +39,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#FAFAFA", color: "#171717" }}>
+      {isSmallScreen && mobileOpen ? (
+        <div
+          onClick={() => setMobileOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 39,
+            backgroundColor: "rgba(0,0,0,0.3)",
+          }}
+        />
+      ) : null}
       <Sidebar
         collapsed={collapsed}
         onToggle={() => {
@@ -97,7 +90,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             zIndex: 30,
           }}
         >
-          <div />
+          <div style={{ display: isSmallScreen ? "none" : undefined }} />
 
           <button
             type="button"
@@ -106,7 +99,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               borderRadius: "8px",
               backgroundColor: "#fff",
               height: "34px",
-              minWidth: "240px",
+              width: isSmallScreen ? "100%" : undefined,
+              minWidth: isSmallScreen ? 0 : "240px",
+              flex: isSmallScreen ? 1 : undefined,
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
