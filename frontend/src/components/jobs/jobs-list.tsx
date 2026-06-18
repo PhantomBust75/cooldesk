@@ -519,90 +519,90 @@ export function JobsList() {
         >
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
-                {[
-                  "Job ID",
-                  "Status",
-                  "Type",
-                  "Brand",
-                  "Customer",
-                  "Assigned",
-                  "Source",
-                ].map((heading) => (
-                  <th
-                    key={heading}
-                    style={{
-                      padding: "10px 16px",
-                      textAlign: "left",
-                      fontSize: "12px",
-                      color: "#737373",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {heading}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {displayedJobs.map((job) => (
-                <tr
-                  key={job.id}
-                  style={{
-                    borderBottom: "1px solid #F5F5F5",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => window.location.assign(`/jobs/${job.id}`)}
-                >
-                  <td
-                    style={{
-                      padding: "14px 16px",
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: "12px",
-                      color: "#525252",
-                    }}
-                  >
-                    {job.id}
-                  </td>
-                  <td style={{ padding: "14px 16px" }}>
-                    <StatusChip status={job.status} />
-                  </td>
-                  <td style={{ padding: "14px 16px" }}>
-                    <JobTypeChip type={job.type} />
-                  </td>
-                  <td style={{ padding: "14px 16px" }}>
-                    <BrandSwatch name={job.brandName ?? "—"} colorHex={null} />
-                  </td>
-                  <td
-                    style={{
-                      padding: "14px 16px",
-                      color: "#404040",
-                      fontSize: "13px",
-                    }}
-                  >
-                    {job.customerName}
-                  </td>
-                  <td
-                    style={{
-                      padding: "14px 16px",
-                      color: "#404040",
-                      fontSize: "13px",
-                    }}
-                  >
-                    {job.assignedTechnicianName ?? "—"}
-                  </td>
-                  <td style={{ padding: "14px 16px" }}>
-                    <SourceChip
-                      source={job.source}
-                      dealerName={job.dealerName ?? undefined}
-                    />
-                  </td>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
+                  {[
+                    "Job ID",
+                    "Status",
+                    "Type",
+                    "Brand",
+                    "Customer",
+                    "Assigned",
+                    "Source",
+                  ].map((heading) => (
+                    <th
+                      key={heading}
+                      style={{
+                        padding: "10px 16px",
+                        textAlign: "left",
+                        fontSize: "12px",
+                        color: "#737373",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {heading}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-            </div>
+              </thead>
+              <tbody>
+                {displayedJobs.map((job) => (
+                  <tr
+                    key={job.id}
+                    style={{
+                      borderBottom: "1px solid #F5F5F5",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => window.location.assign(`/jobs/${job.id}`)}
+                  >
+                    <td
+                      style={{
+                        padding: "14px 16px",
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: "12px",
+                        color: "#525252",
+                      }}
+                    >
+                      {job.id}
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <StatusChip status={job.status} />
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <JobTypeChip type={job.type} />
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <BrandSwatch name={job.brandName ?? "—"} colorHex={null} />
+                    </td>
+                    <td
+                      style={{
+                        padding: "14px 16px",
+                        color: "#404040",
+                        fontSize: "13px",
+                      }}
+                    >
+                      {job.customerName}
+                    </td>
+                    <td
+                      style={{
+                        padding: "14px 16px",
+                        color: "#404040",
+                        fontSize: "13px",
+                      }}
+                    >
+                      {job.assignedTechnicianName ?? "—"}
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <SourceChip
+                        source={job.source}
+                        dealerName={job.dealerName ?? undefined}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

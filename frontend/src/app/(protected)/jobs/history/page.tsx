@@ -74,41 +74,41 @@ export default function JobsHistoryPage() {
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "520px" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
-                  {["Customer", "Type", "Status", "Scheduled", "Logged"].map((heading) => (
-                    <th key={heading} style={{ padding: "10px 12px", textAlign: "left", fontSize: "12px", fontWeight: 500, color: "#525252" }}>
-                      {heading}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {historyJobs.map((job) => (
-                  <tr key={job.id} style={{ borderBottom: "1px solid #F5F5F5" }}>
-                    <td style={{ padding: "14px 12px" }}>
-                      <Link href={`/jobs/${job.id}`} style={{ fontSize: "13px", fontWeight: 500, color: "#171717", textDecoration: "none" }}>
-                        {job.customerName}
-                      </Link>
-                      <div style={{ fontSize: "12px", color: "#737373" }}>{job.address}</div>
-                    </td>
-                    <td style={{ padding: "14px 12px" }}>
-                      <JobTypeChip type={job.type} />
-                    </td>
-                    <td style={{ padding: "14px 12px" }}>
-                      <StatusChip status={job.status} />
-                    </td>
-                    <td style={{ padding: "14px 12px", fontSize: "13px", color: "#404040" }}>
-                      {job.scheduledAt ? new Date(job.scheduledAt).toLocaleDateString() : "—"}
-                    </td>
-                    <td style={{ padding: "14px 12px", fontSize: "13px", color: "#737373" }}>
-                      {new Date(job.createdAt).toLocaleDateString()}
-                    </td>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "520px" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
+                    {["Customer", "Type", "Status", "Scheduled", "Logged"].map((heading) => (
+                      <th key={heading} style={{ padding: "10px 12px", textAlign: "left", fontSize: "12px", fontWeight: 500, color: "#525252" }}>
+                        {heading}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {historyJobs.map((job) => (
+                    <tr key={job.id} style={{ borderBottom: "1px solid #F5F5F5" }}>
+                      <td style={{ padding: "14px 12px" }}>
+                        <Link href={`/jobs/${job.id}`} style={{ fontSize: "13px", fontWeight: 500, color: "#171717", textDecoration: "none" }}>
+                          {job.customerName}
+                        </Link>
+                        <div style={{ fontSize: "12px", color: "#737373" }}>{job.address}</div>
+                      </td>
+                      <td style={{ padding: "14px 12px" }}>
+                        <JobTypeChip type={job.type} />
+                      </td>
+                      <td style={{ padding: "14px 12px" }}>
+                        <StatusChip status={job.status} />
+                      </td>
+                      <td style={{ padding: "14px 12px", fontSize: "13px", color: "#404040" }}>
+                        {job.scheduledAt ? new Date(job.scheduledAt).toLocaleDateString() : "—"}
+                      </td>
+                      <td style={{ padding: "14px 12px", fontSize: "13px", color: "#737373" }}>
+                        {new Date(job.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

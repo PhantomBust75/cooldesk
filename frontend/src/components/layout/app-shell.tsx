@@ -69,7 +69,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div
         style={{
-          marginLeft: `${sidebarWidth}px`,
+          marginLeft: isSmallScreen ? 0 : `${sidebarWidth}px`,
           transition: "margin-left 220ms ease-in-out",
           minHeight: "100vh",
           display: "flex",
