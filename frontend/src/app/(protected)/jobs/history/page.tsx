@@ -10,12 +10,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
 const PAGE_SIZE = 10;
 
 export default function JobsHistoryPage() {
   const { session } = useAuth();
   const router = useRouter();
+  const isMobile = useMobileBreakpoint();
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
@@ -36,7 +38,7 @@ export default function JobsHistoryPage() {
 
   return (
     <RoleGate allowedRoles={["technician"]}>
-      <section style={{ padding: "24px", maxWidth: "1100px" }}>
+      <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "1100px" }}>
         <div style={{ marginBottom: "24px" }}>
           <h1 style={{ fontSize: "36px", fontWeight: 600, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
             Job History
@@ -71,7 +73,8 @@ export default function JobsHistoryPage() {
               No completed jobs yet.
             </div>
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "520px" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
                   {["Customer", "Type", "Status", "Scheduled", "Logged"].map((heading) => (
@@ -106,6 +109,7 @@ export default function JobsHistoryPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 

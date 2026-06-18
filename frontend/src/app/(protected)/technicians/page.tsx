@@ -9,9 +9,11 @@ import { createOfficeTechnician, fetchTechnicianDirectory, fetchTechnicianStats 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, ChevronRight, Plus, Search, X } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
 export default function TechniciansPage() {
   const queryClient = useQueryClient();
+  const isMobile = useMobileBreakpoint();
   const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState("");
   const [fullName, setFullName] = useState("");
@@ -79,8 +81,8 @@ export default function TechniciansPage() {
 
   return (
     <RoleGate allowedRoles={["owner", "office_staff"]}>
-      <section style={{ padding: "24px", maxWidth: "980px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+      <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "980px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
           <div>
             <h1 style={{ fontSize: "36px", fontWeight: 600, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Technicians</h1>
             <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0", fontWeight: 400 }}>Organization-scoped technician directory and active workload.</p>

@@ -5,9 +5,11 @@ import { createBrand, fetchOfficeBrands } from "@/lib/api/operations";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import { FormEvent, useState } from "react";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
 export default function BrandsAdminPage() {
   const queryClient = useQueryClient();
+  const isMobile = useMobileBreakpoint();
   const [brandName, setBrandName] = useState("");
   const [brandColor, setBrandColor] = useState("#1E40AF");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -49,7 +51,7 @@ export default function BrandsAdminPage() {
   }
 
   return (
-    <section style={{ padding: "24px", maxWidth: "800px" }}>
+    <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "800px" }}>
       <h1 style={{ fontSize: "36px", fontWeight: 600, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em", marginBottom: "8px" }}>
         Brands
       </h1>
@@ -60,7 +62,7 @@ export default function BrandsAdminPage() {
       <div style={{ backgroundColor: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
         <h2 style={{ fontSize: "15px", fontWeight: 600, color: "#171717", margin: "0 0 16px" }}>New brand</h2>
 
-        <form onSubmit={onSubmit} style={{ display: "grid", gap: "12px", gridTemplateColumns: "1fr auto auto" }}>
+        <form onSubmit={onSubmit} style={{ display: "grid", gap: "12px", gridTemplateColumns: isMobile ? "1fr" : "1fr auto auto" }}>
           <input
             type="text"
             value={brandName}

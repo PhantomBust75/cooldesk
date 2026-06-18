@@ -11,6 +11,7 @@ import type { NotificationItem } from "@/types/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, BellRing, Check, Filter, RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
 function eventLabel(eventType: string): string {
   return eventType.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -35,6 +36,7 @@ function payloadPreview(payload: unknown): string {
 export default function NotificationsPage() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
+  const isMobile = useMobileBreakpoint();
 
   const [tab, setTab] = useState<"all" | "unread" | "cancellations" | "assignments">("all");
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -112,7 +114,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <section style={{ padding: "24px", maxWidth: "1000px" }}>
+    <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "1000px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <div>
           <h1 style={{ fontSize: "36px", fontWeight: 600, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Notifications</h1>
@@ -156,7 +158,7 @@ export default function NotificationsPage() {
           ))}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "10px", alignItems: "end" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))", gap: "10px", alignItems: "end" }}>
           <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#404040" }}>
             <input type="checkbox" checked={unreadOnly} onChange={(event) => setUnreadOnly(event.target.checked)} />
             Unread only (query)
