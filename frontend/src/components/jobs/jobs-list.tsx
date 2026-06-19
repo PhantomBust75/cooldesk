@@ -12,7 +12,7 @@ import { fetchJobs } from "@/lib/api/jobs";
 import { fetchOfficeTechnicians } from "@/lib/api/office";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import type { JobListFilter, JobListQuery } from "@/types/jobs";
-import { Briefcase, SlidersHorizontal } from "lucide-react";
+import { Briefcase, ChevronRight, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -494,21 +494,69 @@ export function JobsList() {
             color="#D4D4D4"
             style={{ margin: "0 auto 12px", display: "block", opacity: 0.4 }}
           />
-          <p
-            style={{
-              margin: 0,
-              fontSize: "14px",
-              fontWeight: 500,
-              color: "#404040",
-            }}
-          >
+          <p style={{ margin: 0, fontSize: "14px", fontWeight: 500, color: "#404040" }}>
             No jobs found
           </p>
           <p style={{ margin: "4px 0 0", fontSize: "13px" }}>
             Try adjusting your filters
           </p>
         </div>
+      ) : isMobile ? (
+        /* ── Mobile card list ─────────────────────────────── */
+        <div
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: "12px",
+            border: "1px solid #E5E5E5",
+            overflow: "hidden",
+          }}
+        >
+          {displayedJobs.map((job, index) => (
+            <a
+              key={job.id}
+              href={`/jobs/${job.id}`}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+                padding: "14px 16px",
+                borderBottom: index < displayedJobs.length - 1 ? "1px solid #F5F5F5" : "none",
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                <StatusChip status={job.status} />
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <JobTypeChip type={job.type} />
+                  <ChevronRight size={14} strokeWidth={1.5} color="#A3A3A3" />
+                </div>
+              </div>
+              <div style={{ fontSize: "14px", fontWeight: 500, color: "#171717", lineHeight: 1.3 }}>
+                {job.customerName}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                <span style={{ fontSize: "11px", color: "#A3A3A3", fontFamily: '"JetBrains Mono", monospace' }}>
+                  #{job.id.slice(0, 8)}
+                </span>
+                {job.brandName ? (
+                  <>
+                    <span style={{ fontSize: "11px", color: "#D4D4D4" }}>·</span>
+                    <BrandSwatch name={job.brandName} colorHex={null} />
+                  </>
+                ) : null}
+                {job.assignedTechnicianName ? (
+                  <>
+                    <span style={{ fontSize: "11px", color: "#D4D4D4" }}>·</span>
+                    <span style={{ fontSize: "11px", color: "#737373" }}>{job.assignedTechnicianName}</span>
+                  </>
+                ) : null}
+              </div>
+            </a>
+          ))}
+        </div>
       ) : (
+        /* ── Desktop table ────────────────────────────────── */
         <div
           style={{
             backgroundColor: "#fff",
@@ -521,15 +569,7 @@ export function JobsList() {
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
-                  {[
-                    "Job ID",
-                    "Status",
-                    "Type",
-                    "Brand",
-                    "Customer",
-                    "Assigned",
-                    "Source",
-                  ].map((heading) => (
+                  {["Job ID", "Status", "Type", "Brand", "Customer", "Assigned", "Source"].map((heading) => (
                     <th
                       key={heading}
                       style={{
@@ -549,10 +589,7 @@ export function JobsList() {
                 {displayedJobs.map((job) => (
                   <tr
                     key={job.id}
-                    style={{
-                      borderBottom: "1px solid #F5F5F5",
-                      cursor: "pointer",
-                    }}
+                    style={{ borderBottom: "1px solid #F5F5F5", cursor: "pointer" }}
                     onClick={() => window.location.assign(`/jobs/${job.id}`)}
                   >
                     <td
@@ -574,29 +611,14 @@ export function JobsList() {
                     <td style={{ padding: "14px 16px" }}>
                       <BrandSwatch name={job.brandName ?? "—"} colorHex={null} />
                     </td>
-                    <td
-                      style={{
-                        padding: "14px 16px",
-                        color: "#404040",
-                        fontSize: "13px",
-                      }}
-                    >
+                    <td style={{ padding: "14px 16px", color: "#404040", fontSize: "13px" }}>
                       {job.customerName}
                     </td>
-                    <td
-                      style={{
-                        padding: "14px 16px",
-                        color: "#404040",
-                        fontSize: "13px",
-                      }}
-                    >
+                    <td style={{ padding: "14px 16px", color: "#404040", fontSize: "13px" }}>
                       {job.assignedTechnicianName ?? "—"}
                     </td>
                     <td style={{ padding: "14px 16px" }}>
-                      <SourceChip
-                        source={job.source}
-                        dealerName={job.dealerName ?? undefined}
-                      />
+                      <SourceChip source={job.source} dealerName={job.dealerName ?? undefined} />
                     </td>
                   </tr>
                 ))}

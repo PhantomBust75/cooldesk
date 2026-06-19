@@ -42,16 +42,17 @@ function isActiveRoute(pathname: string, href: string): boolean {
   if (href === "/dashboard") {
     return pathname === href;
   }
-
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function Sidebar({
   collapsed,
+  isSmallScreen,
   onToggle,
   onNavigate,
 }: {
   collapsed: boolean;
+  isSmallScreen: boolean;
   onToggle: () => void;
   onNavigate?: () => void;
 }) {
@@ -59,17 +60,13 @@ export function Sidebar({
   const { session } = useAuth();
 
   const filteredNavItems = NAV_ITEMS.filter((item) => {
-    if (!item.roles) {
-      return true;
-    }
-
+    if (!item.roles) return true;
     const role = session?.user.role;
-    if (!role) {
-      return false;
-    }
-
+    if (!role) return false;
     return item.roles.includes(role);
   });
+
+  const mobileHidden = isSmallScreen && collapsed;
 
   return (
     <aside
@@ -78,12 +75,20 @@ export function Sidebar({
         left: 0,
         top: 0,
         bottom: 0,
-        width: collapsed ? "56px" : "240px",
-        transition: "width 220ms ease-in-out",
+        width: isSmallScreen ? "280px" : (collapsed ? "56px" : "240px"),
+        transition: isSmallScreen
+          ? "transform 220ms ease-in-out"
+          : "width 220ms ease-in-out",
+        transform: isSmallScreen
+          ? (mobileHidden ? "translateX(-100%)" : "translateX(0)")
+          : undefined,
         backgroundColor: "#FAFAFA",
         borderRight: "1px solid #E5E5E5",
+        boxShadow: isSmallScreen && !mobileHidden ? "4px 0 24px rgba(0,0,0,0.12)" : undefined,
         overflow: "hidden",
         zIndex: 40,
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <div
@@ -94,12 +99,11 @@ export function Sidebar({
           alignItems: "center",
           padding: "0 12px",
           gap: "8px",
+          flexShrink: 0,
         }}
       >
-        {!collapsed ? <Zap size={18} strokeWidth={1.5} color="#0A0A0A" /> : null}
-        {!collapsed ? (
-          <span style={{ fontSize: "15px", color: "#0A0A0A", fontWeight: 500 }}>CoolDesk</span>
-        ) : null}
+        <Zap size={18} strokeWidth={1.5} color="#0A0A0A" />
+        <span style={{ fontSize: "15px", color: "#0A0A0A", fontWeight: 500 }}>CoolDesk</span>
         <button
           type="button"
           onClick={onToggle}
@@ -117,14 +121,13 @@ export function Sidebar({
             cursor: "pointer",
             flexShrink: 0,
           }}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          aria-expanded={!collapsed}
+          aria-label="Collapse sidebar"
         >
-          <Menu size={collapsed ? 18 : 16} strokeWidth={1.5} />
+          <Menu size={16} strokeWidth={1.5} />
         </button>
       </div>
 
-      <nav style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "10px 8px" }}>
+      <nav style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "10px 8px", overflowY: "auto", flex: 1 }}>
         {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const active = isActiveRoute(pathname, item.href);
@@ -136,31 +139,21 @@ export function Sidebar({
               onClick={onNavigate}
               style={{
                 borderRadius: "8px",
-                padding: collapsed ? "10px 0" : "9px 12px",
+                padding: "10px 12px",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: collapsed ? "center" : "flex-start",
-                gap: "9px",
+                gap: "10px",
                 textDecoration: "none",
-                backgroundColor: active ? "#F5F5F5" : "transparent",
-                color: active ? "#171717" : "#525252",
+                backgroundColor: active ? "#F0F0F0" : "transparent",
+                color: active ? "#0A0A0A" : "#525252",
                 fontSize: "13px",
                 fontWeight: active ? 500 : 400,
                 whiteSpace: "nowrap",
-                overflow: "hidden",
+                minHeight: "40px",
               }}
-              title={collapsed ? item.label : undefined}
             >
-              <Icon size={collapsed ? 20 : 16} strokeWidth={1.6} />
-              <span
-                style={{
-                  opacity: collapsed ? 0 : 1,
-                  width: collapsed ? 0 : "auto",
-                  transition: "opacity 140ms ease",
-                }}
-              >
-                {item.label}
-              </span>
+              <span style={{ flexShrink: 0, display: "inline-flex" }}><Icon size={17} strokeWidth={1.6} /></span>
+              <span>{item.label}</span>
             </Link>
           );
         })}
