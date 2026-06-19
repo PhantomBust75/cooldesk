@@ -83,6 +83,7 @@ function mapDealer(row: UnknownRecord): DealerDirectoryItem {
     phone: asString(row.phone),
     isActive: asBoolean(row.is_active, true),
     createdAt: asString(row.created_at),
+    brandIds: Array.isArray(row.brand_ids) ? (row.brand_ids as string[]) : [],
   };
 }
 
@@ -143,9 +144,28 @@ export async function fetchDealers(): Promise<DealerDirectoryItem[]> {
 
 export function updateDealer(
   dealerId: string,
-  input: { name?: string; email?: string; phone?: string; brandIds?: string[]; isActive?: boolean },
+  input: { isActive?: boolean },
 ): Promise<{ ok: true }> {
   return apiClient.patch<{ ok: true }>(`/dealers/${dealerId}`, input);
+}
+
+export function updateDealerProfile(
+  dealerId: string,
+  input: { name?: string; phone?: string },
+): Promise<{ ok: true }> {
+  return apiClient.patch<{ ok: true }>(`/dealers/${dealerId}/profile`, input);
+}
+
+export async function fetchDealerBrandIds(dealerId: string): Promise<string[]> {
+  const result = await apiClient.get<{ brandIds: string[] }>(`/dealers/${dealerId}/brands`);
+  return result.brandIds;
+}
+
+export function setDealerBrands(
+  dealerId: string,
+  brandIds: string[],
+): Promise<{ ok: true; brandCount: number }> {
+  return apiClient.put<{ ok: true; brandCount: number }>(`/dealers/${dealerId}/brands`, { brandIds });
 }
 
 export async function fetchDealerJobs(dealerId: string): Promise<DealerJobItem[]> {

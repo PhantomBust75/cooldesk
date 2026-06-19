@@ -8,6 +8,7 @@ import {
   CreateDealerDto,
   DealerHistoryQueryDto,
   UpdateDealerBrandsDto,
+  UpdateDealerProfileDto,
   UpdateDealerStatusDto,
 } from './dealers.dto';
 import { DealersService } from './dealers.service';
@@ -83,6 +84,24 @@ export class DealersController {
   @UseGuards(DealerGuard)
   getDealerJob(@Param('id') id: string, @Req() req: DealerRequest) {
     return this.dealersService.getDealerJobById(id, req.dealerContext);
+  }
+
+  @Get('dealers/:id/brands')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff')
+  getDealerBrandsForOffice(@Param('id') id: string, @Req() req: UserRequest) {
+    return this.dealersService.getDealerBrandsForOffice(id, req.context);
+  }
+
+  @Patch('dealers/:id/profile')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner')
+  patchDealerProfile(
+    @Param('id') id: string,
+    @Body() body: UpdateDealerProfileDto,
+    @Req() req: UserRequest,
+  ) {
+    return this.dealersService.updateDealerProfile(id, body, req.context);
   }
 
   @Get('dealers/:id/jobs')

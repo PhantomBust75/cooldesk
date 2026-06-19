@@ -5,10 +5,10 @@ import { Modal } from "@/components/ui/modal";
 import { StatusToggle } from "@/components/ui/status-toggle";
 import { RoleGate } from "@/components/auth/role-gate";
 import { ApiError } from "@/lib/api/client";
-import { createDealer, fetchDealerJobs, fetchDealers, fetchOfficeBrands, updateDealer } from "@/lib/api/operations";
+import { createDealer, fetchDealerJobs, fetchDealers, fetchOfficeBrands, setDealerBrands, updateDealerProfile } from "@/lib/api/operations";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Building2, ChevronRight, Pencil, Plus, Search, X } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState, useCallback } from "react";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
 export default function DealerManagementPage() {
@@ -54,6 +54,14 @@ export default function DealerManagementPage() {
     [selectedDealerId, dealersQuery.data],
   );
 
+  const openEditModal = useCallback((dealer: { id: string; name: string; phone: string; brandIds: string[] }) => {
+    setSelectedDealerId(dealer.id);
+    setName(dealer.name);
+    setPhone(dealer.phone);
+    setEditBrandIds(dealer.brandIds);
+    setShowEdit(true);
+  }, []);
+
   const dealerJobsQuery = useQuery({
     queryKey: ["dealer-jobs", selectedDealerId],
     queryFn: () => fetchDealerJobs(selectedDealerId ?? ""),
@@ -87,16 +95,13 @@ export default function DealerManagementPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: () => {
-      if (!selectedDealerId) {
-        return Promise.resolve({ ok: true });
-      }
-      return updateDealer(selectedDealerId, {
+    mutationFn: async () => {
+      if (!selectedDealerId) return;
+      await updateDealerProfile(selectedDealerId, {
         name: name.trim() || undefined,
-        email: email.trim() || undefined,
         phone: phone.trim() || undefined,
-        brandIds: editBrandIds.length > 0 ? editBrandIds : undefined,
       });
+      await setDealerBrands(selectedDealerId, editBrandIds);
     },
     onSuccess: () => {
       setMessage("Dealer updated.");
@@ -182,12 +187,7 @@ export default function DealerManagementPage() {
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
-                      setSelectedDealerId(dealer.id);
-                      setName(dealer.name);
-                      setEmail("");
-                      setPhone(dealer.phone || "");
-                      setEditBrandIds([]);
-                      setShowEdit(true);
+                      openEditModal({ id: dealer.id, name: dealer.name, phone: dealer.phone, brandIds: dealer.brandIds });
                     }}
                     style={{ border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", color: "#404040", padding: "6px 8px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "12px" }}
                   >
@@ -271,11 +271,6 @@ export default function DealerManagementPage() {
               <div>
                 <label style={{ display: "block", marginBottom: "5px", fontSize: "12px", fontWeight: 500, color: "#404040" }}>Dealer name <span style={{ color: "#EF4444" }}>*</span></label>
                 <input value={name} onChange={(event) => setName(event.target.value)} style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px" }} placeholder="Dealer name" />
-              </div>
-
-              <div>
-                <label style={{ display: "block", marginBottom: "5px", fontSize: "12px", fontWeight: 500, color: "#404040" }}>Email</label>
-                <input value={email} onChange={(event) => setEmail(event.target.value)} style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px" }} placeholder="Dealer email" type="email" />
               </div>
 
               <div>

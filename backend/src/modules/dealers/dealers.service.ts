@@ -6,6 +6,7 @@ import {
   CreateDealerDto,
   DealerHistoryQueryDto,
   UpdateDealerBrandsDto,
+  UpdateDealerProfileDto,
   UpdateDealerStatusDto,
 } from './dealers.dto';
 
@@ -19,12 +20,18 @@ export class DealersService {
       SELECT
         d.id,
         d.name,
-        ''::text AS phone,
+        d.phone,
         d.is_active,
-        d.created_at
+        d.created_at,
+        COALESCE(
+          ARRAY_AGG(db.brand_id ORDER BY db.brand_id) FILTER (WHERE db.brand_id IS NOT NULL),
+          ARRAY[]::UUID[]
+        ) AS brand_ids
       FROM dealers d
+      LEFT JOIN dealer_brands db ON db.dealer_id = d.id AND db.organization_id = d.organization_id
       WHERE d.organization_id = $1
         AND d.is_deleted = FALSE
+      GROUP BY d.id, d.name, d.phone, d.is_active, d.created_at
       ORDER BY d.name ASC
       `,
       [ctx.organizationId],
@@ -326,6 +333,65 @@ export class DealersService {
     );
 
     return result.rows as Record<string, unknown>[];
+  }
+
+  async getDealerBrandsForOffice(
+    dealerId: string,
+    ctx: RequestContext,
+  ): Promise<{ brandIds: string[] }> {
+    const result = await this.db.query<{ brand_id: string }>(
+      `
+      SELECT db.brand_id
+      FROM dealer_brands db
+      INNER JOIN dealers d ON d.id = db.dealer_id AND d.organization_id = db.organization_id
+      WHERE db.organization_id = $1
+        AND db.dealer_id = $2
+        AND d.is_deleted = FALSE
+      `,
+      [ctx.organizationId, dealerId],
+    );
+    return { brandIds: result.rows.map((r) => r.brand_id) };
+  }
+
+  async updateDealerProfile(
+    dealerId: string,
+    input: UpdateDealerProfileDto,
+    ctx: RequestContext,
+  ): Promise<{ ok: true }> {
+    if (ctx.role !== 'owner') {
+      throw new ForbiddenException('Only owner can update dealers');
+    }
+
+    const setClauses: string[] = ['updated_at = NOW()'];
+    const params: unknown[] = [dealerId, ctx.organizationId];
+
+    if (input.name !== undefined) {
+      params.push(input.name.trim());
+      setClauses.push(`name = $${params.length}`);
+    }
+
+    if (input.phone !== undefined) {
+      params.push(input.phone.trim());
+      setClauses.push(`phone = $${params.length}`);
+    }
+
+    const update = await this.db.query<{ id: string }>(
+      `
+      UPDATE dealers
+      SET ${setClauses.join(', ')}
+      WHERE id = $1
+        AND organization_id = $2
+        AND is_deleted = FALSE
+      RETURNING id
+      `,
+      params,
+    );
+
+    if (update.rows.length === 0) {
+      throw new NotFoundException('Dealer not found');
+    }
+
+    return { ok: true };
   }
 
   private hashPassword(password: string): string {

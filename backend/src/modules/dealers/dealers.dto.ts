@@ -39,6 +39,19 @@ export class UpdateDealerStatusDto {
   isActive!: boolean;
 }
 
+export class UpdateDealerProfileDto {
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 120)
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 40)
+  phone?: string;
+}
+
 export class UpdateDealerBrandsDto {
   @IsArray()
   @ArrayUnique()

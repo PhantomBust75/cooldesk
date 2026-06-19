@@ -38,6 +38,7 @@ export type DealerDirectoryItem = {
   phone: string;
   isActive: boolean;
   createdAt: string;
+  brandIds: string[];
 };
 
 export type DealerJobItem = {
