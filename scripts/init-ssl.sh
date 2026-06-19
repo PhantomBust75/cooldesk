@@ -17,6 +17,12 @@ cd "$STACK_DIR"
 # shellcheck source=/dev/null
 source .env
 
+# Allow HTTP-only deployments to skip SSL entirely.
+if [[ "${ENABLE_SSL:-false}" != "true" ]]; then
+  echo "ENABLE_SSL is not 'true' — skipping SSL certificate bootstrap."
+  exit 0
+fi
+
 : "${APP_DOMAIN:?APP_DOMAIN must be set in .env}"
 : "${API_DOMAIN:?API_DOMAIN must be set in .env}"
 : "${SSL_EMAIL:?SSL_EMAIL must be set in .env}"
