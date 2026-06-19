@@ -2,10 +2,10 @@ name: Deploy Production
 
 on:
   push:
-    branches: [prod]
+    branches: [main]
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -79,3 +79,6 @@ jobs:
             STACK_DIR=/opt/cooldesk BACKEND_IMAGE="${BACKEND_IMAGE}" FRONTEND_IMAGE="${FRONTEND_IMAGE}" HEALTHCHECK_API_URL="${HEALTHCHECK_API_URL}" HEALTHCHECK_APP_URL="${HEALTHCHECK_APP_URL}" PROD_ENV_FILE="${PROD_ENV_FILE}" scripts/deploy.sh
 
             docker compose -f docker-compose.prod.yml exec -T backend npm run migrate
+
+      - name: Sync prod branch
+        run: git push origin HEAD:prod --force
