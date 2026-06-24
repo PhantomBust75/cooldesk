@@ -3349,6 +3349,7 @@ export class JobsService {
       `
       UPDATE jobs
       SET status = 'needs_revisit',
+          revisit_count = revisit_count + 1,
           updated_at = NOW(),
           version = version + 1
       WHERE id = $1
