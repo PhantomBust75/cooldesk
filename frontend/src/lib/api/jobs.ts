@@ -128,6 +128,7 @@ export async function fetchJobs(filter: JobListQuery = {}): Promise<JobListResul
   if (filter.status) params.set("status", filter.status);
   if (filter.type) params.set("type", filter.type);
   if (filter.technicianId) params.set("technicianId", filter.technicianId);
+  if (filter.brandId) params.set("brandId", filter.brandId);
   if (filter.dateFrom) params.set("dateFrom", filter.dateFrom);
   if (filter.dateTo) params.set("dateTo", filter.dateTo);
   if (filter.search) params.set("search", filter.search);

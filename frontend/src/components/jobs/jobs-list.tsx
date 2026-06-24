@@ -10,9 +10,16 @@ import { useAuth } from "@/contexts/auth-context";
 import { isTerminalStatus } from "@/lib/job-status-groups";
 import { fetchJobs } from "@/lib/api/jobs";
 import { fetchOfficeTechnicians } from "@/lib/api/office";
+import { fetchOfficeBrands } from "@/lib/api/operations";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import type { JobListFilter, JobListQuery } from "@/types/jobs";
-import { Briefcase, ChevronRight, SlidersHorizontal } from "lucide-react";
+import {
+  Briefcase,
+  ChevronRight,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -20,28 +27,78 @@ import { useQuery } from "@tanstack/react-query";
 
 const PAGE_SIZE = 10;
 
+const STATUS_OPTIONS = [
+  "new",
+  "pending_schedule",
+  "scheduled",
+  "assigned",
+  "acknowledged",
+  "in_transit",
+  "in_process",
+  "needs_revisit",
+  "resolved",
+  "completed",
+  "cancelled",
+];
+
+function formatStatusLabel(status: string): string {
+  return status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatScheduled(scheduledAt: string | null): string {
+  if (!scheduledAt) return "—";
+  try {
+    return new Date(scheduledAt).toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "—";
+  }
+}
+
 export function JobsList() {
   const { session } = useAuth();
   const router = useRouter();
   const isMobile = useMobileBreakpoint();
   const isTechnician = session?.user.role === "technician";
-  const isDealer = session?.user.role === "dealer";
+
+  // Applied filter state (what actually goes to the API)
   const [filter, setFilter] = useState<JobListFilter>({});
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [filtersOpen, setFiltersOpen] = useState(true);
+
+  // Drawer open/close
+  const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false);
+
+  // Draft filter state inside the drawer (applied on "Apply")
+  const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
+  const [draftType, setDraftType] = useState<"" | "installation" | "complaint">(
+    ""
+  );
+  const [draftTechnicianId, setDraftTechnicianId] = useState("");
+  const [draftBrandId, setDraftBrandId] = useState("");
+  const [draftDateFrom, setDraftDateFrom] = useState("");
+  const [draftDateTo, setDraftDateTo] = useState("");
+
   const queryInput = useMemo<JobListQuery>(
     () => ({
       ...filter,
       search: search.trim() || undefined,
-      technicianId: isTechnician ? session?.user.userId : filter.technicianId,
+      technicianId: isTechnician
+        ? session?.user.userId
+        : filter.technicianId,
       page,
       limit: PAGE_SIZE,
     }),
-    [filter, search, page, isTechnician, session?.user.userId],
+    [filter, search, page, isTechnician, session?.user.userId]
   );
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["jobs", queryInput],
     queryFn: () => fetchJobs(queryInput),
   });
@@ -51,13 +108,81 @@ export function JobsList() {
     queryFn: () => fetchOfficeTechnicians(),
   });
 
+  const brandsQuery = useQuery({
+    queryKey: ["office-brands"],
+    queryFn: () => fetchOfficeBrands(),
+  });
+
   const displayedJobs = useMemo(() => {
     const jobs = data?.jobs ?? [];
     if (!isTechnician) return jobs;
     return jobs.filter((job) => !isTerminalStatus(job.status));
   }, [data?.jobs, isTechnician]);
 
-  if (isLoading) return <div>Loading jobs…</div>;
+  const total = isTechnician ? displayedJobs.length : (data?.total ?? 0);
+  const totalPages = Math.max(1, data?.page.totalPages ?? 1);
+  const safePage = Math.min(page, totalPages);
+
+  function openDrawer() {
+    // Sync draft state from current applied filter
+    setDraftStatuses(filter.status ? [filter.status] : []);
+    setDraftType((filter.type as "" | "installation" | "complaint") ?? "");
+    setDraftTechnicianId(filter.technicianId ?? "");
+    setDraftBrandId(filter.brandId ?? "");
+    setDraftDateFrom(filter.dateFrom ?? "");
+    setDraftDateTo(filter.dateTo ?? "");
+    setFiltersDrawerOpen(true);
+  }
+
+  function applyFilters() {
+    setFilter({
+      status: draftStatuses.length === 1 ? draftStatuses[0] : undefined,
+      type: draftType || undefined,
+      technicianId: draftTechnicianId || undefined,
+      brandId: draftBrandId || undefined,
+      dateFrom: draftDateFrom || undefined,
+      dateTo: draftDateTo || undefined,
+    });
+    setPage(1);
+    setFiltersDrawerOpen(false);
+  }
+
+  function clearFilters() {
+    setDraftStatuses([]);
+    setDraftType("");
+    setDraftTechnicianId("");
+    setDraftBrandId("");
+    setDraftDateFrom("");
+    setDraftDateTo("");
+    setFilter({});
+    setSearch("");
+    setPage(1);
+    setFiltersDrawerOpen(false);
+  }
+
+  function toggleDraftStatus(status: string) {
+    setDraftStatuses((prev) =>
+      prev.includes(status)
+        ? prev.filter((s) => s !== status)
+        : [...prev, status]
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          padding: "48px 24px",
+          textAlign: "center",
+          color: "#737373",
+          fontSize: "13px",
+        }}
+      >
+        Loading jobs…
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div style={{ padding: "24px" }}>
@@ -65,8 +190,8 @@ export function JobsList() {
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
+            alignItems: "flex-start",
+            marginBottom: "16px",
           }}
         >
           <div>
@@ -80,30 +205,12 @@ export function JobsList() {
                 lineHeight: 1.1,
               }}
             >
-              Jobs
+              All jobs
             </h1>
-            <p
-              style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0" }}
-            >
+            <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0" }}>
               0 jobs
             </p>
           </div>
-          {!isTechnician ? (
-            <Link
-              href="/log-new-job"
-              style={{
-                border: "1px solid #E5E5E5",
-                borderRadius: "8px",
-                padding: "7px 14px",
-                backgroundColor: "#0A0A0A",
-                color: "#fff",
-                textDecoration: "none",
-                fontSize: "13px",
-              }}
-            >
-              Log new job
-            </Link>
-          ) : null}
         </div>
         <div
           style={{
@@ -129,27 +236,32 @@ export function JobsList() {
               color: "#404040",
             }}
           >
-            No jobs found.
+            Failed to load jobs.
           </p>
           <p style={{ margin: "4px 0 0", fontSize: "13px" }}>
-            Try adjusting your filters.
+            Try refreshing the page.
           </p>
         </div>
       </div>
     );
   }
 
-  const totalPages = Math.max(1, data?.page.totalPages ?? 1);
-  const safePage = Math.min(page, totalPages);
-
   return (
-    <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "1400px" }}>
+    <section
+      style={{
+        padding: isMobile ? "16px" : "0",
+        maxWidth: "1400px",
+        width: "100%",
+      }}
+    >
+      {/* ── Header ─────────────────────────────────────────── */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "24px",
+          alignItems: "flex-start",
+          marginBottom: "16px",
+          padding: "24px 24px 0",
         }}
       >
         <div>
@@ -163,39 +275,64 @@ export function JobsList() {
               lineHeight: 1.1,
             }}
           >
-            Jobs
+            All jobs
           </h1>
-          <p
-            style={{
-              fontSize: "13px",
-              color: "#737373",
-              margin: "3px 0 0",
-              fontWeight: 400,
-            }}
-          >
-            {isTechnician ? displayedJobs.length : (data?.total ?? 0)} jobs
+          <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0" }}>
+            {total} jobs
           </p>
         </div>
-        {!isTechnician ? (
-          <Link
-            href="/log-new-job"
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <button
+            type="button"
+            onClick={openDrawer}
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "7px 14px",
               border: "1px solid #E5E5E5",
               borderRadius: "8px",
-              padding: "7px 14px",
-              backgroundColor: "#0A0A0A",
-              color: "#fff",
-              textDecoration: "none",
+              backgroundColor: "#fff",
+              color: "#404040",
               fontSize: "13px",
+              cursor: "pointer",
             }}
           >
-            Log new job
-          </Link>
-        ) : null}
+            <SlidersHorizontal size={14} strokeWidth={1.5} /> Filters
+          </button>
+          {!isTechnician ? (
+            <Link
+              href="/log-new-job"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                border: "1px solid #E5E5E5",
+                borderRadius: "8px",
+                padding: "7px 14px",
+                backgroundColor: "#0A0A0A",
+                color: "#fff",
+                textDecoration: "none",
+                fontSize: "13px",
+              }}
+            >
+              Log new job
+            </Link>
+          ) : null}
+        </div>
       </div>
 
+      {/* ── Technician tab bar ─────────────────────────────── */}
       {isTechnician ? (
-        <div style={{ display: "flex", gap: "4px", marginBottom: "20px", borderBottom: "1px solid #E5E5E5", paddingBottom: "0" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "4px",
+            borderBottom: "1px solid #E5E5E5",
+            paddingBottom: "0",
+            padding: "0 24px",
+            marginBottom: "16px",
+          }}
+        >
           <button
             type="button"
             style={{
@@ -232,254 +369,50 @@ export function JobsList() {
         </div>
       ) : null}
 
+      {/* ── Search input ───────────────────────────────────── */}
       <div
         style={{
-          border: "1px solid #E5E5E5",
-          borderRadius: "12px",
-          backgroundColor: "#fff",
-          overflow: "hidden",
-          marginBottom: "16px",
+          padding: "0 24px 16px",
+          position: "relative",
         }}
       >
-        <button
-          type="button"
-          onClick={() => setFiltersOpen((prev) => !prev)}
+        <Search
+          size={14}
+          strokeWidth={1.5}
+          style={{
+            position: "absolute",
+            left: "34px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            color: "#A3A3A3",
+            pointerEvents: "none",
+          }}
+        />
+        <input
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          placeholder="Search by name, job ID, brand…"
           style={{
             width: "100%",
-            padding: "14px 16px",
-            backgroundColor: "#fff",
-            border: "none",
-            borderBottom: filtersOpen ? "1px solid #E5E5E5" : "none",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            cursor: "pointer",
+            boxSizing: "border-box",
+            padding: "9px 12px 9px 34px",
+            border: "1px solid #E5E5E5",
+            borderRadius: "8px",
+            fontSize: "13px",
+            color: "#171717",
+            outline: "none",
           }}
-        >
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              fontSize: "14px",
-              fontWeight: 500,
-              color: "#171717",
-            }}
-          >
-            <SlidersHorizontal size={14} strokeWidth={1.5} /> Filters
-          </span>
-          <span style={{ fontSize: "12px", color: "#737373" }}>
-            {filtersOpen ? "Hide" : "Show"}
-          </span>
-        </button>
-
-        <div
-          style={{
-            maxHeight: filtersOpen ? "220px" : "0",
-            overflow: "hidden",
-            transition: "max-height 250ms ease",
-          }}
-        >
-          <div
-            style={{
-              padding: "16px",
-              display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(6, minmax(0, 1fr))",
-              gap: "12px",
-            }}
-          >
-            <input
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Search jobs, customers, phones"
-              style={{
-                border: "1px solid #E5E5E5",
-                borderRadius: "8px",
-                padding: "9px 12px",
-                fontSize: "13px",
-              }}
-            />
-
-            <select
-              value={filter.type ?? ""}
-              onChange={(event) => {
-                const value = event.target.value as
-                  | "installation"
-                  | "complaint"
-                  | "";
-                setFilter((prev) => ({ ...prev, type: value || undefined }));
-                setPage(1);
-              }}
-              style={{
-                border: "1px solid #E5E5E5",
-                borderRadius: "8px",
-                padding: "9px 12px",
-                fontSize: "13px",
-              }}
-            >
-              <option value="">All types</option>
-              <option value="installation">Installation</option>
-              <option value="complaint">Complaint</option>
-            </select>
-
-            <select
-              value={filter.status ?? ""}
-              onChange={(event) => {
-                const value = event.target.value;
-                setFilter((prev) => ({ ...prev, status: value || undefined }));
-                setPage(1);
-              }}
-              style={{
-                border: "1px solid #E5E5E5",
-                borderRadius: "8px",
-                padding: "9px 12px",
-                fontSize: "13px",
-              }}
-            >
-              <option value="">All statuses</option>
-              <option value="new">New</option>
-              <option value="pending_schedule">Pending schedule</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="assigned">Assigned</option>
-              <option value="acknowledged">Acknowledged</option>
-              <option value="in_transit">In transit</option>
-              <option value="in_process">In process</option>
-              <option value="needs_revisit">Needs revisit</option>
-              <option value="resolved">Resolved</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-
-            {!isTechnician ? (
-              <select
-                value={filter.technicianId ?? ""}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setFilter((prev) => ({
-                    ...prev,
-                    technicianId: value || undefined,
-                  }));
-                  setPage(1);
-                }}
-                style={{
-                  border: "1px solid #E5E5E5",
-                  borderRadius: "8px",
-                  padding: "9px 12px",
-                  fontSize: "13px",
-                }}
-              >
-                <option value="">All technicians</option>
-                {techniciansQuery.data?.map((technician) => (
-                  <option key={technician.id} value={technician.id}>
-                    {technician.name}
-                  </option>
-                ))}
-              </select>
-            ) : null}
-
-            <select
-              value={filter.dateFrom ?? ""}
-              onChange={(event) => {
-                const value = event.target.value;
-                setFilter((prev) => ({
-                  ...prev,
-                  dateFrom: value || undefined,
-                }));
-                setPage(1);
-              }}
-              style={{
-                border: "1px solid #E5E5E5",
-                borderRadius: "8px",
-                padding: "9px 12px",
-                fontSize: "13px",
-              }}
-            >
-              <option value="">From date</option>
-              <option value="2026-01-01">2026-01-01</option>
-            </select>
-
-            <select
-              value={filter.dateTo ?? ""}
-              onChange={(event) => {
-                const value = event.target.value;
-                setFilter((prev) => ({ ...prev, dateTo: value || undefined }));
-                setPage(1);
-              }}
-              style={{
-                border: "1px solid #E5E5E5",
-                borderRadius: "8px",
-                padding: "9px 12px",
-                fontSize: "13px",
-              }}
-            >
-              <option value="">To date</option>
-              <option value="2026-12-31">2026-12-31</option>
-            </select>
-          </div>
-
-          <div
-            style={{
-              padding: "0 16px 16px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <div style={{ fontSize: "12px", color: "#737373" }}>
-              <span
-                style={{
-                  backgroundColor: "#F5F5F5",
-                  borderRadius: "9999px",
-                  padding: "3px 8px",
-                }}
-              >
-                Filters active
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setFilter({});
-                  setSearch("");
-                  setPage(1);
-                }}
-                style={{
-                  border: "1px solid #E5E5E5",
-                  borderRadius: "8px",
-                  padding: "7px 12px",
-                  backgroundColor: "#fff",
-                  fontSize: "13px",
-                  color: "#404040",
-                }}
-              >
-                Clear filters
-              </button>
-              <button
-                type="button"
-                onClick={() => refetch()}
-                style={{
-                  border: "1px solid #E5E5E5",
-                  borderRadius: "8px",
-                  padding: "7px 12px",
-                  backgroundColor: "#fff",
-                  fontSize: "13px",
-                  color: "#404040",
-                }}
-              >
-                Refresh
-              </button>
-            </div>
-          </div>
-        </div>
+        />
       </div>
 
+      {/* ── Jobs content ───────────────────────────────────── */}
       {displayedJobs.length === 0 ? (
         <div
           style={{
+            margin: "0 24px",
             backgroundColor: "#fff",
             borderRadius: "12px",
             border: "1px solid #E5E5E5",
@@ -494,7 +427,14 @@ export function JobsList() {
             color="#D4D4D4"
             style={{ margin: "0 auto 12px", display: "block", opacity: 0.4 }}
           />
-          <p style={{ margin: 0, fontSize: "14px", fontWeight: 500, color: "#404040" }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: "14px",
+              fontWeight: 500,
+              color: "#404040",
+            }}
+          >
             No jobs found
           </p>
           <p style={{ margin: "4px 0 0", fontSize: "13px" }}>
@@ -505,6 +445,7 @@ export function JobsList() {
         /* ── Mobile card list ─────────────────────────────── */
         <div
           style={{
+            margin: "0 24px",
             backgroundColor: "#fff",
             borderRadius: "12px",
             border: "1px solid #E5E5E5",
@@ -520,38 +461,95 @@ export function JobsList() {
                 flexDirection: "column",
                 gap: "6px",
                 padding: "14px 16px",
-                borderBottom: index < displayedJobs.length - 1 ? "1px solid #F5F5F5" : "none",
+                borderBottom:
+                  index < displayedJobs.length - 1
+                    ? "1px solid #F5F5F5"
+                    : "none",
                 textDecoration: "none",
                 color: "inherit",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "8px",
+                }}
+              >
                 <StatusChip status={job.status} />
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
                   <JobTypeChip type={job.type} />
                   <ChevronRight size={14} strokeWidth={1.5} color="#A3A3A3" />
                 </div>
               </div>
-              <div style={{ fontSize: "14px", fontWeight: 500, color: "#171717", lineHeight: 1.3 }}>
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#171717",
+                  lineHeight: 1.3,
+                }}
+              >
                 {job.customerName}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                <span style={{ fontSize: "11px", color: "#A3A3A3", fontFamily: '"JetBrains Mono", monospace' }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  flexWrap: "wrap",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "11px",
+                    color: "#A3A3A3",
+                    fontFamily: '"JetBrains Mono", monospace',
+                  }}
+                >
                   #{job.id.slice(0, 8)}
                 </span>
                 {job.brandName ? (
                   <>
-                    <span style={{ fontSize: "11px", color: "#D4D4D4" }}>·</span>
+                    <span style={{ fontSize: "11px", color: "#D4D4D4" }}>
+                      ·
+                    </span>
                     <BrandSwatch name={job.brandName} colorHex={null} />
+                  </>
+                ) : null}
+                {job.phone ? (
+                  <>
+                    <span style={{ fontSize: "11px", color: "#D4D4D4" }}>
+                      ·
+                    </span>
+                    <span style={{ fontSize: "11px", color: "#737373" }}>
+                      {job.phone}
+                    </span>
                   </>
                 ) : null}
                 {job.assignedTechnicianName ? (
                   <>
-                    <span style={{ fontSize: "11px", color: "#D4D4D4" }}>·</span>
-                    <span style={{ fontSize: "11px", color: "#737373" }}>{job.assignedTechnicianName}</span>
+                    <span style={{ fontSize: "11px", color: "#D4D4D4" }}>
+                      ·
+                    </span>
+                    <span style={{ fontSize: "11px", color: "#737373" }}>
+                      {job.assignedTechnicianName}
+                    </span>
                   </>
                 ) : null}
               </div>
+              {job.scheduledAt ? (
+                <div style={{ fontSize: "11px", color: "#737373" }}>
+                  {formatScheduled(job.scheduledAt)}
+                </div>
+              ) : null}
             </a>
           ))}
         </div>
@@ -559,6 +557,7 @@ export function JobsList() {
         /* ── Desktop table ────────────────────────────────── */
         <div
           style={{
+            margin: "0 24px",
             backgroundColor: "#fff",
             borderRadius: "12px",
             border: "1px solid #E5E5E5",
@@ -566,18 +565,36 @@ export function JobsList() {
           }}
         >
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                minWidth: "900px",
+              }}
+            >
               <thead>
                 <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
-                  {["Job ID", "Status", "Type", "Brand", "Customer", "Assigned", "Source"].map((heading) => (
+                  {[
+                    "JOB ID",
+                    "CUSTOMER",
+                    "PHONE",
+                    "TYPE",
+                    "SOURCE",
+                    "BRAND",
+                    "TECHNICIAN",
+                    "SCHEDULED",
+                    "STATUS",
+                  ].map((heading) => (
                     <th
                       key={heading}
                       style={{
                         padding: "10px 16px",
                         textAlign: "left",
-                        fontSize: "12px",
+                        fontSize: "11px",
                         color: "#737373",
                         fontWeight: 500,
+                        letterSpacing: "0.04em",
+                        whiteSpace: "nowrap",
                       }}
                     >
                       {heading}
@@ -589,36 +606,106 @@ export function JobsList() {
                 {displayedJobs.map((job) => (
                   <tr
                     key={job.id}
-                    style={{ borderBottom: "1px solid #F5F5F5", cursor: "pointer" }}
+                    style={{
+                      borderBottom: "1px solid #F5F5F5",
+                      cursor: "pointer",
+                    }}
                     onClick={() => window.location.assign(`/jobs/${job.id}`)}
                   >
+                    {/* JOB ID */}
                     <td
                       style={{
                         padding: "14px 16px",
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: "12px",
                         color: "#525252",
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      {job.id}
+                      {job.id.slice(0, 8)}
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <StatusChip status={job.status} />
-                    </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <JobTypeChip type={job.type} />
-                    </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <BrandSwatch name={job.brandName ?? "—"} colorHex={null} />
-                    </td>
-                    <td style={{ padding: "14px 16px", color: "#404040", fontSize: "13px" }}>
+                    {/* CUSTOMER */}
+                    <td
+                      style={{
+                        padding: "14px 16px",
+                        color: "#171717",
+                        fontSize: "13px",
+                        fontWeight: 500,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {job.customerName}
                     </td>
-                    <td style={{ padding: "14px 16px", color: "#404040", fontSize: "13px" }}>
-                      {job.assignedTechnicianName ?? "—"}
+                    {/* PHONE */}
+                    <td
+                      style={{
+                        padding: "14px 16px",
+                        color: "#525252",
+                        fontSize: "13px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {job.phone || "—"}
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <SourceChip source={job.source} dealerName={job.dealerName ?? undefined} />
+                    {/* TYPE */}
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
+                      <JobTypeChip type={job.type} />
+                    </td>
+                    {/* SOURCE */}
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
+                      <SourceChip
+                        source={job.source}
+                        dealerName={job.dealerName ?? undefined}
+                      />
+                    </td>
+                    {/* BRAND */}
+                    <td
+                      style={{
+                        padding: "14px 16px",
+                        color: "#525252",
+                        fontSize: "13px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {job.brandName ?? "—"}
+                    </td>
+                    {/* TECHNICIAN */}
+                    <td
+                      style={{
+                        padding: "14px 16px",
+                        fontSize: "13px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {job.assignedTechnicianName ? (
+                        <span style={{ color: "#404040" }}>
+                          {job.assignedTechnicianName}
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            color: "#A3A3A3",
+                            fontStyle: "italic",
+                          }}
+                        >
+                          Unassigned
+                        </span>
+                      )}
+                    </td>
+                    {/* SCHEDULED */}
+                    <td
+                      style={{
+                        padding: "14px 16px",
+                        color: "#525252",
+                        fontSize: "13px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {formatScheduled(job.scheduledAt)}
+                    </td>
+                    {/* STATUS */}
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
+                      <StatusChip status={job.status} />
                     </td>
                   </tr>
                 ))}
@@ -628,6 +715,7 @@ export function JobsList() {
         </div>
       )}
 
+      {/* ── Pagination ─────────────────────────────────────── */}
       <div
         style={{
           display: "flex",
@@ -635,11 +723,11 @@ export function JobsList() {
           justifyContent: "space-between",
           fontSize: "12px",
           color: "#737373",
-          marginTop: "12px",
+          margin: "12px 24px 24px",
         }}
       >
         <span>
-          Total (API): {data?.total ?? 0} · Showing: {displayedJobs.length}
+          {data?.total ?? 0} total · showing {displayedJobs.length}
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <button
@@ -652,7 +740,9 @@ export function JobsList() {
               padding: "7px 10px",
               backgroundColor: "#fff",
               color: "#404040",
+              fontSize: "12px",
               cursor: safePage <= 1 ? "not-allowed" : "pointer",
+              opacity: safePage <= 1 ? 0.5 : 1,
             }}
           >
             Previous
@@ -670,11 +760,345 @@ export function JobsList() {
               padding: "7px 10px",
               backgroundColor: "#fff",
               color: "#404040",
+              fontSize: "12px",
               cursor: safePage >= totalPages ? "not-allowed" : "pointer",
+              opacity: safePage >= totalPages ? 0.5 : 1,
             }}
           >
             Next
           </button>
+        </div>
+      </div>
+
+      {/* ── Filter drawer backdrop ─────────────────────────── */}
+      {filtersDrawerOpen ? (
+        <div
+          onClick={() => setFiltersDrawerOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 39,
+            backgroundColor: "rgba(0,0,0,0.2)",
+          }}
+        />
+      ) : null}
+
+      {/* ── Filter drawer ──────────────────────────────────── */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          width: "320px",
+          height: "100vh",
+          backgroundColor: "#fff",
+          borderLeft: "1px solid #E5E5E5",
+          transform: filtersDrawerOpen ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 220ms ease",
+          zIndex: 40,
+          overflowY: "auto",
+        }}
+      >
+        <div style={{ padding: "20px" }}>
+          {/* Drawer header */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "20px",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#171717",
+              }}
+            >
+              Filters
+            </span>
+            <button
+              type="button"
+              onClick={() => setFiltersDrawerOpen(false)}
+              style={{
+                border: "1px solid #E5E5E5",
+                borderRadius: "8px",
+                backgroundColor: "#fff",
+                cursor: "pointer",
+                width: "28px",
+                height: "28px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <X size={14} strokeWidth={1.5} />
+            </button>
+          </div>
+
+          {/* Status multi-select chips */}
+          <div style={{ marginBottom: "20px" }}>
+            <p
+              style={{
+                fontSize: "11px",
+                fontWeight: 500,
+                color: "#737373",
+                letterSpacing: "0.05em",
+                margin: "0 0 8px",
+                textTransform: "uppercase",
+              }}
+            >
+              Status
+            </p>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "6px",
+              }}
+            >
+              {STATUS_OPTIONS.map((status) => {
+                const isSelected = draftStatuses.includes(status);
+                return (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => toggleDraftStatus(status)}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: "9999px",
+                      border: "1px solid",
+                      borderColor: isSelected ? "#0A0A0A" : "#E5E5E5",
+                      backgroundColor: isSelected ? "#0A0A0A" : "#F5F5F5",
+                      color: isSelected ? "#fff" : "#525252",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      fontWeight: isSelected ? 500 : 400,
+                      transition: "all 120ms ease",
+                    }}
+                  >
+                    {formatStatusLabel(status)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Type toggle */}
+          <div style={{ marginBottom: "20px" }}>
+            <p
+              style={{
+                fontSize: "11px",
+                fontWeight: 500,
+                color: "#737373",
+                letterSpacing: "0.05em",
+                margin: "0 0 8px",
+                textTransform: "uppercase",
+              }}
+            >
+              Type
+            </p>
+            <div style={{ display: "flex", gap: "6px" }}>
+              {(
+                [
+                  { value: "", label: "All" },
+                  { value: "installation", label: "Installation" },
+                  { value: "complaint", label: "Complaint" },
+                ] as { value: "" | "installation" | "complaint"; label: string }[]
+              ).map((opt) => {
+                const isSelected = draftType === opt.value;
+                return (
+                  <button
+                    key={opt.value || "all"}
+                    type="button"
+                    onClick={() => setDraftType(opt.value)}
+                    style={{
+                      padding: "4px 12px",
+                      borderRadius: "9999px",
+                      border: "1px solid",
+                      borderColor: isSelected ? "#0A0A0A" : "#E5E5E5",
+                      backgroundColor: isSelected ? "#0A0A0A" : "#F5F5F5",
+                      color: isSelected ? "#fff" : "#525252",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      fontWeight: isSelected ? 500 : 400,
+                      transition: "all 120ms ease",
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Brand dropdown */}
+          <div style={{ marginBottom: "20px" }}>
+            <p
+              style={{
+                fontSize: "11px",
+                fontWeight: 500,
+                color: "#737373",
+                letterSpacing: "0.05em",
+                margin: "0 0 8px",
+                textTransform: "uppercase",
+              }}
+            >
+              Brand
+            </p>
+            <select
+              value={draftBrandId}
+              onChange={(e) => setDraftBrandId(e.target.value)}
+              style={{
+                width: "100%",
+                border: "1px solid #E5E5E5",
+                borderRadius: "8px",
+                padding: "9px 12px",
+                fontSize: "13px",
+                color: "#404040",
+                backgroundColor: "#fff",
+                outline: "none",
+              }}
+            >
+              <option value="">All brands</option>
+              {(brandsQuery.data ?? []).map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Technician dropdown (non-technician only) */}
+          {!isTechnician ? (
+            <div style={{ marginBottom: "20px" }}>
+              <p
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  color: "#737373",
+                  letterSpacing: "0.05em",
+                  margin: "0 0 8px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Technician
+              </p>
+              <select
+                value={draftTechnicianId}
+                onChange={(e) => setDraftTechnicianId(e.target.value)}
+                style={{
+                  width: "100%",
+                  border: "1px solid #E5E5E5",
+                  borderRadius: "8px",
+                  padding: "9px 12px",
+                  fontSize: "13px",
+                  color: "#404040",
+                  backgroundColor: "#fff",
+                  outline: "none",
+                }}
+              >
+                <option value="">All technicians</option>
+                {(techniciansQuery.data ?? []).map((tech) => (
+                  <option key={tech.id} value={tech.id}>
+                    {tech.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
+          {/* Date range */}
+          <div style={{ marginBottom: "20px" }}>
+            <p
+              style={{
+                fontSize: "11px",
+                fontWeight: 500,
+                color: "#737373",
+                letterSpacing: "0.05em",
+                margin: "0 0 8px",
+                textTransform: "uppercase",
+              }}
+            >
+              Date range
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <input
+                type="date"
+                value={draftDateFrom}
+                onChange={(e) => setDraftDateFrom(e.target.value)}
+                placeholder="From"
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  border: "1px solid #E5E5E5",
+                  borderRadius: "8px",
+                  padding: "9px 12px",
+                  fontSize: "13px",
+                  color: "#404040",
+                  outline: "none",
+                }}
+              />
+              <input
+                type="date"
+                value={draftDateTo}
+                onChange={(e) => setDraftDateTo(e.target.value)}
+                placeholder="To"
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  border: "1px solid #E5E5E5",
+                  borderRadius: "8px",
+                  padding: "9px 12px",
+                  fontSize: "13px",
+                  color: "#404040",
+                  outline: "none",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              marginTop: "24px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={applyFilters}
+              style={{
+                border: "none",
+                borderRadius: "8px",
+                padding: "10px",
+                backgroundColor: "#0A0A0A",
+                color: "#fff",
+                fontSize: "13px",
+                fontWeight: 500,
+                cursor: "pointer",
+              }}
+            >
+              Apply
+            </button>
+            <button
+              type="button"
+              onClick={clearFilters}
+              style={{
+                border: "none",
+                backgroundColor: "transparent",
+                color: "#525252",
+                fontSize: "13px",
+                cursor: "pointer",
+                padding: "6px",
+              }}
+            >
+              Clear all
+            </button>
+          </div>
         </div>
       </div>
     </section>

@@ -21,6 +21,7 @@ export type JobListFilter = {
   status?: string;
   type?: "installation" | "complaint";
   technicianId?: string;
+  brandId?: string;
   dateFrom?: string;
   dateTo?: string;
 };
