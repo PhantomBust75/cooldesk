@@ -24,6 +24,7 @@ import {
   RescheduleJobDto,
   SchedulePendingJobDto,
   ScheduleRevisitDto,
+  SearchQueryDto,
   UndoJobActionDto,
   UpdateJobStatusDto,
 } from './jobs.dto';
@@ -725,8 +726,12 @@ export class JobsService {
         j.address,
         j.scheduled_at,
         j.created_at,
-        j.version
+        j.version,
+        b.name AS brand_name,
+        d.name AS dealer_name
       FROM jobs j
+      LEFT JOIN brands b ON b.id = j.brand_id AND b.organization_id = j.organization_id
+      LEFT JOIN dealers d ON d.id = j.dealer_id AND d.organization_id = j.organization_id
       WHERE j.organization_id = $1
         AND j.is_deleted = FALSE
         AND j.type = 'installation'
@@ -3901,6 +3906,37 @@ export class JobsService {
     return {
       active_jobs: Number.parseInt(activeResult.rows[0].active_jobs, 10),
       completion_rate: total > 0 ? Math.round((completed / total) * 100) / 100 : null,
+    };
+  }
+
+  async search(
+    query: SearchQueryDto,
+    ctx: RequestContext,
+  ): Promise<{ jobs: Array<{ id: string; customerName: string; status: string }> }> {
+    const q = (query.q ?? '').trim();
+    const limit = Math.min(query.limit ?? 10, 50);
+
+    if (!q) {
+      return { jobs: [] };
+    }
+
+    const pattern = `%${q}%`;
+    const result = await this.db.query(
+      `SELECT id, customer_name, status FROM jobs
+       WHERE organization_id = $1
+         AND is_deleted = false
+         AND (id ILIKE $2 OR customer_name ILIKE $2)
+       ORDER BY created_at DESC
+       LIMIT $3`,
+      [ctx.organizationId, pattern, limit],
+    );
+
+    return {
+      jobs: result.rows.map((row: Record<string, unknown>) => ({
+        id: row.id as string,
+        customerName: row.customer_name as string,
+        status: row.status as string,
+      })),
     };
   }
 }

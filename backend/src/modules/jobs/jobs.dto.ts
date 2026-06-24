@@ -622,3 +622,15 @@ export class TechnicianDropdownDto {
   @IsInt()
   activeAssignments!: number;
 }
+
+export class SearchQueryDto {
+  @IsOptional()
+  @IsString()
+  q?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  limit?: number;
+}

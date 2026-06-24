@@ -34,6 +34,7 @@ import {
   RescheduleJobDto,
   SchedulePendingJobDto,
   ScheduleRevisitDto,
+  SearchQueryDto,
   TimelineQueryDto,
   TriggerUnacknowledgedScanDto,
   UndoJobActionDto,
@@ -64,6 +65,13 @@ export class JobsController {
   @UseGuards(DealerGuard)
   createJobByDealer(@Body() body: CreateJobDto, @Req() req: DealerRequest) {
     return this.jobsService.createByDealer(body, req.dealerContext);
+  }
+
+  @Get('search')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff', 'technician')
+  search(@Query() query: SearchQueryDto, @Req() req: UserRequest) {
+    return this.jobsService.search(query, req.context);
   }
 
   @Get('jobs/:id')
