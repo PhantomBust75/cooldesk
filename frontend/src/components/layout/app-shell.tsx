@@ -5,11 +5,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Bell, ChevronDown, LogOut, Menu, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import { BottomNav } from "./bottom-nav";
 import { Sidebar } from "./sidebar";
+import { SearchModal } from "./search-modal";
 
 function userInitials(name: string | undefined): string {
   if (!name) return "?";
@@ -27,8 +28,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const isSmallScreen = useMobileBreakpoint();
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   const audience = useMemo(() => {
     return session?.user.role === "dealer" ? "dealer" : "user";
@@ -263,6 +276,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <button
               type="button"
+              onClick={() => setSearchOpen(true)}
               style={{
                 border: "1px solid #E5E5E5",
                 borderRadius: "8px",
@@ -426,6 +440,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {isSmallScreen ? <BottomNav unreadCount={unreadCount} /> : null}
+
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }
