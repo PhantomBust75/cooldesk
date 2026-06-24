@@ -225,7 +225,7 @@ export function JobsList() {
           <Briefcase
             size={32}
             strokeWidth={1}
-            color="#D4D4D4"
+            color="#E5E5E5"
             style={{ margin: "0 auto 12px", display: "block", opacity: 0.4 }}
           />
           <p
@@ -384,7 +384,7 @@ export function JobsList() {
             left: "34px",
             top: "50%",
             transform: "translateY(-50%)",
-            color: "#A3A3A3",
+            color: "#737373",
             pointerEvents: "none",
           }}
         />
@@ -424,7 +424,7 @@ export function JobsList() {
           <Briefcase
             size={32}
             strokeWidth={1}
-            color="#D4D4D4"
+            color="#E5E5E5"
             style={{ margin: "0 auto 12px", display: "block", opacity: 0.4 }}
           />
           <p
@@ -486,7 +486,7 @@ export function JobsList() {
                   }}
                 >
                   <JobTypeChip type={job.type} />
-                  <ChevronRight size={14} strokeWidth={1.5} color="#A3A3A3" />
+                  <ChevronRight size={14} strokeWidth={1.5} color="#737373" />
                 </div>
               </div>
               <div
@@ -510,7 +510,7 @@ export function JobsList() {
                 <span
                   style={{
                     fontSize: "11px",
-                    color: "#A3A3A3",
+                    color: "#737373",
                     fontFamily: '"JetBrains Mono", monospace',
                   }}
                 >
@@ -518,7 +518,7 @@ export function JobsList() {
                 </span>
                 {job.brandName ? (
                   <>
-                    <span style={{ fontSize: "11px", color: "#D4D4D4" }}>
+                    <span style={{ fontSize: "11px", color: "#E5E5E5" }}>
                       ·
                     </span>
                     <BrandSwatch name={job.brandName} colorHex={null} />
@@ -526,7 +526,7 @@ export function JobsList() {
                 ) : null}
                 {job.phone ? (
                   <>
-                    <span style={{ fontSize: "11px", color: "#D4D4D4" }}>
+                    <span style={{ fontSize: "11px", color: "#E5E5E5" }}>
                       ·
                     </span>
                     <span style={{ fontSize: "11px", color: "#737373" }}>
@@ -536,7 +536,7 @@ export function JobsList() {
                 ) : null}
                 {job.assignedTechnicianName ? (
                   <>
-                    <span style={{ fontSize: "11px", color: "#D4D4D4" }}>
+                    <span style={{ fontSize: "11px", color: "#E5E5E5" }}>
                       ·
                     </span>
                     <span style={{ fontSize: "11px", color: "#737373" }}>
@@ -684,7 +684,7 @@ export function JobsList() {
                       ) : (
                         <span
                           style={{
-                            color: "#A3A3A3",
+                            color: "#737373",
                             fontStyle: "italic",
                           }}
                         >
