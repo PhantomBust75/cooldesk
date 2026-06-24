@@ -16,8 +16,9 @@ import { Roles } from '../security/roles.decorator';
 import { RolesGuard } from '../security/roles.guard';
 import { TenantGuard } from '../security/tenant.guard';
 import {
-  CreateJobDto,
   AssignTechnicianDto,
+  BatchScheduleDto,
+  CreateJobDto,
   CreateOfficeTechnicianDto,
   CustomerLookupQueryDto,
   DecideCancellationRequestDto,
@@ -195,6 +196,13 @@ export class JobsController {
     @Req() req: UserRequest,
   ) {
     return this.jobsService.decideCancellationRequest(id, body, req.context);
+  }
+
+  @Post('jobs/batch-schedule')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff')
+  batchSchedule(@Body() body: BatchScheduleDto, @Req() req: UserRequest) {
+    return this.jobsService.batchSchedule(body, req.context);
   }
 
   @Post('jobs/:id/assign')

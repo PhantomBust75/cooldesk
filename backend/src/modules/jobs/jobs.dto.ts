@@ -634,3 +634,16 @@ export class SearchQueryDto {
   @Min(1)
   limit?: number;
 }
+
+export class BatchScheduleDto {
+  @IsArray()
+  @IsString({ each: true })
+  jobIds!: string[];
+
+  @IsISO8601()
+  scheduledAt!: string;
+
+  @IsOptional()
+  @IsUUID()
+  technicianId?: string;
+}

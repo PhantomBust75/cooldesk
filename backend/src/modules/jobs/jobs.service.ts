@@ -11,6 +11,7 @@ import { DatabaseService } from '../../shared/database.service';
 import { TenantConfigService } from '../settings/tenant-config.service';
 import { DealerRequestContext, RequestContext, UserRole } from '../security/request-context';
 import {
+  BatchScheduleDto,
   CustomerLookupQueryDto,
   CreateJobDto,
   CreateOfficeTechnicianDto,
@@ -3938,5 +3939,43 @@ export class JobsService {
         status: row.status as string,
       })),
     };
+  }
+
+  async batchSchedule(
+    body: BatchScheduleDto,
+    ctx: RequestContext,
+  ): Promise<{ ok: true; scheduled: number; errors: Array<{ jobId: string; reason: string }> }> {
+    const { jobIds, scheduledAt, technicianId } = body;
+    const errors: Array<{ jobId: string; reason: string }> = [];
+    let scheduled = 0;
+
+    for (const jobId of jobIds) {
+      try {
+        // Verify job belongs to org and is schedulable
+        const check = await this.db.query(
+          `SELECT id, status FROM jobs WHERE id = $1 AND organization_id = $2 AND is_deleted = false`,
+          [jobId, ctx.organizationId],
+        );
+        if (check.rows.length === 0) {
+          errors.push({ jobId, reason: 'not found' });
+          continue;
+        }
+        const job = check.rows[0] as { id: string; status: string };
+        if (!['pending', 'scheduled'].includes(job.status)) {
+          errors.push({ jobId, reason: `cannot schedule job in status ${job.status}` });
+          continue;
+        }
+
+        await this.db.query(
+          `UPDATE jobs SET scheduled_at = $1, technician_id = COALESCE($2, technician_id), status = 'scheduled', updated_at = NOW(), version = version + 1 WHERE id = $3 AND organization_id = $4`,
+          [scheduledAt, technicianId ?? null, jobId, ctx.organizationId],
+        );
+        scheduled++;
+      } catch (err) {
+        errors.push({ jobId, reason: 'internal error' });
+      }
+    }
+
+    return { ok: true, scheduled, errors };
   }
 }
