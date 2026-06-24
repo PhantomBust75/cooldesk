@@ -1,34 +1,26 @@
 "use client";
 
 import { JobTypeChip } from "@/components/ui/job-type-chip";
-import { SlaCell } from "@/components/ui/sla-cell";
 import { ApiError } from "@/lib/api/client";
+import {
+  batchScheduleJobs,
+  type BatchScheduleInput,
+} from "@/lib/api/batch-schedule";
 import {
   fetchOfficeTechnicians,
   fetchPendingScheduleJobs,
-  lookupCustomers,
   schedulePendingJob,
 } from "@/lib/api/office";
-import type {
-  PendingScheduleJob,
-  SchedulePendingJobInput,
-} from "@/types/office";
-import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
+import type { PendingScheduleJob, SchedulePendingJobInput } from "@/types/office";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Calendar,
-  CheckCircle,
-  ChevronRight,
-  Clock,
-  Users,
-} from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { Calendar, Users, X } from "lucide-react";
+import { useState } from "react";
+
+// ─── helpers ────────────────────────────────────────────────────────────────
 
 function toDateTimeLocalValue(value: Date): string {
-  const pad = (input: number) => String(input).padStart(2, "0");
-  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}T${pad(
-    value.getHours(),
-  )}:${pad(value.getMinutes())}`;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}T${pad(value.getHours())}:${pad(value.getMinutes())}`;
 }
 
 function initialScheduleAt(): string {
@@ -38,25 +30,552 @@ function initialScheduleAt(): string {
 }
 
 function toIsoStringFromLocal(value: string): string {
-  const date = new Date(value);
-  return date.toISOString();
+  return new Date(value).toISOString();
 }
 
-export default function PendingSchedulePage() {
-  const isMobile = useMobileBreakpoint();
-  const queryClient = useQueryClient();
+function daysWaiting(createdAt: string): number {
+  return Math.max(
+    0,
+    Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24)),
+  );
+}
 
-  const [batchMode, setBatchMode] = useState(false);
-  const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
-  const [lookupPhone, setLookupPhone] = useState("");
-  const [lookupName, setLookupName] = useState("");
-  const [lookupError, setLookupError] = useState<string | null>(null);
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+function daysColor(days: number): string {
+  if (days >= 7) return "#EF4444";
+  if (days >= 3) return "#F59E0B";
+  return "#737373";
+}
+
+// ─── inline row state ────────────────────────────────────────────────────────
+
+type RowState = {
+  scheduledAt: string;
+  technicianId: string;
+  open: boolean;
+};
+
+// ─── Batch Schedule Modal ────────────────────────────────────────────────────
+
+type BatchModalProps = {
+  jobs: PendingScheduleJob[];
+  technicians: Array<{ id: string; name: string; activeAssignments: number }>;
+  onClose: () => void;
+  onSuccess: () => void;
+};
+
+function BatchModal({ jobs, technicians, onClose, onSuccess }: BatchModalProps) {
+  const [selectedIds, setSelectedIds] = useState<string[]>(jobs.map((j) => j.id));
   const [scheduledAt, setScheduledAt] = useState(initialScheduleAt());
   const [technicianId, setTechnicianId] = useState("");
-  const [acknowledgeConflict, setAcknowledgeConflict] = useState(false);
-  const [scheduleMessage, setScheduleMessage] = useState<string | null>(null);
-  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: (input: BatchScheduleInput) => batchScheduleJobs(input),
+    onSuccess: (result) => {
+      const errCount = result.errors?.length ?? 0;
+      if (errCount > 0) {
+        setSuccessMsg(
+          `Scheduled ${result.scheduled} job(s). ${errCount} error(s) occurred.`,
+        );
+      } else {
+        setSuccessMsg(`Successfully scheduled ${result.scheduled} job(s).`);
+      }
+      setError(null);
+      onSuccess();
+    },
+    onError: (err) => {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Failed to batch schedule jobs.");
+      }
+    },
+  });
+
+  function toggleId(id: string) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
+
+  function toggleAll() {
+    setSelectedIds((prev) =>
+      prev.length === jobs.length ? [] : jobs.map((j) => j.id),
+    );
+  }
+
+  function handleConfirm() {
+    if (selectedIds.length === 0) {
+      setError("Select at least one job.");
+      return;
+    }
+    if (!scheduledAt) {
+      setError("Select a date and time.");
+      return;
+    }
+    setError(null);
+    mutation.mutate({
+      jobIds: selectedIds,
+      scheduledAt: toIsoStringFromLocal(scheduledAt),
+      technicianId: technicianId || undefined,
+    });
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        backgroundColor: "rgba(0,0,0,0.45)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: "#fff",
+          borderRadius: "14px",
+          border: "1px solid #E5E5E5",
+          padding: "28px",
+          width: "560px",
+          maxWidth: "calc(100vw - 32px)",
+          maxHeight: "90vh",
+          overflowY: "auto",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "20px",
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "18px",
+              fontWeight: 600,
+              color: "#0A0A0A",
+            }}
+          >
+            Batch Schedule
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "4px",
+              color: "#737373",
+            }}
+          >
+            <X size={18} strokeWidth={1.5} />
+          </button>
+        </div>
+
+        {/* Jobs list */}
+        <div
+          style={{
+            border: "1px solid #E5E5E5",
+            borderRadius: "10px",
+            overflow: "hidden",
+            marginBottom: "20px",
+          }}
+        >
+          <div
+            style={{
+              padding: "10px 14px",
+              borderBottom: "1px solid #E5E5E5",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              backgroundColor: "#FAFAFA",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={selectedIds.length === jobs.length}
+              onChange={toggleAll}
+              style={{ cursor: "pointer" }}
+            />
+            <span style={{ fontSize: "12px", fontWeight: 500, color: "#525252" }}>
+              {selectedIds.length} / {jobs.length} selected
+            </span>
+          </div>
+          {jobs.map((job) => {
+            const days = daysWaiting(job.createdAt);
+            const overdue = days >= 7;
+            return (
+              <div
+                key={job.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "10px 14px",
+                  borderBottom: "1px solid #F5F5F5",
+                  backgroundColor: selectedIds.includes(job.id) ? "#FAFAFA" : "#fff",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(job.id)}
+                  onChange={() => toggleId(job.id)}
+                  style={{ cursor: "pointer" }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: 500,
+                      color: "#171717",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {job.customerName}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#737373" }}>
+                    {job.id.slice(0, 8)}…
+                  </div>
+                </div>
+                <JobTypeChip type={job.type} />
+                <span
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: overdue ? 600 : 400,
+                    color: daysColor(days),
+                    textDecoration: overdue ? "underline" : "none",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {overdue ? "⊙ " : ""}{days}d
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Controls */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: "12px",
+                fontWeight: 500,
+                color: "#404040",
+                marginBottom: "6px",
+              }}
+            >
+              Scheduled date &amp; time
+            </label>
+            <div style={{ position: "relative" }}>
+              <Calendar
+                size={14}
+                strokeWidth={1.5}
+                style={{
+                  position: "absolute",
+                  left: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "#A3A3A3",
+                  pointerEvents: "none",
+                }}
+              />
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  padding: "8px 10px 8px 32px",
+                  border: "1px solid #E5E5E5",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                }}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: "12px",
+                fontWeight: 500,
+                color: "#404040",
+                marginBottom: "6px",
+              }}
+            >
+              Technician (optional)
+            </label>
+            <select
+              value={technicianId}
+              onChange={(e) => setTechnicianId(e.target.value)}
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "8px 10px",
+                border: "1px solid #E5E5E5",
+                borderRadius: "8px",
+                fontSize: "13px",
+              }}
+            >
+              <option value="">No technician assignment</option>
+              {technicians.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.activeAssignments})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {error ? (
+            <div
+              style={{
+                borderRadius: "8px",
+                border: "1px solid #FECACA",
+                backgroundColor: "#FEF2F2",
+                padding: "10px 12px",
+                color: "#EF4444",
+                fontSize: "13px",
+              }}
+            >
+              {error}
+            </div>
+          ) : null}
+
+          {successMsg ? (
+            <div
+              style={{
+                borderRadius: "8px",
+                border: "1px solid #D1FAE5",
+                backgroundColor: "#F0FDF4",
+                padding: "10px 12px",
+                color: "#10B981",
+                fontSize: "13px",
+              }}
+            >
+              {successMsg}
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            disabled={mutation.isPending || selectedIds.length === 0}
+            onClick={handleConfirm}
+            style={{
+              width: "100%",
+              border: "none",
+              borderRadius: "8px",
+              padding: "11px 14px",
+              backgroundColor: "#0A0A0A",
+              color: "#FAFAFA",
+              fontSize: "13px",
+              fontWeight: 600,
+              cursor: mutation.isPending || selectedIds.length === 0 ? "not-allowed" : "pointer",
+              opacity: mutation.isPending || selectedIds.length === 0 ? 0.5 : 1,
+            }}
+          >
+            {mutation.isPending
+              ? "Scheduling…"
+              : `Schedule ${selectedIds.length} job${selectedIds.length === 1 ? "" : "s"}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Inline row form ─────────────────────────────────────────────────────────
+
+type InlineFormProps = {
+  job: PendingScheduleJob;
+  technicians: Array<{ id: string; name: string; activeAssignments: number }>;
+  onClose: () => void;
+  onSuccess: () => void;
+};
+
+function InlineForm({ job, technicians, onClose, onSuccess }: InlineFormProps) {
+  const [scheduledAt, setScheduledAt] = useState(initialScheduleAt());
+  const [technicianId, setTechnicianId] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: (payload: SchedulePendingJobInput) => schedulePendingJob(job.id, payload),
+    onSuccess: (result) => {
+      const conflictCount = result.conflictJobIds?.length ?? 0;
+      const note = conflictCount > 0 ? ` (${conflictCount} conflict ref(s) ack'd)` : "";
+      setSuccessMsg(`Job updated to ${result.status}.${note}`);
+      setError(null);
+      onSuccess();
+    },
+    onError: (err) => {
+      if (err instanceof ApiError) {
+        if (err.status === 409) {
+          setError("Version conflict. Refresh and retry.");
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError("Unable to schedule job right now.");
+      }
+    },
+  });
+
+  function handleSave() {
+    if (!scheduledAt) {
+      setError("Select a date and time.");
+      return;
+    }
+    setError(null);
+    mutation.mutate({
+      scheduledAt: toIsoStringFromLocal(scheduledAt),
+      expectedVersion: job.version,
+      technicianId: technicianId || undefined,
+    });
+  }
+
+  return (
+    <tr style={{ backgroundColor: "#FAFAFA" }}>
+      <td
+        colSpan={9}
+        style={{ padding: "14px 16px", borderBottom: "1px solid #E5E5E5" }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "10px",
+            alignItems: "flex-end",
+          }}
+        >
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: "11px",
+                fontWeight: 500,
+                color: "#525252",
+                marginBottom: "4px",
+              }}
+            >
+              Date &amp; time
+            </label>
+            <input
+              type="datetime-local"
+              value={scheduledAt}
+              onChange={(e) => setScheduledAt(e.target.value)}
+              style={{
+                padding: "7px 10px",
+                border: "1px solid #E5E5E5",
+                borderRadius: "7px",
+                fontSize: "13px",
+              }}
+            />
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: "11px",
+                fontWeight: 500,
+                color: "#525252",
+                marginBottom: "4px",
+              }}
+            >
+              Technician (optional)
+            </label>
+            <select
+              value={technicianId}
+              onChange={(e) => setTechnicianId(e.target.value)}
+              style={{
+                padding: "7px 10px",
+                border: "1px solid #E5E5E5",
+                borderRadius: "7px",
+                fontSize: "13px",
+                minWidth: "180px",
+              }}
+            >
+              <option value="">Unassigned</option>
+              {technicians.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.activeAssignments})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            disabled={mutation.isPending}
+            onClick={handleSave}
+            style={{
+              padding: "7px 16px",
+              border: "none",
+              borderRadius: "7px",
+              backgroundColor: "#0A0A0A",
+              color: "#FAFAFA",
+              fontSize: "13px",
+              fontWeight: 500,
+              cursor: mutation.isPending ? "not-allowed" : "pointer",
+              opacity: mutation.isPending ? 0.6 : 1,
+            }}
+          >
+            {mutation.isPending ? "Saving…" : "Save"}
+          </button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              padding: "7px 12px",
+              border: "1px solid #E5E5E5",
+              borderRadius: "7px",
+              backgroundColor: "#fff",
+              color: "#525252",
+              fontSize: "13px",
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+
+          {error ? (
+            <span style={{ fontSize: "12px", color: "#EF4444" }}>{error}</span>
+          ) : null}
+          {successMsg ? (
+            <span style={{ fontSize: "12px", color: "#10B981" }}>{successMsg}</span>
+          ) : null}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
+
+export default function PendingSchedulePage() {
+  const queryClient = useQueryClient();
+
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
 
   const pendingScheduleQuery = useQuery({
     queryKey: ["office", "pending-schedule"],
@@ -68,743 +587,302 @@ export default function PendingSchedulePage() {
     queryFn: fetchOfficeTechnicians,
   });
 
-  const lookupMutation = useMutation({
-    mutationFn: lookupCustomers,
-    onError: (error) => {
-      if (error instanceof ApiError) {
-        setLookupError(error.message);
-      } else {
-        setLookupError("Unable to fetch customer lookup results.");
-      }
-    },
-    onSuccess: () => {
-      setLookupError(null);
-    },
-  });
+  const queue = pendingScheduleQuery.data ?? [];
+  const technicians = techniciansQuery.data ?? [];
 
-  const scheduleMutation = useMutation({
-    mutationFn: ({
-      jobId,
-      payload,
-    }: {
-      jobId: string;
-      payload: SchedulePendingJobInput;
-    }) => schedulePendingJob(jobId, payload),
-    onSuccess: (result) => {
-      const conflictCount = result.conflictJobIds?.length ?? 0;
-      const conflictNote =
-        conflictCount > 0
-          ? ` Scheduled with ${conflictCount} conflict reference(s) acknowledged.`
-          : "";
-      setScheduleMessage(`Job updated to ${result.status}.${conflictNote}`);
-      setScheduleError(null);
-      queryClient.invalidateQueries({
-        queryKey: ["office", "pending-schedule"],
-      });
-      queryClient.invalidateQueries({ queryKey: ["office", "technicians"] });
-    },
-    onError: (error) => {
-      if (error instanceof ApiError) {
-        if (error.status === 409) {
-          setScheduleError(
-            "Version conflict detected. Refresh queue and retry.",
-          );
-          return;
-        }
-        setScheduleError(error.message);
-        return;
-      }
-      setScheduleError("Unable to schedule job right now.");
-    },
-  });
-
-  const [now] = useState(() => Date.now());
-
-  const queue = useMemo(
-    () => pendingScheduleQuery.data ?? [],
-    [pendingScheduleQuery.data],
-  );
-  const selectedJob = useMemo(
-    () => queue.find((job) => job.id === selectedJobId) ?? null,
-    [queue, selectedJobId],
-  );
-
-  function selectJob(job: PendingScheduleJob) {
-    setSelectedJobId(job.id);
-    setScheduleMessage(null);
-    setScheduleError(null);
+  function handleJobSuccess() {
+    queryClient.invalidateQueries({ queryKey: ["office", "pending-schedule"] });
+    queryClient.invalidateQueries({ queryKey: ["office", "technicians"] });
   }
 
-  function toggleSelected(jobId: string) {
-    setSelectedJobIds((current) =>
-      current.includes(jobId)
-        ? current.filter((value) => value !== jobId)
-        : [...current, jobId],
-    );
-  }
+  const TABLE_HEADERS = [
+    "JOB ID",
+    "CUSTOMER",
+    "TYPE",
+    "BRAND",
+    "DEALER",
+    "SUBMITTED",
+    "DAYS WAITING",
+    "SCHEDULE & ASSIGN",
+  ];
 
-  function submitLookup(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLookupError(null);
-    const phone = lookupPhone.trim();
-    const name = lookupName.trim();
-
-    if (!phone && !name) {
-      setLookupError("Enter phone or name to search.");
-      return;
-    }
-
-    lookupMutation.mutate({
-      phone: phone || undefined,
-      name: name || undefined,
-      limit: 20,
-    });
-  }
-
-  function submitSchedule(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setScheduleMessage(null);
-    setScheduleError(null);
-
-    if (!selectedJob) {
-      setScheduleError("Select a pending job before scheduling.");
-      return;
-    }
-
-    if (!scheduledAt) {
-      setScheduleError("Select a scheduled date/time.");
-      return;
-    }
-
-    scheduleMutation.mutate({
-      jobId: selectedJob.id,
-      payload: {
-        scheduledAt: toIsoStringFromLocal(scheduledAt),
-        expectedVersion: selectedJob.version,
-        technicianId: technicianId || undefined,
-        acknowledgeConflict,
-      },
-    });
-  }
+  const thStyle: React.CSSProperties = {
+    padding: "10px 12px",
+    textAlign: "left" as const,
+    fontSize: "11px",
+    fontWeight: 600,
+    color: "#525252",
+    letterSpacing: "0.04em",
+    whiteSpace: "nowrap" as const,
+    borderBottom: "1px solid #E5E5E5",
+    backgroundColor: "#FAFAFA",
+  };
 
   return (
-    <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "1100px" }}>
+    <section style={{ padding: "24px", maxWidth: "1200px" }}>
+      {/* Header row */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: "flex-start",
           marginBottom: "24px",
         }}
       >
         <div>
           <h1
             style={{
-              fontSize: "36px",
-              fontWeight: 600,
+              fontSize: "32px",
+              fontWeight: 700,
               color: "#0A0A0A",
               margin: 0,
               letterSpacing: "-0.02em",
               lineHeight: 1.1,
             }}
           >
-            Pending Schedule
+            Schedule and Assign
           </h1>
           <p
             style={{
               fontSize: "13px",
               color: "#737373",
-              margin: "3px 0 0",
+              margin: "4px 0 0",
               fontWeight: 400,
             }}
           >
-            {queue.length} jobs awaiting scheduling
+            {queue.length} job{queue.length === 1 ? "" : "s"} awaiting scheduling
           </p>
         </div>
+
         <button
           type="button"
-          onClick={() => {
-            setBatchMode((current) => !current);
-            setSelectedJobIds([]);
-          }}
+          onClick={() => setShowBatchModal(true)}
           style={{
             display: "flex",
             alignItems: "center",
             gap: "6px",
-            padding: "7px 14px",
+            padding: "8px 16px",
             borderRadius: "8px",
-            border: `1px solid ${batchMode ? "#0A0A0A" : "#E5E5E5"}`,
-            backgroundColor: batchMode ? "#0A0A0A" : "#fff",
-            color: batchMode ? "#fff" : "#404040",
+            border: "1px solid #E5E5E5",
+            backgroundColor: "#0A0A0A",
+            color: "#FAFAFA",
             cursor: "pointer",
             fontSize: "13px",
+            fontWeight: 500,
           }}
         >
-          <Users size={14} strokeWidth={1.5} />{" "}
-          {batchMode ? "Exit batch mode" : "Batch schedule"}
+          <Users size={14} strokeWidth={1.5} />
+          Batch schedule
         </button>
       </div>
 
-      {batchMode && selectedJobIds.length > 0 ? (
-        <div
-          style={{
-            marginBottom: "16px",
-            backgroundColor: "#FAFAFA",
-            borderRadius: "8px",
-            padding: "12px 16px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            border: "1px solid #E5E5E5",
-          }}
-        >
-          <span style={{ fontSize: "13px", color: "#171717", fontWeight: 500 }}>
-            {selectedJobIds.length} job{selectedJobIds.length > 1 ? "s" : ""}{" "}
-            selected
-          </span>
-          <span style={{ fontSize: "12px", color: "#737373" }}>
-            Batch UI staged; individual scheduling remains active.
-          </span>
-        </div>
-      ) : null}
-
+      {/* Table card */}
       <div
         style={{
           backgroundColor: "#fff",
           borderRadius: "12px",
           border: "1px solid #E5E5E5",
           overflow: "hidden",
-          marginBottom: "20px",
         }}
       >
         {pendingScheduleQuery.isLoading ? (
-          <div style={{ padding: "20px", fontSize: "13px", color: "#737373" }}>
-            Loading queue...
+          <div style={{ padding: "24px", fontSize: "13px", color: "#737373" }}>
+            Loading queue…
           </div>
         ) : null}
+
         {pendingScheduleQuery.isError ? (
-          <div style={{ padding: "20px", fontSize: "13px", color: "#991B1B" }}>
+          <div style={{ padding: "24px", fontSize: "13px", color: "#EF4444" }}>
             Failed to load pending-schedule jobs.
           </div>
         ) : null}
-        {!pendingScheduleQuery.isLoading && queue.length === 0 ? (
-          <div style={{ padding: "20px", fontSize: "13px", color: "#737373" }}>
+
+        {!pendingScheduleQuery.isLoading && !pendingScheduleQuery.isError && queue.length === 0 ? (
+          <div style={{ padding: "24px", fontSize: "13px", color: "#737373" }}>
             No pending-schedule jobs right now.
           </div>
         ) : null}
 
         {queue.length > 0 ? (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "560px" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
-                {batchMode ? (
-                  <th
-                    style={{
-                      padding: "10px 12px",
-                      textAlign: "left",
-                      fontSize: "12px",
-                      fontWeight: 500,
-                      color: "#525252",
-                    }}
-                  >
-                    Select
-                  </th>
-                ) : null}
-                {[
-                  "Customer",
-                  "Type",
-                  "Waiting",
-                  "Created",
-                  "Version",
-                  "Action",
-                ].map((heading) => (
-                  <th
-                    key={heading}
-                    style={{
-                      padding: "10px 12px",
-                      textAlign: "left",
-                      fontSize: "12px",
-                      fontWeight: 500,
-                      color: "#525252",
-                    }}
-                  >
-                    {heading}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {queue.map((job) => {
-                const selected = selectedJobId === job.id;
-                const days = Math.max(
-                  0,
-                  Math.floor(
-                    (now - new Date(job.createdAt).getTime()) /
-                      (1000 * 60 * 60 * 24),
-                  ),
-                );
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                minWidth: "820px",
+              }}
+            >
+              <thead>
+                <tr>
+                  {TABLE_HEADERS.map((heading) => (
+                    <th key={heading} style={thStyle}>
+                      {heading}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {queue.map((job) => {
+                  const days = daysWaiting(job.createdAt);
+                  const overdue = days >= 7;
+                  const color = daysColor(days);
+                  const isExpanded = expandedJobId === job.id;
 
-                return (
-                  <tr
-                    key={job.id}
-                    style={{
-                      borderBottom: "1px solid #F5F5F5",
-                      backgroundColor: selected ? "#FAFAFA" : "#fff",
-                    }}
-                  >
-                    {batchMode ? (
-                      <td style={{ padding: "14px 12px" }}>
-                        <input
-                          type="checkbox"
-                          checked={selectedJobIds.includes(job.id)}
-                          onChange={() => toggleSelected(job.id)}
-                        />
-                      </td>
-                    ) : null}
-                    <td style={{ padding: "14px 12px" }}>
-                      <div
-                        style={{
-                          fontSize: "13px",
-                          fontWeight: 500,
-                          color: "#171717",
-                        }}
-                      >
-                        {job.customerName}
-                      </div>
-                      <div style={{ fontSize: "12px", color: "#737373" }}>
-                        {job.address}
-                      </div>
-                    </td>
-                    <td style={{ padding: "14px 12px" }}>
-                      <JobTypeChip type={job.type} />
-                    </td>
-                    <td style={{ padding: "14px 12px" }}>
-                      <SlaCell days={days} type={job.type} />
-                    </td>
-                    <td
+                  return [
+                    <tr
+                      key={job.id}
                       style={{
-                        padding: "14px 12px",
-                        fontSize: "13px",
-                        color: "#404040",
+                        borderBottom: isExpanded ? "none" : "1px solid #F5F5F5",
+                        backgroundColor: isExpanded ? "#F5F5F5" : "#fff",
                       }}
                     >
-                      {new Date(job.createdAt).toLocaleDateString()}
-                    </td>
-                    <td
-                      style={{
-                        padding: "14px 12px",
-                        fontSize: "13px",
-                        color: "#404040",
-                      }}
-                    >
-                      {job.version}
-                    </td>
-                    <td style={{ padding: "14px 12px" }}>
-                      <button
-                        type="button"
-                        onClick={() => selectJob(job)}
+                      {/* JOB ID */}
+                      <td
                         style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          padding: "6px 10px",
-                          borderRadius: "8px",
-                          border: `1px solid ${selected ? "#0A0A0A" : "#E5E5E5"}`,
-                          backgroundColor: selected ? "#0A0A0A" : "#fff",
-                          color: selected ? "#fff" : "#404040",
-                          cursor: "pointer",
+                          padding: "14px 12px",
                           fontSize: "12px",
+                          color: "#737373",
+                          fontFamily: "monospace",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        {selected ? (
-                          <CheckCircle size={12} strokeWidth={1.5} />
-                        ) : (
-                          <ChevronRight size={12} strokeWidth={1.5} />
-                        )}
-                        {selected ? "Selected" : "Schedule"}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                        {job.id.slice(0, 8)}…
+                      </td>
+
+                      {/* CUSTOMER */}
+                      <td style={{ padding: "14px 12px" }}>
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: 500,
+                            color: "#171717",
+                          }}
+                        >
+                          {job.customerName}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#737373" }}>
+                          {job.address}
+                        </div>
+                      </td>
+
+                      {/* TYPE */}
+                      <td style={{ padding: "14px 12px" }}>
+                        <JobTypeChip type={job.type} />
+                      </td>
+
+                      {/* BRAND */}
+                      <td
+                        style={{
+                          padding: "14px 12px",
+                          fontSize: "13px",
+                          color: job.brandName ? "#171717" : "#737373",
+                        }}
+                      >
+                        {job.brandName ?? "—"}
+                      </td>
+
+                      {/* DEALER */}
+                      <td
+                        style={{
+                          padding: "14px 12px",
+                          fontSize: "13px",
+                          color: job.dealerName ? "#171717" : "#737373",
+                        }}
+                      >
+                        {job.dealerName ?? "—"}
+                      </td>
+
+                      {/* SUBMITTED */}
+                      <td
+                        style={{
+                          padding: "14px 12px",
+                          fontSize: "13px",
+                          color: "#404040",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {new Date(job.createdAt).toLocaleDateString()}
+                      </td>
+
+                      {/* DAYS WAITING */}
+                      <td style={{ padding: "14px 12px" }}>
+                        <span
+                          style={{
+                            fontSize: "13px",
+                            color,
+                            fontWeight: overdue ? 600 : 400,
+                            textDecoration: overdue ? "underline" : "none",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          {overdue ? "⊙" : ""} {days}d
+                        </span>
+                      </td>
+
+                      {/* SCHEDULE & ASSIGN */}
+                      <td style={{ padding: "14px 12px" }}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedJobId((prev) =>
+                              prev === job.id ? null : job.id,
+                            )
+                          }
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "5px",
+                            padding: "6px 12px",
+                            borderRadius: "7px",
+                            border: `1px solid ${isExpanded ? "#0A0A0A" : "#E5E5E5"}`,
+                            backgroundColor: isExpanded ? "#0A0A0A" : "#fff",
+                            color: isExpanded ? "#FAFAFA" : "#404040",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            fontWeight: 500,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          <Calendar size={12} strokeWidth={1.5} />
+                          {isExpanded ? "Close" : "Schedule"}
+                        </button>
+                      </td>
+                    </tr>,
+
+                    isExpanded ? (
+                      <InlineForm
+                        key={`${job.id}-form`}
+                        job={job}
+                        technicians={technicians}
+                        onClose={() => setExpandedJobId(null)}
+                        onSuccess={() => {
+                          handleJobSuccess();
+                          setExpandedJobId(null);
+                        }}
+                      />
+                    ) : null,
+                  ];
+                })}
+              </tbody>
+            </table>
           </div>
         ) : null}
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 340px",
-          gap: "20px",
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: "#fff",
-            borderRadius: "12px",
-            border: "1px solid #E5E5E5",
-            padding: "20px",
+      {/* Batch Schedule Modal */}
+      {showBatchModal ? (
+        <BatchModal
+          jobs={queue}
+          technicians={technicians}
+          onClose={() => setShowBatchModal(false)}
+          onSuccess={() => {
+            handleJobSuccess();
+            setShowBatchModal(false);
           }}
-        >
-          <h3
-            style={{
-              fontSize: "16px",
-              fontWeight: 600,
-              margin: 0,
-              color: "#171717",
-            }}
-          >
-            Customer lookup
-          </h3>
-          <p style={{ margin: "6px 0 0", fontSize: "13px", color: "#737373" }}>
-            Search by exact phone or customer name.
-          </p>
-
-          <form
-            onSubmit={submitLookup}
-            style={{
-              display: isMobile ? "flex" : "grid",
-              flexDirection: isMobile ? "column" : undefined,
-              gridTemplateColumns: isMobile ? undefined : "1fr 1fr auto auto",
-              gap: "10px",
-              marginTop: "16px",
-            }}
-          >
-            <input
-              type="text"
-              value={lookupPhone}
-              onChange={(event) => setLookupPhone(event.target.value)}
-              placeholder="Phone"
-              style={{
-                border: "1px solid #E5E5E5",
-                borderRadius: "8px",
-                padding: "8px 10px",
-                fontSize: "13px",
-              }}
-            />
-            <input
-              type="text"
-              value={lookupName}
-              onChange={(event) => setLookupName(event.target.value)}
-              placeholder="Customer name"
-              style={{
-                border: "1px solid #E5E5E5",
-                borderRadius: "8px",
-                padding: "8px 10px",
-                fontSize: "13px",
-              }}
-            />
-            <button
-              type="submit"
-              disabled={lookupMutation.isPending}
-              style={{
-                border: "none",
-                borderRadius: "8px",
-                padding: "8px 12px",
-                backgroundColor: "#0A0A0A",
-                color: "#fff",
-                fontSize: "13px",
-                cursor: "pointer",
-              }}
-            >
-              {lookupMutation.isPending ? "Searching..." : "Search"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setLookupPhone("");
-                setLookupName("");
-                lookupMutation.reset();
-                setLookupError(null);
-              }}
-              style={{
-                border: "1px solid #E5E5E5",
-                borderRadius: "8px",
-                padding: "8px 12px",
-                backgroundColor: "#fff",
-                color: "#404040",
-                fontSize: "13px",
-                cursor: "pointer",
-              }}
-            >
-              Clear
-            </button>
-          </form>
-
-          {lookupError ? (
-            <p
-              style={{ marginTop: "12px", fontSize: "13px", color: "#991B1B" }}
-            >
-              {lookupError}
-            </p>
-          ) : null}
-          {lookupMutation.data && lookupMutation.data.length === 0 ? (
-            <p
-              style={{ marginTop: "12px", fontSize: "13px", color: "#737373" }}
-            >
-              No customers found for this search.
-            </p>
-          ) : null}
-          {lookupMutation.data && lookupMutation.data.length > 0 ? (
-            <div style={{ overflowX: "auto", marginTop: "14px" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
-                    {["Customer", "Phone", "Address", "Latest Job"].map(
-                      (heading) => (
-                        <th
-                          key={heading}
-                          style={{
-                            padding: "10px 12px",
-                            textAlign: "left",
-                            fontSize: "12px",
-                            fontWeight: 500,
-                            color: "#525252",
-                          }}
-                        >
-                          {heading}
-                        </th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {lookupMutation.data.map((row) => (
-                    <tr
-                      key={`${row.jobId}-${row.phone}`}
-                      style={{ borderBottom: "1px solid #F5F5F5" }}
-                    >
-                      <td
-                        style={{
-                          padding: "12px",
-                          fontSize: "13px",
-                          color: "#404040",
-                        }}
-                      >
-                        {row.customerName}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px",
-                          fontSize: "13px",
-                          color: "#404040",
-                        }}
-                      >
-                        {row.phone}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px",
-                          fontSize: "13px",
-                          color: "#404040",
-                        }}
-                      >
-                        {row.address}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px",
-                          fontSize: "12px",
-                          color: "#737373",
-                        }}
-                      >
-                        {row.jobId}
-                        <br />
-                        {new Date(row.createdAt).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-        </div>
-
-        <div
-          style={{
-            backgroundColor: "#fff",
-            borderRadius: "12px",
-            border: "1px solid #E5E5E5",
-            padding: "20px",
-            alignSelf: "start",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "16px",
-              fontWeight: 600,
-              margin: 0,
-              color: "#171717",
-            }}
-          >
-            Schedule selected job
-          </h3>
-          <p style={{ margin: "6px 0 0", fontSize: "12px", color: "#737373" }}>
-            {selectedJob
-              ? `Selected: ${selectedJob.customerName} (${selectedJob.id})`
-              : "Select a queue row to schedule."}
-          </p>
-
-          <form
-            onSubmit={submitSchedule}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-              marginTop: "16px",
-            }}
-          >
-            <div>
-              <label
-                htmlFor="scheduledAt"
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontSize: "12px",
-                  fontWeight: 500,
-                  color: "#404040",
-                }}
-              >
-                Scheduled at
-              </label>
-              <div style={{ position: "relative" }}>
-                <Calendar
-                  size={14}
-                  strokeWidth={1.5}
-                  style={{
-                    position: "absolute",
-                    left: "10px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: "#A3A3A3",
-                  }}
-                />
-                <input
-                  id="scheduledAt"
-                  type="datetime-local"
-                  value={scheduledAt}
-                  onChange={(event) => setScheduledAt(event.target.value)}
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    padding: "8px 10px 8px 32px",
-                    border: "1px solid #E5E5E5",
-                    borderRadius: "8px",
-                    fontSize: "13px",
-                  }}
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="technician"
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontSize: "12px",
-                  fontWeight: 500,
-                  color: "#404040",
-                }}
-              >
-                Technician (optional)
-              </label>
-              <select
-                id="technician"
-                value={technicianId}
-                onChange={(event) => setTechnicianId(event.target.value)}
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  padding: "8px 10px",
-                  border: "1px solid #E5E5E5",
-                  borderRadius: "8px",
-                  fontSize: "13px",
-                }}
-              >
-                <option value="">No technician assignment</option>
-                {(techniciansQuery.data ?? []).map((technician) => (
-                  <option key={technician.id} value={technician.id}>
-                    {technician.name} ({technician.activeAssignments})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: "13px",
-                color: "#404040",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={acknowledgeConflict}
-                onChange={(event) =>
-                  setAcknowledgeConflict(event.target.checked)
-                }
-              />
-              <Clock size={13} strokeWidth={1.5} /> Acknowledge scheduling
-              conflicts if detected
-            </label>
-
-            {scheduleError ? (
-              <div
-                style={{
-                  borderRadius: "8px",
-                  border: "1px solid #FECACA",
-                  backgroundColor: "#FEF2F2",
-                  padding: "10px 12px",
-                  color: "#991B1B",
-                  fontSize: "13px",
-                }}
-              >
-                {scheduleError}
-              </div>
-            ) : null}
-            {scheduleMessage ? (
-              <div
-                style={{
-                  borderRadius: "8px",
-                  border: "1px solid #BBF7D0",
-                  backgroundColor: "#F0FDF4",
-                  padding: "10px 12px",
-                  color: "#166534",
-                  fontSize: "13px",
-                }}
-              >
-                {scheduleMessage}
-              </div>
-            ) : null}
-
-            <button
-              type="submit"
-              disabled={scheduleMutation.isPending || !selectedJob}
-              style={{
-                width: "100%",
-                border: "none",
-                borderRadius: "8px",
-                padding: "10px 14px",
-                backgroundColor: "#0A0A0A",
-                color: "#fff",
-                fontSize: "13px",
-                fontWeight: 500,
-                cursor: "pointer",
-                opacity: scheduleMutation.isPending || !selectedJob ? 0.5 : 1,
-              }}
-            >
-              {scheduleMutation.isPending ? "Scheduling..." : "Schedule Job"}
-            </button>
-          </form>
-        </div>
-      </div>
+        />
+      ) : null}
     </section>
   );
 }

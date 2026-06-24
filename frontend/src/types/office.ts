@@ -4,7 +4,9 @@ export type PendingScheduleJob = {
   status: string;
   source: "direct" | "via_dealer";
   brandId: string | null;
+  brandName: string | null;
   dealerId: string | null;
+  dealerName: string | null;
   customerName: string;
   phone: string;
   address: string;
