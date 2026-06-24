@@ -6,6 +6,7 @@ import { StatusToggle } from "@/components/ui/status-toggle";
 import { RoleGate } from "@/components/auth/role-gate";
 import { ApiError } from "@/lib/api/client";
 import { createOfficeTechnician, fetchTechnicianDirectory, toggleTechnicianActive } from "@/lib/api/operations";
+import { TechnicianDirectoryItem } from "@/types/operations";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Plus, Search } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
@@ -15,6 +16,7 @@ export default function TechniciansPage() {
   const queryClient = useQueryClient();
   const isMobile = useMobileBreakpoint();
   const [showCreate, setShowCreate] = useState(false);
+  const [editTarget, setEditTarget] = useState<TechnicianDirectoryItem | null>(null);
   const [search, setSearch] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -67,6 +69,19 @@ export default function TechniciansPage() {
     },
     onError: () => {
       setErrorMessage("Unable to update technician status.");
+    },
+  });
+
+  const editToggleMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => toggleTechnicianActive(id, isActive),
+    onSuccess: () => {
+      setMessage("Technician updated.");
+      setErrorMessage(null);
+      setEditTarget(null);
+      queryClient.invalidateQueries({ queryKey: ["technicians", "directory"] });
+    },
+    onError: () => {
+      setErrorMessage("Unable to update technician.");
     },
   });
 
@@ -161,6 +176,15 @@ export default function TechniciansPage() {
                     loading={toggleMutation.isPending}
                   />
                 </RoleGate>
+                <RoleGate allowedRoles={["owner"]}>
+                  <button
+                    type="button"
+                    onClick={() => setEditTarget(technician)}
+                    style={{ border: "none", backgroundColor: "transparent", color: "#525252", fontSize: "13px", cursor: "pointer", padding: "4px 8px" }}
+                  >
+                    ✎ Edit
+                  </button>
+                </RoleGate>
               </div>
             </div>
           ))}
@@ -217,6 +241,48 @@ export default function TechniciansPage() {
                 {createMutation.isPending ? "Creating..." : "Save technician"}
               </button>
             </form>
+          </Modal>
+        </RoleGate>
+
+        <RoleGate allowedRoles={["owner"]}>
+          <Modal isOpen={editTarget !== null} onClose={() => setEditTarget(null)} title="Edit technician">
+            {editTarget ? (
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setMessage(null);
+                  setErrorMessage(null);
+                  editToggleMutation.mutate({ id: editTarget.id, isActive: editTarget.isActive });
+                }}
+                style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+              >
+                <div>
+                  <label style={{ display: "block", marginBottom: "5px", fontSize: "12px", fontWeight: 500, color: "#404040" }}>Full name</label>
+                  <input
+                    value={editTarget.name}
+                    readOnly
+                    style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", backgroundColor: "#F5F5F5", color: "#737373" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: 500, color: "#404040", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={editTarget.isActive}
+                      onChange={(event) => setEditTarget({ ...editTarget, isActive: event.target.checked })}
+                    />
+                    Active
+                  </label>
+                </div>
+                <button
+                  type="submit"
+                  disabled={editToggleMutation.isPending}
+                  style={{ border: "none", borderRadius: "8px", padding: "10px 14px", backgroundColor: "#0A0A0A", color: "#FAFAFA", fontSize: "13px", fontWeight: 500, cursor: "pointer", opacity: editToggleMutation.isPending ? 0.6 : 1 }}
+                >
+                  {editToggleMutation.isPending ? "Saving..." : "Save changes"}
+                </button>
+              </form>
+            ) : null}
           </Modal>
         </RoleGate>
       </section>
