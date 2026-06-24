@@ -335,6 +335,24 @@ export class AnalyticsService {
     }
   }
 
+  async getBusinessDaily(
+    days: number,
+    ctx: RequestContext,
+  ): Promise<Array<{ date: string; revenue: number; total: number; completed: number }>> {
+    const result = await this.db.query(
+      `SELECT metric_date::text AS date,
+              COALESCE(revenue_amount, 0)::numeric AS revenue,
+              COALESCE(jobs_total, 0)::int AS total,
+              COALESCE(jobs_completed + jobs_resolved, 0)::int AS completed
+       FROM analytics_business_daily
+       WHERE organization_id = $1
+         AND metric_date >= CURRENT_DATE - ($2 || ' days')::interval
+       ORDER BY metric_date ASC`,
+      [ctx.organizationId, String(days)],
+    );
+    return result.rows as Array<{ date: string; revenue: number; total: number; completed: number }>;
+  }
+
   async getBusinessOverview(
     days: number,
     ctx: RequestContext,
@@ -402,13 +420,21 @@ export class AnalyticsService {
             AND jj.organization_id = $1
             AND cr.submitted_at IS NOT NULL
             AND cr.submitted_at >= NOW() - ($2::text || ' days')::interval
-        ) AS avg_star_rating
+        ) AS avg_star_rating,
+        CASE WHEN SUM(atd.on_time_count + atd.late_count) > 0
+          THEN ROUND(SUM(atd.on_time_count)::numeric / SUM(atd.on_time_count + atd.late_count) * 100, 1)
+          ELSE NULL
+        END AS on_time_rate
       FROM users u
       LEFT JOIN jobs j
         ON j.technician_id = u.id
         AND j.organization_id = $1
         AND j.is_deleted = FALSE
         AND j.created_at >= NOW() - ($2::text || ' days')::interval
+      LEFT JOIN analytics_technician_daily atd
+        ON atd.technician_id = u.id
+        AND atd.organization_id = $1
+        AND atd.metric_date >= CURRENT_DATE - ($2::text || ' days')::interval
       WHERE u.organization_id = $1
         AND u.role = 'technician'
         AND u.is_deleted = FALSE
@@ -471,7 +497,16 @@ export class AnalyticsService {
             COUNT(j.id) FILTER (WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit'))::numeric
             / COUNT(j.id)::numeric * 100, 2
           )
-        END AS completion_rate
+        END AS completion_rate,
+        CASE
+          WHEN COUNT(j.id) FILTER (WHERE j.scheduled_at IS NOT NULL) = 0 THEN NULL
+          ELSE ROUND(
+            AVG(
+              EXTRACT(EPOCH FROM (j.scheduled_at - j.created_at)) / 86400.0
+            ) FILTER (WHERE j.scheduled_at IS NOT NULL)::numeric,
+            1
+          )
+        END AS avg_days_waiting
       FROM dealers d
       LEFT JOIN jobs j
         ON j.dealer_id = d.id

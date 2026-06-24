@@ -45,6 +45,13 @@ export class AnalyticsController {
     return this.analyticsService.getBusinessOverview(query.days ?? 30, req.context);
   }
 
+  @Get('analytics/business/daily')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff')
+  getBusinessDaily(@Query() query: AnalyticsDaysQueryDto, @Req() req: UserRequest) {
+    return this.analyticsService.getBusinessDaily(query.days ?? 7, req.context);
+  }
+
   @Get('analytics/technicians')
   @UseGuards(TenantGuard, RolesGuard)
   @Roles('owner', 'office_staff')

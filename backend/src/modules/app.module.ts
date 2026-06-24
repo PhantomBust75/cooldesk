@@ -30,6 +30,8 @@ import { BrandsController } from './brands/brands.controller';
 import { BrandsService } from './brands/brands.service';
 import { HealthController } from './health/health.controller';
 import { SettingsController } from './settings/settings.controller';
+import { ServiceItemsController } from './service-items/service-items.controller';
+import { ServiceItemsService } from './service-items/service-items.service';
 
 @Module({
   imports: [
@@ -52,6 +54,7 @@ import { SettingsController } from './settings/settings.controller';
     AuthController,
     BrandsController,
     SettingsController,
+    ServiceItemsController,
   ],
   providers: [
     AppConfigService,
@@ -67,6 +70,7 @@ import { SettingsController } from './settings/settings.controller';
     AuthService,
     BrandsService,
     TenantConfigService,
+    ServiceItemsService,
     TenantGuard,
     RolesGuard,
     PlatformAdminGuard,
