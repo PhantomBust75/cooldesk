@@ -217,8 +217,22 @@ export class DashboardService {
       [orgId],
     );
 
+    // 7-day trends: unscheduled active jobs created per day for last 7 days
+    const pendingTrendResult = await this.db.query(
+      `SELECT DATE(created_at AT TIME ZONE 'UTC') AS day, COUNT(*)::int AS total
+       FROM jobs
+       WHERE organization_id = $1
+         AND is_deleted = false
+         AND scheduled_at IS NULL
+         AND status NOT IN ${INACTIVE_STATUSES}
+         AND created_at >= NOW() - INTERVAL '7 days'
+       GROUP BY day ORDER BY day ASC`,
+      [orgId],
+    );
+
     // Build 7-entry arrays aligned to last 7 days
     const days7: number[] = [];
+    const pendingDays7: number[] = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setUTCDate(d.getUTCDate() - i);
@@ -228,6 +242,12 @@ export class DashboardService {
         return day instanceof Date ? day.toISOString().slice(0, 10) === key : String(r.day).slice(0, 10) === key;
       });
       days7.push(row ? (row.total as number) : 0);
+
+      const pendingRow = pendingTrendResult.rows.find((r: Record<string, unknown>) => {
+        const day = r.day as Date;
+        return day instanceof Date ? day.toISOString().slice(0, 10) === key : String(r.day).slice(0, 10) === key;
+      });
+      pendingDays7.push(pendingRow ? (pendingRow.total as number) : 0);
     }
 
     return {
@@ -238,7 +258,7 @@ export class DashboardService {
       noShowsToday,
       trends: {
         totalActiveJobs: days7,
-        pendingSchedule: days7.map((v) => Math.max(0, Math.round(v * 0.4))),
+        pendingSchedule: pendingDays7,
       },
     };
   }
