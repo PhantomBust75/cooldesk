@@ -75,6 +75,8 @@ export type AnalyticsTechnicianItem = {
   technicianName: string;
   totalJobs: number;
   completionRate: number;
+  onTimeRate: number | null;
+  avgResolution: number | null;
   avgStarRating: number | null;
 };
 
@@ -83,6 +85,8 @@ export type AnalyticsBrandItem = {
   brandName: string;
   totalJobs: number;
   completionRate: number;
+  revisitRate: number | null;
+  avgResolution: number | null;
 };
 
 export type AnalyticsDealerItem = {
@@ -90,4 +94,12 @@ export type AnalyticsDealerItem = {
   dealerName: string;
   totalJobs: number;
   completionRate: number;
+  avgDaysWaiting: number | null;
+};
+
+export type AnalyticsDailyItem = {
+  date: string;
+  revenue: number;
+  total: number;
+  completed: number;
 };

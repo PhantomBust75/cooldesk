@@ -245,6 +245,8 @@ export async function fetchAnalyticsTechnicians(days = 30): Promise<AnalyticsTec
     technicianName: asString(row.technician_name),
     totalJobs: asNumber(row.total_jobs),
     completionRate: asNumber(row.completion_rate),
+    onTimeRate: asNullableNumber(row.on_time_rate),
+    avgResolution: asNullableNumber(row.avg_resolution),
     avgStarRating: asNullableNumber(row.avg_star_rating),
   }));
 }
@@ -256,6 +258,8 @@ export async function fetchAnalyticsBrands(days = 30): Promise<AnalyticsBrandIte
     brandName: asString(row.brand_name),
     totalJobs: asNumber(row.total_jobs),
     completionRate: asNumber(row.completion_rate),
+    revisitRate: asNullableNumber(row.revisit_rate),
+    avgResolution: asNullableNumber(row.avg_resolution),
   }));
 }
 
@@ -266,6 +270,7 @@ export async function fetchAnalyticsDealers(days = 30): Promise<AnalyticsDealerI
     dealerName: asString(row.dealer_name),
     totalJobs: asNumber(row.total_jobs),
     completionRate: asNumber(row.completion_rate),
+    avgDaysWaiting: asNullableNumber(row.avg_days_waiting),
   }));
 }
 

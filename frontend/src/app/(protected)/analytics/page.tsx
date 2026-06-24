@@ -1,21 +1,224 @@
 "use client";
 
 import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
   fetchAnalyticsBrands,
   fetchAnalyticsDealers,
   fetchAnalyticsOverview,
   fetchAnalyticsTechnicians,
 } from "@/lib/api/operations";
+import { fetchAnalyticsDaily } from "@/lib/api/analytics-daily";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart2, Clock3, Star, TrendingUp } from "lucide-react";
 import { useState } from "react";
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function exportToCsv(data: unknown[], filename: string) {
+  if (!data.length) return;
+  const keys = Object.keys(data[0] as object);
+  const rows = data.map((row) =>
+    keys.map((k) => JSON.stringify((row as Record<string, unknown>)[k] ?? "")).join(","),
+  );
+  const csv = [keys.join(","), ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function fmt(d: string) {
+  return new Date(d).toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+function nullFmt(v: number | null, decimals = 1, suffix = "") {
+  return v == null ? "—" : `${v.toFixed(decimals)}${suffix}`;
+}
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        backgroundColor: "#fff",
+        border: "1px solid #E5E5E5",
+        borderRadius: "12px",
+        padding: "16px",
+        marginBottom: "16px",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "13px",
+          fontWeight: 500,
+          color: "#171717",
+          marginBottom: "12px",
+        }}
+      >
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function KpiCard({ title, value }: { title: string; value: string }) {
+  return (
+    <div
+      style={{
+        borderRadius: "12px",
+        border: "1px solid #E5E5E5",
+        backgroundColor: "#fff",
+        padding: "14px",
+      }}
+    >
+      <p style={{ margin: "0 0 6px", fontSize: "12px", color: "#737373" }}>{title}</p>
+      <p
+        style={{
+          margin: 0,
+          fontSize: "26px",
+          fontWeight: 600,
+          color: "#171717",
+          letterSpacing: "-0.02em",
+        }}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        border: "none",
+        borderBottom: `2px solid ${active ? "#0A0A0A" : "transparent"}`,
+        backgroundColor: "transparent",
+        color: active ? "#171717" : "#737373",
+        padding: "10px 0",
+        marginBottom: "-1px",
+        fontSize: "13px",
+        cursor: "pointer",
+        fontWeight: active ? 500 : 400,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function WindowSelect({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      style={{
+        borderRadius: "8px",
+        border: "1px solid #E5E5E5",
+        padding: "6px 10px",
+        fontSize: "12px",
+        color: "#171717",
+        backgroundColor: "#FAFAFA",
+        cursor: "pointer",
+      }}
+    >
+      <option value={7}>Last 7 days</option>
+      <option value={30}>Last 30 days</option>
+      <option value={90}>Last 90 days</option>
+    </select>
+  );
+}
+
+function ExportButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        borderRadius: "8px",
+        border: "1px solid #E5E5E5",
+        padding: "6px 12px",
+        fontSize: "12px",
+        color: "#404040",
+        backgroundColor: "#FAFAFA",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+      }}
+    >
+      ↓ Export CSV
+    </button>
+  );
+}
+
+function LoadingRow() {
+  return (
+    <p style={{ margin: 0, padding: "14px", fontSize: "13px", color: "#737373" }}>Loading…</p>
+  );
+}
+
+function ErrorRow() {
+  return (
+    <p style={{ margin: 0, padding: "14px", fontSize: "13px", color: "#EF4444" }}>
+      Failed to load data.
+    </p>
+  );
+}
+
+const tooltipStyle = {
+  fontSize: "12px",
+  borderRadius: "8px",
+  border: "1px solid #E5E5E5",
+};
+
+const axisTickStyle = { fontSize: 11, fill: "#737373" };
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
   const [tab, setTab] = useState<"business" | "technicians" | "brands" | "dealers">("business");
   const [days, setDays] = useState(30);
+
   const overviewQuery = useQuery({
     queryKey: ["analytics", "overview", days],
     queryFn: () => fetchAnalyticsOverview(days),
+  });
+
+  const dailyQuery = useQuery({
+    queryKey: ["analytics", "daily", days],
+    queryFn: () => fetchAnalyticsDaily(days),
+    enabled: tab === "business",
   });
 
   const techniciansQuery = useQuery({
@@ -37,167 +240,434 @@ export default function AnalyticsPage() {
   });
 
   const overview = overviewQuery.data;
+  const dailyData = dailyQuery.data ?? [];
+
+  // KPI derivations from available data
+  const techData = techniciansQuery.data ?? [];
+  const avgOnTime =
+    techData.length > 0
+      ? techData.reduce((s, t) => s + (t.onTimeRate ?? 0), 0) / techData.length
+      : null;
+  const avgResolutionKpi =
+    techData.length > 0
+      ? techData.reduce((s, t) => s + (t.avgResolution ?? 0), 0) / techData.length
+      : null;
+
+  // Month label for subtitle
+  const now = new Date();
+  const monthLabel = now.toLocaleDateString([], { month: "long", year: "numeric" });
+
+  function handleExport() {
+    if (tab === "business") {
+      exportToCsv(dailyData, `analytics-business-${days}d.csv`);
+    } else if (tab === "technicians") {
+      exportToCsv(techniciansQuery.data ?? [], `analytics-technicians-${days}d.csv`);
+    } else if (tab === "brands") {
+      exportToCsv(brandsQuery.data ?? [], `analytics-brands-${days}d.csv`);
+    } else {
+      exportToCsv(dealersQuery.data ?? [], `analytics-dealers-${days}d.csv`);
+    }
+  }
 
   return (
     <section style={{ padding: "24px", maxWidth: "1040px" }}>
-      <header style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "12px", marginBottom: "20px" }}>
+      {/* Header */}
+      <header
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "12px",
+          marginBottom: "20px",
+        }}
+      >
         <div>
-          <h1 style={{ fontSize: "36px", fontWeight: 600, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Analytics</h1>
-          <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0", fontWeight: 400 }}>Precomputed daily organization metrics.</p>
-        </div>
-
-        <label style={{ fontSize: "12px", color: "#737373" }}>
-          Window
-          <select value={days} onChange={(event) => setDays(Number(event.target.value))} style={{ marginTop: "5px", display: "block", borderRadius: "8px", border: "1px solid #E5E5E5", padding: "8px 10px", fontSize: "13px", color: "#171717" }}>
-            <option value={7}>7 days</option>
-            <option value={30}>30 days</option>
-            <option value={90}>90 days</option>
-          </select>
-        </label>
-      </header>
-
-      <div style={{ display: "flex", gap: "18px", borderBottom: "1px solid #E5E5E5", marginBottom: "16px" }}>
-        {([
-          { key: "business", label: "Business" },
-          { key: "technicians", label: "Technician scorecards" },
-          { key: "brands", label: "Brand" },
-          { key: "dealers", label: "Dealer" },
-        ] as const).map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            onClick={() => setTab(item.key)}
+          <h1
             style={{
-              border: "none",
-              borderBottom: `2px solid ${tab === item.key ? "#0A0A0A" : "transparent"}`,
-              backgroundColor: "transparent",
-              color: tab === item.key ? "#171717" : "#737373",
-              padding: "10px 0",
-              marginBottom: "-1px",
-              fontSize: "13px",
-              cursor: "pointer",
+              fontSize: "36px",
+              fontWeight: 600,
+              color: "#0A0A0A",
+              margin: 0,
+              letterSpacing: "-0.02em",
+              lineHeight: 1.1,
             }}
           >
-            {item.label}
-          </button>
-        ))}
+            Analytics
+          </h1>
+          <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0", fontWeight: 400 }}>
+            Last {days} days &middot; {monthLabel}
+          </p>
+        </div>
+        <ExportButton onClick={handleExport} />
+      </header>
+
+      {/* Tab bar */}
+      <div
+        style={{
+          display: "flex",
+          gap: "18px",
+          borderBottom: "1px solid #E5E5E5",
+          marginBottom: "16px",
+        }}
+      >
+        <TabButton active={tab === "business"} onClick={() => setTab("business")}>
+          Business
+        </TabButton>
+        <TabButton active={tab === "technicians"} onClick={() => setTab("technicians")}>
+          Technician scorecards
+        </TabButton>
+        <TabButton active={tab === "brands"} onClick={() => setTab("brands")}>
+          Brand
+        </TabButton>
+        <TabButton active={tab === "dealers"} onClick={() => setTab("dealers")}>
+          Dealer
+        </TabButton>
       </div>
 
+      {/* ── Business Tab ── */}
       {tab === "business" ? (
         <>
-          {overviewQuery.isLoading ? <p style={{ fontSize: "13px", color: "#737373" }}>Loading analytics...</p> : null}
-          {overviewQuery.isError ? <p style={{ fontSize: "13px", color: "#991B1B" }}>Failed to load analytics.</p> : null}
+          {/* Tab toolbar */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "16px",
+            }}
+          >
+            <WindowSelect value={days} onChange={setDays} />
+          </div>
 
+          {overviewQuery.isLoading ? <LoadingRow /> : null}
+          {overviewQuery.isError ? <ErrorRow /> : null}
+
+          {/* KPI cards — 4 columns */}
           {overview ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: "12px" }}>
-              <MetricCard title="Total Jobs" value={String(overview.totalJobs)} icon={<BarChart2 size={14} strokeWidth={1.5} />} />
-              <MetricCard title="Resolved/Completed" value={String(overview.resolvedOrCompleted)} icon={<CheckIcon />} />
-              <MetricCard title="Cancelled" value={String(overview.cancelled)} icon={<TrendingUp size={14} strokeWidth={1.5} />} />
-              <MetricCard title="Revisit Pending" value={String(overview.revisitPending)} icon={<Clock3 size={14} strokeWidth={1.5} />} />
-              <MetricCard title="Avg Star Rating" value={overview.avgStarRating == null ? "—" : overview.avgStarRating.toFixed(2)} icon={<Star size={14} strokeWidth={1.5} />} />
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                gap: "12px",
+                marginBottom: "20px",
+              }}
+            >
+              <KpiCard
+                title="Total Revenue (SAR)"
+                value={
+                  dailyData.length
+                    ? dailyData.reduce((s, d) => s + d.revenue, 0).toLocaleString()
+                    : "—"
+                }
+              />
+              <KpiCard
+                title="Completion Rate"
+                value={
+                  overview.totalJobs > 0
+                    ? `${Math.round((overview.resolvedOrCompleted / overview.totalJobs) * 100)}%`
+                    : "—"
+                }
+              />
+              <KpiCard
+                title="On-Time Rate"
+                value={avgOnTime != null ? `${avgOnTime.toFixed(1)}%` : "—"}
+              />
+              <KpiCard
+                title="Avg Resolution (days)"
+                value={avgResolutionKpi != null ? avgResolutionKpi.toFixed(1) : "—"}
+              />
             </div>
+          ) : null}
+
+          {/* Bar chart — daily revenue */}
+          {dailyQuery.isLoading ? <LoadingRow /> : null}
+          {dailyQuery.isError ? <ErrorRow /> : null}
+          {!dailyQuery.isLoading && !dailyQuery.isError && dailyData.length > 0 ? (
+            <>
+              <ChartCard title="Daily Revenue (SAR)">
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={dailyData} barSize={28}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#F5F5F5"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="date"
+                      tick={axisTickStyle}
+                      tickFormatter={fmt}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis tick={axisTickStyle} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Bar dataKey="revenue" fill="#0A0A0A" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              {/* Line chart — daily jobs */}
+              <ChartCard title="Daily Jobs">
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={dailyData}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#F5F5F5"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="date"
+                      tick={axisTickStyle}
+                      tickFormatter={fmt}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis tick={axisTickStyle} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Line
+                      type="monotone"
+                      dataKey="total"
+                      stroke="#737373"
+                      strokeWidth={2}
+                      dot={false}
+                      name="Total"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="completed"
+                      stroke="#F59E0B"
+                      strokeWidth={2}
+                      dot={false}
+                      name="Completed"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartCard>
+            </>
           ) : null}
         </>
       ) : null}
 
+      {/* ── Technicians Tab ── */}
       {tab === "technicians" ? (
-        <section style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", overflow: "hidden" }}>
-          {techniciansQuery.isLoading ? <p style={{ margin: 0, padding: "14px", fontSize: "13px", color: "#737373" }}>Loading technician scorecards...</p> : null}
-          {techniciansQuery.isError ? <p style={{ margin: 0, padding: "14px", fontSize: "13px", color: "#991B1B" }}>Failed to load technician scorecards.</p> : null}
-          {!techniciansQuery.isLoading && !techniciansQuery.isError ? (
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
-              <thead>
-                <tr style={{ backgroundColor: "#FAFAFA", color: "#737373", textAlign: "left" }}>
-                  <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>Technician</th>
-                  <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>Total jobs</th>
-                  <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>Completion rate</th>
-                  <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>Avg rating</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(techniciansQuery.data ?? []).map((item) => (
-                  <tr key={item.technicianId} style={{ borderBottom: "1px solid #F5F5F5" }}>
-                    <td style={{ padding: "10px 12px", color: "#171717" }}>{item.technicianName || "-"}</td>
-                    <td style={{ padding: "10px 12px", color: "#404040" }}>{item.totalJobs}</td>
-                    <td style={{ padding: "10px 12px", color: "#404040" }}>{item.completionRate}%</td>
-                    <td style={{ padding: "10px 12px", color: "#404040" }}>{item.avgStarRating == null ? "—" : item.avgStarRating.toFixed(2)}</td>
+        <>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "16px",
+            }}
+          >
+            <WindowSelect value={days} onChange={setDays} />
+          </div>
+          <section
+            style={{
+              borderRadius: "12px",
+              border: "1px solid #E5E5E5",
+              backgroundColor: "#fff",
+              overflow: "hidden",
+            }}
+          >
+            {techniciansQuery.isLoading ? <LoadingRow /> : null}
+            {techniciansQuery.isError ? <ErrorRow /> : null}
+            {!techniciansQuery.isLoading && !techniciansQuery.isError ? (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+                <thead>
+                  <tr
+                    style={{
+                      backgroundColor: "#FAFAFA",
+                      color: "#737373",
+                      textAlign: "left",
+                    }}
+                  >
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      NAME
+                    </th>
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      JOBS COMPLETED
+                    </th>
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      COMPLETION RATE
+                    </th>
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      ON-TIME RATE
+                    </th>
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      AVG RESOLUTION
+                    </th>
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      RATING
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : null}
-        </section>
+                </thead>
+                <tbody>
+                  {(techniciansQuery.data ?? []).map((item) => (
+                    <tr key={item.technicianId} style={{ borderBottom: "1px solid #F5F5F5" }}>
+                      <td style={{ padding: "10px 12px", color: "#171717" }}>
+                        {item.technicianName || "—"}
+                      </td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.totalJobs}</td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>
+                        {item.completionRate}%
+                      </td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>
+                        {nullFmt(item.onTimeRate, 1, "%")}
+                      </td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>
+                        {nullFmt(item.avgResolution, 1, "d")}
+                      </td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>
+                        {nullFmt(item.avgStarRating, 2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
+          </section>
+        </>
       ) : null}
 
+      {/* ── Brands Tab ── */}
       {tab === "brands" ? (
-        <section style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", overflow: "hidden" }}>
-          {brandsQuery.isLoading ? <p style={{ margin: 0, padding: "14px", fontSize: "13px", color: "#737373" }}>Loading brand analytics...</p> : null}
-          {brandsQuery.isError ? <p style={{ margin: 0, padding: "14px", fontSize: "13px", color: "#991B1B" }}>Failed to load brand analytics.</p> : null}
-          {!brandsQuery.isLoading && !brandsQuery.isError ? (
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
-              <thead>
-                <tr style={{ backgroundColor: "#FAFAFA", color: "#737373", textAlign: "left" }}>
-                  <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>Brand</th>
-                  <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>Total jobs</th>
-                  <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>Completion rate</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(brandsQuery.data ?? []).map((item) => (
-                  <tr key={item.brandId} style={{ borderBottom: "1px solid #F5F5F5" }}>
-                    <td style={{ padding: "10px 12px", color: "#171717" }}>{item.brandName || "-"}</td>
-                    <td style={{ padding: "10px 12px", color: "#404040" }}>{item.totalJobs}</td>
-                    <td style={{ padding: "10px 12px", color: "#404040" }}>{item.completionRate}%</td>
+        <>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "16px",
+            }}
+          >
+            <WindowSelect value={days} onChange={setDays} />
+          </div>
+          <section
+            style={{
+              borderRadius: "12px",
+              border: "1px solid #E5E5E5",
+              backgroundColor: "#fff",
+              overflow: "hidden",
+            }}
+          >
+            {brandsQuery.isLoading ? <LoadingRow /> : null}
+            {brandsQuery.isError ? <ErrorRow /> : null}
+            {!brandsQuery.isLoading && !brandsQuery.isError ? (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+                <thead>
+                  <tr
+                    style={{
+                      backgroundColor: "#FAFAFA",
+                      color: "#737373",
+                      textAlign: "left",
+                    }}
+                  >
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      BRAND
+                    </th>
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      TOTAL JOBS
+                    </th>
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      COMPLETION RATE
+                    </th>
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      REVISIT RATE
+                    </th>
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      AVG RESOLUTION
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : null}
-        </section>
+                </thead>
+                <tbody>
+                  {(brandsQuery.data ?? []).map((item) => (
+                    <tr key={item.brandId} style={{ borderBottom: "1px solid #F5F5F5" }}>
+                      <td style={{ padding: "10px 12px", color: "#171717" }}>
+                        {item.brandName || "—"}
+                      </td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.totalJobs}</td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>
+                        {item.completionRate}%
+                      </td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>
+                        {nullFmt(item.revisitRate, 1, "%")}
+                      </td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>
+                        {nullFmt(item.avgResolution, 1, "d")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
+          </section>
+        </>
       ) : null}
 
+      {/* ── Dealers Tab ── */}
       {tab === "dealers" ? (
-        <section style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", overflow: "hidden" }}>
-          {dealersQuery.isLoading ? <p style={{ margin: 0, padding: "14px", fontSize: "13px", color: "#737373" }}>Loading dealer analytics...</p> : null}
-          {dealersQuery.isError ? <p style={{ margin: 0, padding: "14px", fontSize: "13px", color: "#991B1B" }}>Failed to load dealer analytics.</p> : null}
-          {!dealersQuery.isLoading && !dealersQuery.isError ? (
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
-              <thead>
-                <tr style={{ backgroundColor: "#FAFAFA", color: "#737373", textAlign: "left" }}>
-                  <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>Dealer</th>
-                  <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>Total jobs</th>
-                  <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>Completion rate</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(dealersQuery.data ?? []).map((item) => (
-                  <tr key={item.dealerId} style={{ borderBottom: "1px solid #F5F5F5" }}>
-                    <td style={{ padding: "10px 12px", color: "#171717" }}>{item.dealerName || "-"}</td>
-                    <td style={{ padding: "10px 12px", color: "#404040" }}>{item.totalJobs}</td>
-                    <td style={{ padding: "10px 12px", color: "#404040" }}>{item.completionRate}%</td>
+        <>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "16px",
+            }}
+          >
+            <WindowSelect value={days} onChange={setDays} />
+          </div>
+          <section
+            style={{
+              borderRadius: "12px",
+              border: "1px solid #E5E5E5",
+              backgroundColor: "#fff",
+              overflow: "hidden",
+            }}
+          >
+            {dealersQuery.isLoading ? <LoadingRow /> : null}
+            {dealersQuery.isError ? <ErrorRow /> : null}
+            {!dealersQuery.isLoading && !dealersQuery.isError ? (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+                <thead>
+                  <tr
+                    style={{
+                      backgroundColor: "#FAFAFA",
+                      color: "#737373",
+                      textAlign: "left",
+                    }}
+                  >
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      DEALER
+                    </th>
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      JOBS REFERRED
+                    </th>
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      COMPLETION RATE
+                    </th>
+                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                      AVG DAYS WAITING
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : null}
-        </section>
+                </thead>
+                <tbody>
+                  {(dealersQuery.data ?? []).map((item) => (
+                    <tr key={item.dealerId} style={{ borderBottom: "1px solid #F5F5F5" }}>
+                      <td style={{ padding: "10px 12px", color: "#171717" }}>
+                        {item.dealerName || "—"}
+                      </td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.totalJobs}</td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>
+                        {item.completionRate}%
+                      </td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>
+                        {nullFmt(item.avgDaysWaiting, 1, "d")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
+          </section>
+        </>
       ) : null}
     </section>
-  );
-}
-
-function CheckIcon() {
-  return <span style={{ width: "14px", height: "14px", borderRadius: "50%", backgroundColor: "#10B981", display: "inline-block" }} />;
-}
-
-function MetricCard({ title, value, icon }: { title: string; value: string; icon: React.ReactNode }) {
-  return (
-    <div style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", padding: "14px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-        <p style={{ margin: 0, fontSize: "12px", color: "#737373" }}>{title}</p>
-        <span style={{ color: "#A3A3A3", lineHeight: 0 }}>{icon}</span>
-      </div>
-      <p style={{ margin: 0, fontSize: "28px", fontWeight: 600, color: "#171717", letterSpacing: "-0.02em" }}>{value}</p>
-    </div>
   );
 }
