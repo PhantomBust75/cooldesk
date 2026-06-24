@@ -37,6 +37,7 @@ type RequestOptions = {
   auth?: boolean;
   body?: unknown;
   headers?: Record<string, string>;
+  params?: Record<string, string | number | boolean | undefined | null>;
 };
 
 async function request<T>(
@@ -44,8 +45,16 @@ async function request<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { auth = true, body, headers = {} } = options;
+  const { auth = true, body, headers = {}, params } = options;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const queryString = params
+    ? new URLSearchParams(
+        Object.entries(params)
+          .filter(([, v]) => v !== undefined && v !== null)
+          .map(([k, v]) => [k, String(v)]),
+      ).toString()
+    : '';
+  const fullPath = queryString ? `${normalizedPath}?${queryString}` : normalizedPath;
 
   const requestHeaders: Record<string, string> = {
     "Content-Type": "application/json",
@@ -59,7 +68,7 @@ async function request<T>(
     }
   }
 
-  const response = await fetch(`${API_BASE_URL}${normalizedPath}`, {
+  const response = await fetch(`${API_BASE_URL}${fullPath}`, {
     method,
     headers: requestHeaders,
     body: body !== undefined ? JSON.stringify(body) : undefined,

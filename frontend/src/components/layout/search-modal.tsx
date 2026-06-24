@@ -1,51 +1,46 @@
 'use client';
 
-import { searchJobs, SearchJobResult } from '@/lib/api/search';
+import { searchJobs } from '@/lib/api/search';
+import { useQuery } from '@tanstack/react-query';
 import { Search, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  scheduled: { bg: '#DBEAFE', color: '#1E40AF' },
-  in_progress: { bg: '#D1FAE5', color: '#065F46' },
-  pending: { bg: '#F5F5F5', color: '#525252' },
-  needs_revisit: { bg: '#FEE2E2', color: '#991B1B' },
-  completed: { bg: '#F0FDF4', color: '#166534' },
-  cancelled: { bg: '#F5F5F5', color: '#737373' },
+const STATUS_COLORS: Record<string, { background: string; color: string }> = {
+  scheduled: { color: '#3B82F6', background: 'rgba(59,130,246,0.1)' },
+  in_progress: { color: '#10B981', background: 'rgba(16,185,129,0.1)' },
+  pending: { color: '#F59E0B', background: 'rgba(245,158,11,0.1)' },
+  needs_revisit: { color: '#EF4444', background: 'rgba(239,68,68,0.1)' },
+  completed: { color: '#10B981', background: 'rgba(16,185,129,0.1)' },
+  cancelled: { color: '#EF4444', background: 'rgba(239,68,68,0.1)' },
 };
 
 function getStatusColors(status: string) {
-  return STATUS_COLORS[status] ?? { bg: '#F5F5F5', color: '#525252' };
+  return STATUS_COLORS[status] ?? { color: '#737373', background: '#F5F5F5' };
 }
 
 export function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchJobResult[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
 
+  // Reset query when modal opens
   useEffect(() => {
     if (open) {
       setQuery('');
-      setResults([]);
-      setTimeout(() => inputRef.current?.focus(), 50);
+      setDebouncedQuery('');
     }
   }, [open]);
 
+  // Debounce query updates (300ms)
   useEffect(() => {
-    if (!query.trim()) { setResults([]); return; }
-    const timer = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const res = await searchJobs(query.trim());
-        setResults(res.jobs);
-      } catch { setResults([]); }
-      finally { setLoading(false); }
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query);
     }, 300);
     return () => clearTimeout(timer);
   }, [query]);
 
+  // Keyboard close
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose();
@@ -53,6 +48,15 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
     if (open) document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
+
+  const { data, isFetching } = useQuery({
+    queryKey: ['search', debouncedQuery],
+    queryFn: () => searchJobs(debouncedQuery),
+    enabled: debouncedQuery.trim().length > 0,
+    staleTime: 30_000,
+  });
+
+  const results = data?.jobs ?? [];
 
   if (!open) return null;
 
@@ -79,7 +83,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
           <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #E5E5E5', gap: '10px' }}>
             <Search size={16} strokeWidth={1.5} style={{ color: '#A3A3A3', flexShrink: 0 }} />
             <input
-              ref={inputRef}
+              autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search jobs, customers…"
@@ -92,9 +96,9 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
 
           {/* Results */}
           <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-            {loading ? (
+            {isFetching ? (
               <div style={{ padding: '16px', fontSize: '13px', color: '#737373' }}>Searching…</div>
-            ) : query.trim() && results.length === 0 ? (
+            ) : debouncedQuery.trim() && results.length === 0 ? (
               <div style={{ padding: '16px', fontSize: '13px', color: '#737373' }}>No results for &quot;{query}&quot;</div>
             ) : results.length > 0 ? (
               <div>
@@ -112,7 +116,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
                     >
                       <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#525252', flexShrink: 0 }}>{job.id}</span>
                       <span style={{ flex: 1, fontSize: '13px', color: '#171717', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.customerName}</span>
-                      <span style={{ flexShrink: 0, fontSize: '11px', fontWeight: 500, padding: '3px 8px', borderRadius: '9999px', backgroundColor: colors.bg, color: colors.color }}>
+                      <span style={{ flexShrink: 0, fontSize: '11px', fontWeight: 500, padding: '3px 8px', borderRadius: '9999px', backgroundColor: colors.background, color: colors.color }}>
                         {job.status.replace(/_/g, ' ')}
                       </span>
                     </button>
