@@ -17,7 +17,7 @@ describe('DashboardService Phase 07 owner dashboard', () => {
       })),
     };
 
-    const service = new DashboardService(db as never);
+    const service = new DashboardService(db as never, {} as never);
     await service.getOwnerDashboard({ brandId: 'brand-1', limit: 10 }, ctx);
 
     const brandCall = (db.query as jest.Mock).mock.calls.find((call: unknown[]) =>

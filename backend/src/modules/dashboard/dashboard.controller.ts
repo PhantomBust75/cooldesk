@@ -20,4 +20,10 @@ export class DashboardController {
   getOwnerDashboard(@Query() query: OwnerDashboardQueryDto, @Req() req: UserRequest) {
     return this.dashboardService.getOwnerDashboard(query, req.context);
   }
+
+  @Get('dashboard/metrics')
+  @Roles('owner', 'office_staff')
+  getDashboardMetrics(@Req() req: UserRequest) {
+    return this.dashboardService.getDashboardMetrics(req.context);
+  }
 }
