@@ -121,6 +121,10 @@ export async function createOfficeTechnician(input: {
   return apiClient.post<{ technicianId: string }>("/office/technicians", input);
 }
 
+export function toggleTechnicianActive(technicianId: string, isActive: boolean): Promise<{ ok: true }> {
+  return apiClient.patch<{ ok: true }>(`/office/technicians/${technicianId}`, { isActive });
+}
+
 export async function fetchOfficeBrands(): Promise<Array<{ id: string; name: string; colorHex?: string }>> {
   const rows = await apiClient.get<UnknownRecord[]>("/office/brands");
   return rows.map((row) => ({

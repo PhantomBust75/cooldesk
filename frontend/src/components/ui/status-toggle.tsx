@@ -2,27 +2,30 @@ interface StatusToggleProps {
   active: boolean;
   onToggle: () => void;
   disabled?: boolean;
+  loading?: boolean;
 }
 
-export function StatusToggle({ active, onToggle, disabled = false }: StatusToggleProps) {
+export function StatusToggle({ active, onToggle, disabled = false, loading = false }: StatusToggleProps) {
+  const isDisabled = disabled || loading;
   return (
     <button
       type="button"
       onClick={onToggle}
-      disabled={disabled}
+      disabled={isDisabled}
       style={{
         display: "inline-flex",
         alignItems: "center",
         gap: "6px",
         padding: "4px 10px",
         borderRadius: "9999px",
-        border: `1px solid ${active ? "#CCFBF1" : "#E5E5E5"}`,
-        backgroundColor: active ? "#F0FDFA" : "#F5F5F5",
-        color: active ? "#134E4A" : "#525252",
+        border: `1px solid ${active ? "#10B981" : "#E5E5E5"}`,
+        backgroundColor: active ? "rgba(16,185,129,0.10)" : "#F5F5F5",
+        color: active ? "#10B981" : "#737373",
         fontSize: "12px",
         fontWeight: 500,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.6 : 1,
+        cursor: isDisabled ? "not-allowed" : "pointer",
+        opacity: isDisabled ? 0.6 : 1,
+        transition: "opacity 120ms ease",
       }}
       aria-pressed={active}
       aria-label={active ? "Set inactive" : "Set active"}
@@ -32,7 +35,7 @@ export function StatusToggle({ active, onToggle, disabled = false }: StatusToggl
           width: "6px",
           height: "6px",
           borderRadius: "50%",
-          backgroundColor: active ? "#10B981" : "#A3A3A3",
+          backgroundColor: active ? "#10B981" : "#737373",
         }}
       />
       {active ? "Active" : "Inactive"}
