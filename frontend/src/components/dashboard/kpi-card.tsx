@@ -3,6 +3,7 @@ type KpiCardProps = {
   value: string;
   accent: string;
   trend?: number[];
+  change?: string;
 };
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -41,7 +42,7 @@ function Sparkline({ color, points }: { color: string; points: number[] }) {
   );
 }
 
-export function KpiCard({ title, value, accent, trend }: KpiCardProps) {
+export function KpiCard({ title, value, accent, trend, change: _change }: KpiCardProps) {
   const sparklinePoints = trend && trend.length > 0 ? trend : [36, 28, 31, 22, 18, 20, 14];
   return (
     <div style={{ backgroundColor: '#fff', border: '1px solid #E5E5E5', borderRadius: '12px', overflow: 'hidden' }}>

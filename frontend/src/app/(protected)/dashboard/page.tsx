@@ -12,8 +12,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useMobileBreakpoint } from '@/hooks/use-mobile-breakpoint';
 
 const TAG_STYLES: Record<string, { bg: string; color: string; label: string }> = {
-  chronic: { bg: '#FEE2E2', color: '#991B1B', label: 'Chronic' },
-  frequent: { bg: '#FEF3C7', color: '#92400E', label: 'Frequent' },
+  chronic: { bg: 'rgba(239,68,68,0.1)', color: '#EF4444', label: 'Chronic' },
+  frequent: { bg: 'rgba(245,158,11,0.1)', color: '#F59E0B', label: 'Frequent' },
   repeat: { bg: '#F5F5F5', color: '#525252', label: 'Repeat' },
 };
 
@@ -84,7 +84,7 @@ export default function DashboardPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '14px', fontWeight: 500, color: '#171717' }}>Needs revisit</span>
                 {needsRevisitJobs.length > 0 && (
-                  <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '9999px', backgroundColor: '#FEE2E2', color: '#991B1B' }}>{needsRevisitJobs.length}</span>
+                  <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '9999px', backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>{needsRevisitJobs.length}</span>
                 )}
               </div>
               <span style={{ fontSize: '12px', color: '#737373' }}>Chronic first</span>
@@ -112,13 +112,13 @@ export default function DashboardPage() {
                       >
                         <td style={{ padding: '12px 16px', fontSize: '13px', color: '#171717', fontWeight: 500 }}>{job.customerName}</td>
                         <td style={{ padding: '12px 16px', fontSize: '13px', color: '#404040' }}>{job.brandName ?? '—'}</td>
-                        <td style={{ padding: '12px 16px', fontSize: '13px', color: '#404040' }}>{job.assignedTechnicianName ?? <em style={{ color: '#A3A3A3', fontStyle: 'italic' }}>Unassigned</em>}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '13px', color: '#404040' }}>{job.assignedTechnicianName ?? <em style={{ color: '#737373', fontStyle: 'italic' }}>Unassigned</em>}</td>
                         <td style={{ padding: '12px 16px', fontSize: '12px', color: '#737373' }}>{new Date(job.createdAt).toLocaleDateString()}</td>
                         <td style={{ padding: '12px 16px', fontSize: '13px', color: '#404040' }}>—</td>
                         <td style={{ padding: '12px 16px' }}>
                           {job.source === 'via_dealer' && <JobTag type="repeat" />}
                         </td>
-                        <td style={{ padding: '12px 16px' }}><ChevronRight size={14} strokeWidth={1.5} color="#A3A3A3" /></td>
+                        <td style={{ padding: '12px 16px' }}><ChevronRight size={14} strokeWidth={1.5} color="#737373" /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -163,14 +163,14 @@ export default function DashboardPage() {
                       >
                         <td style={{ padding: '12px 16px', fontSize: '13px', color: '#171717', fontWeight: 500 }}>{job.customerName}</td>
                         <td style={{ padding: '12px 16px', fontSize: '13px', color: '#404040' }}>{job.brandName ?? '—'}</td>
-                        <td style={{ padding: '12px 16px', fontSize: '13px', color: job.assignedTechnicianName ? '#404040' : '#A3A3A3', fontStyle: job.assignedTechnicianName ? 'normal' : 'italic' }}>
+                        <td style={{ padding: '12px 16px', fontSize: '13px', color: job.assignedTechnicianName ? '#404040' : '#737373', fontStyle: job.assignedTechnicianName ? 'normal' : 'italic' }}>
                           {job.assignedTechnicianName ?? 'Unassigned'}
                         </td>
                         <td style={{ padding: '12px 16px', fontSize: '12px', color: '#737373' }}>
                           {job.scheduledAt ? new Date(job.scheduledAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                         </td>
                         <td style={{ padding: '12px 16px' }}><StatusChip status={job.status} /></td>
-                        <td style={{ padding: '12px 16px' }}><ChevronRight size={14} strokeWidth={1.5} color="#A3A3A3" /></td>
+                        <td style={{ padding: '12px 16px' }}><ChevronRight size={14} strokeWidth={1.5} color="#737373" /></td>
                       </tr>
                     ))}
                   </tbody>
