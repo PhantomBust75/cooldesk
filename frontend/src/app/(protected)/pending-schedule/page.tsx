@@ -68,20 +68,10 @@ function BatchModal({ jobs, technicians, onClose, onSuccess }: BatchModalProps) 
   const [scheduledAt, setScheduledAt] = useState(initialScheduleAt());
   const [technicianId, setTechnicianId] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationFn: (input: BatchScheduleInput) => batchScheduleJobs(input),
-    onSuccess: (result) => {
-      const errCount = result.errors?.length ?? 0;
-      if (errCount > 0) {
-        setSuccessMsg(
-          `Scheduled ${result.scheduled} job(s). ${errCount} error(s) occurred.`,
-        );
-      } else {
-        setSuccessMsg(`Successfully scheduled ${result.scheduled} job(s).`);
-      }
-      setError(null);
+    onSuccess: () => {
       onSuccess();
     },
     onError: (err) => {
@@ -139,7 +129,7 @@ function BatchModal({ jobs, technicians, onClose, onSuccess }: BatchModalProps) 
     >
       <div
         style={{
-          backgroundColor: "#fff",
+          backgroundColor: "#FAFAFA",
           borderRadius: "14px",
           border: "1px solid #E5E5E5",
           padding: "28px",
@@ -224,7 +214,7 @@ function BatchModal({ jobs, technicians, onClose, onSuccess }: BatchModalProps) 
                   gap: "10px",
                   padding: "10px 14px",
                   borderBottom: "1px solid #F5F5F5",
-                  backgroundColor: selectedIds.includes(job.id) ? "#FAFAFA" : "#fff",
+                  backgroundColor: selectedIds.includes(job.id) ? "#FAFAFA" : "#FAFAFA",
                 }}
               >
                 <input
@@ -290,7 +280,7 @@ function BatchModal({ jobs, technicians, onClose, onSuccess }: BatchModalProps) 
                   left: "10px",
                   top: "50%",
                   transform: "translateY(-50%)",
-                  color: "#A3A3A3",
+                  color: "#737373",
                   pointerEvents: "none",
                 }}
               />
@@ -348,29 +338,14 @@ function BatchModal({ jobs, technicians, onClose, onSuccess }: BatchModalProps) 
             <div
               style={{
                 borderRadius: "8px",
-                border: "1px solid #FECACA",
-                backgroundColor: "#FEF2F2",
+                border: "1px solid rgba(239,68,68,0.2)",
+                backgroundColor: "rgba(239,68,68,0.08)",
                 padding: "10px 12px",
                 color: "#EF4444",
                 fontSize: "13px",
               }}
             >
               {error}
-            </div>
-          ) : null}
-
-          {successMsg ? (
-            <div
-              style={{
-                borderRadius: "8px",
-                border: "1px solid #D1FAE5",
-                backgroundColor: "#F0FDF4",
-                padding: "10px 12px",
-                color: "#10B981",
-                fontSize: "13px",
-              }}
-            >
-              {successMsg}
             </div>
           ) : null}
 
@@ -414,15 +389,10 @@ function InlineForm({ job, technicians, onClose, onSuccess }: InlineFormProps) {
   const [scheduledAt, setScheduledAt] = useState(initialScheduleAt());
   const [technicianId, setTechnicianId] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationFn: (payload: SchedulePendingJobInput) => schedulePendingJob(job.id, payload),
-    onSuccess: (result) => {
-      const conflictCount = result.conflictJobIds?.length ?? 0;
-      const note = conflictCount > 0 ? ` (${conflictCount} conflict ref(s) ack'd)` : "";
-      setSuccessMsg(`Job updated to ${result.status}.${note}`);
-      setError(null);
+    onSuccess: () => {
       onSuccess();
     },
     onError: (err) => {
@@ -454,7 +424,7 @@ function InlineForm({ job, technicians, onClose, onSuccess }: InlineFormProps) {
   return (
     <tr style={{ backgroundColor: "#FAFAFA" }}>
       <td
-        colSpan={9}
+        colSpan={8}
         style={{ padding: "14px 16px", borderBottom: "1px solid #E5E5E5" }}
       >
         <div
@@ -548,7 +518,7 @@ function InlineForm({ job, technicians, onClose, onSuccess }: InlineFormProps) {
               padding: "7px 12px",
               border: "1px solid #E5E5E5",
               borderRadius: "7px",
-              backgroundColor: "#fff",
+              backgroundColor: "#FAFAFA",
               color: "#525252",
               fontSize: "13px",
               cursor: "pointer",
@@ -559,9 +529,6 @@ function InlineForm({ job, technicians, onClose, onSuccess }: InlineFormProps) {
 
           {error ? (
             <span style={{ fontSize: "12px", color: "#EF4444" }}>{error}</span>
-          ) : null}
-          {successMsg ? (
-            <span style={{ fontSize: "12px", color: "#10B981" }}>{successMsg}</span>
           ) : null}
         </div>
       </td>
@@ -679,7 +646,7 @@ export default function PendingSchedulePage() {
       {/* Table card */}
       <div
         style={{
-          backgroundColor: "#fff",
+          backgroundColor: "#FAFAFA",
           borderRadius: "12px",
           border: "1px solid #E5E5E5",
           overflow: "hidden",
@@ -733,7 +700,7 @@ export default function PendingSchedulePage() {
                       key={job.id}
                       style={{
                         borderBottom: isExpanded ? "none" : "1px solid #F5F5F5",
-                        backgroundColor: isExpanded ? "#F5F5F5" : "#fff",
+                        backgroundColor: isExpanded ? "#F5F5F5" : "#FAFAFA",
                       }}
                     >
                       {/* JOB ID */}
@@ -837,7 +804,7 @@ export default function PendingSchedulePage() {
                             padding: "6px 12px",
                             borderRadius: "7px",
                             border: `1px solid ${isExpanded ? "#0A0A0A" : "#E5E5E5"}`,
-                            backgroundColor: isExpanded ? "#0A0A0A" : "#fff",
+                            backgroundColor: isExpanded ? "#0A0A0A" : "#FAFAFA",
                             color: isExpanded ? "#FAFAFA" : "#404040",
                             cursor: "pointer",
                             fontSize: "12px",

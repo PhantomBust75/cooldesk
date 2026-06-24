@@ -7,7 +7,7 @@ export type BatchScheduleInput = {
 };
 
 export type BatchScheduleResult = {
-  ok: boolean;
+  ok: true;
   scheduled: number;
   errors: Array<{ jobId: string; reason: string }>;
 };
