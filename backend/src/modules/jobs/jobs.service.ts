@@ -3972,6 +3972,7 @@ export class JobsService {
         );
         scheduled++;
       } catch (err) {
+        console.error(`[batchSchedule] jobId=${jobId}`, err);
         errors.push({ jobId, reason: 'internal error' });
       }
     }

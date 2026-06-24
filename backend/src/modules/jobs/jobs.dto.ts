@@ -1,4 +1,5 @@
 import {
+  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsEnum,
@@ -637,6 +638,7 @@ export class SearchQueryDto {
 
 export class BatchScheduleDto {
   @IsArray()
+  @ArrayMinSize(1)
   @IsString({ each: true })
   jobIds!: string[];
 
