@@ -158,9 +158,9 @@ function PaymentMethodsSection() {
                 <td style={{ padding: "12px 0" }}>
                   <span style={{
                     borderRadius: "9999px",
-                    border: `1px solid ${method.isActive ? "#CCFBF1" : "#E5E5E5"}`,
-                    backgroundColor: method.isActive ? "#F0FDFA" : "#F5F5F5",
-                    color: method.isActive ? "#134E4A" : "#525252",
+                    border: `1px solid ${method.isActive ? "rgba(16,185,129,0.3)" : "#E5E5E5"}`,
+                    backgroundColor: method.isActive ? "rgba(16,185,129,0.08)" : "#F5F5F5",
+                    color: method.isActive ? "#10B981" : "#525252",
                     padding: "3px 9px",
                     fontSize: "12px",
                     display: "inline-flex",
@@ -408,8 +408,8 @@ function ServiceItemsSection() {
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span style={{
                       borderRadius: "6px",
-                      backgroundColor: item.pricingType === "variable" ? "#DBEAFE" : "#F5F5F5",
-                      color: item.pricingType === "variable" ? "#1E40AF" : "#525252",
+                      backgroundColor: item.pricingType === "variable" ? "rgba(59,130,246,0.12)" : "#F5F5F5",
+                      color: item.pricingType === "variable" ? "#3B82F6" : "#525252",
                       padding: "3px 8px",
                       fontSize: "11px",
                       fontWeight: 600,
@@ -436,7 +436,7 @@ function ServiceItemsSection() {
                     <button
                       type="button"
                       onClick={() => { if (confirm("Delete this service item?")) deleteMutation.mutate(item.id); }}
-                      style={{ borderRadius: "7px", border: "1px solid #FECACA", backgroundColor: "#FEF2F2", color: "#EF4444", padding: "6px 8px", fontSize: "12px", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
+                      style={{ borderRadius: "7px", border: "1px solid rgba(239,68,68,0.3)", backgroundColor: "rgba(239,68,68,0.08)", color: "#EF4444", padding: "6px 8px", fontSize: "12px", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
                       title="Delete"
                     >
                       <Trash2 size={13} strokeWidth={1.5} />
