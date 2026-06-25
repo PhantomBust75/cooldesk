@@ -492,7 +492,7 @@ export function JobsList() {
             alignItems: "center",
             gap: "6px",
             fontSize: "13px",
-            color: "#525252",
+            color: "#737373",
             cursor: "pointer",
             userSelect: "none",
           }}
