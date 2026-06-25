@@ -17,7 +17,7 @@ import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import { fetchPaymentMethods, fetchSystemConfig } from "@/lib/api/operations";
 import { ApiError } from "@/lib/api/client";
 import { getAllowedNextStatuses } from "@/lib/jobs-state-machine";
-import { BrandSwatch, JobTypeChip, SourceChip, TagChip } from "@/components/ui/job-type-chip";
+import { TagChip } from "@/components/ui/job-type-chip";
 import { Modal } from "@/components/ui/modal";
 import { StatusChip } from "@/components/ui/status-chip";
 import {
@@ -70,7 +70,6 @@ export function JobDetail({ jobId }: { jobId: string }) {
   const [reassignOpen, setReassignOpen] = useState(false);
   const [reassignTechId, setReassignTechId] = useState("");
   const [advanceStatusOpen, setAdvanceStatusOpen] = useState(false);
-  const [advanceToStatus, setAdvanceToStatus] = useState("");
 
   const role = session?.user.role;
   const isOwner = role === "owner";
