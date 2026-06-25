@@ -497,7 +497,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
               <div style={{ display: "flex", gap: "8px" }}>
                 <button
                   type="button"
-                  onClick={() => { transitionMutation.mutate(); setAdvanceStatusOpen(false); }}
+                  onClick={() => { transitionMutation.mutate(undefined); setAdvanceStatusOpen(false); }}
                   disabled={!toStatus || transitionMutation.isPending}
                   style={{ flex: 1, border: "none", borderRadius: "8px", backgroundColor: "#0A0A0A", color: "#fff", padding: "9px", fontSize: "13px", cursor: "pointer", opacity: !toStatus || transitionMutation.isPending ? 0.5 : 1 }}
                 >
