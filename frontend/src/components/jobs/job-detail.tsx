@@ -9,12 +9,11 @@ import {
   reassignTechnician,
   rollbackJobStatus,
   transitionJobStatus,
-  updateJobPayment,
 } from "@/lib/api/jobs";
 import { fetchOfficeTechnicians } from "@/lib/api/office";
 import { useAuth } from "@/contexts/auth-context";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
-import { fetchPaymentMethods, fetchSystemConfig } from "@/lib/api/operations";
+import { fetchSystemConfig } from "@/lib/api/operations";
 import { ApiError } from "@/lib/api/client";
 import { getAllowedNextStatuses } from "@/lib/jobs-state-machine";
 import { Modal } from "@/components/ui/modal";
@@ -29,7 +28,7 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const TERMINAL_OR_CLOSED = new Set(["completed", "resolved", "resolved_on_revisit", "cancelled"]);
 const OWNER_STATUSES = [
@@ -60,8 +59,6 @@ export function JobDetail({ jobId }: { jobId: string }) {
   const [overrideStatus, setOverrideStatus] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
   const [paymentDecision, setPaymentDecision] = useState<"retain" | "void">("retain");
-  const [paymentMethodId, setPaymentMethodId] = useState("");
-  const [paymentAmount, setPaymentAmount] = useState("");
 
   const [activeTab, setActiveTab] = useState<"details" | "timeline" | "payment" | "review">("details");
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -87,11 +84,6 @@ export function JobDetail({ jobId }: { jobId: string }) {
   const revisitsQuery = useQuery({
     queryKey: ["job-revisits", jobId],
     queryFn: () => fetchJobRevisits(jobId),
-  });
-
-  const paymentMethodsQuery = useQuery({
-    queryKey: ["payment-methods"],
-    queryFn: fetchPaymentMethods,
   });
 
   const configQuery = useQuery({
@@ -125,19 +117,6 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
     return () => window.clearInterval(timer);
   }, [undoSecondsLeft]);
-
-  useEffect(() => {
-    const payment = detailQuery.data?.payment;
-    startTransition(() => {
-      if (!payment) {
-        setPaymentMethodId("");
-        setPaymentAmount("");
-        return;
-      }
-      setPaymentMethodId(payment.paymentMethodId ?? "");
-      setPaymentAmount(String(payment.amount));
-    });
-  }, [detailQuery.data?.payment]);
 
   const transitionMutation = useMutation({
     mutationFn: async (statusOverride?: string) => {
@@ -206,25 +185,6 @@ export function JobDetail({ jobId }: { jobId: string }) {
       setOverrideStatus("");
       setOverrideReason("");
       setPaymentDecision("retain");
-    },
-  });
-
-  const paymentMutation = useMutation({
-    mutationFn: () => {
-      const input: { paymentMethodId?: string; amount?: number } = {};
-      if (isOfficeStaff && paymentMethodId) {
-        input.paymentMethodId = paymentMethodId;
-      }
-      if (isOwner && paymentAmount.trim().length > 0) {
-        input.amount = Number(paymentAmount);
-      }
-      return updateJobPayment(jobId, input);
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["job-detail", jobId] }),
-        queryClient.invalidateQueries({ queryKey: ["job-timeline", jobId] }),
-      ]);
     },
   });
 
@@ -332,7 +292,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
           {revisitCount > 0 ? <span>·</span> : null}
           {revisitCount > 0 ? <span>Revisit #{revisitCount}</span> : null}
           {detail.tags.map((tag) => (
-            <span key={tag} style={{ color: tag === "chronic" ? "#9F1239" : tag === "frequent" ? "#854D0E" : "#1E293B", fontWeight: 500 }}>
+            <span key={tag} style={{ color: tag === "chronic" ? "#9F1239" : tag === "frequent" ? "#737373" : "#525252", fontWeight: 500 }}>
               · {tag.charAt(0).toUpperCase() + tag.slice(1)}
             </span>
           ))}
@@ -464,7 +424,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
                   return (
                     <div key={event.id} style={{ display: "grid", gridTemplateColumns: "16px 1fr", gap: "12px", alignItems: "start" }}>
-                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: event.actorName === "System" ? "#6B7280" : "#0A0A0A", marginTop: "4px", justifySelf: "center" }} />
+                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: event.actorName === "System" ? "#737373" : "#0A0A0A", marginTop: "4px", justifySelf: "center" }} />
                       <div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "4px" }}>
                           <span style={{ fontSize: "13px", fontWeight: 600, color: "#171717" }}>
