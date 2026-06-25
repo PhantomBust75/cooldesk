@@ -6,29 +6,28 @@ import {
   fetchJobRevisits,
   fetchJobTimeline,
   ownerOverrideJobStatus,
+  reassignTechnician,
   rollbackJobStatus,
   transitionJobStatus,
   updateJobPayment,
 } from "@/lib/api/jobs";
+import { fetchOfficeTechnicians } from "@/lib/api/office";
 import { useAuth } from "@/contexts/auth-context";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import { fetchPaymentMethods, fetchSystemConfig } from "@/lib/api/operations";
 import { ApiError } from "@/lib/api/client";
 import { getAllowedNextStatuses } from "@/lib/jobs-state-machine";
-import { BrandSwatch, JobTypeChip, SourceChip } from "@/components/ui/job-type-chip";
+import { BrandSwatch, JobTypeChip, SourceChip, TagChip } from "@/components/ui/job-type-chip";
 import { Modal } from "@/components/ui/modal";
 import { StatusChip } from "@/components/ui/status-chip";
 import {
   ArrowLeft,
-  CalendarClock,
-  ClipboardList,
-  MapPin,
-  Phone,
+  ChevronDown,
+  ChevronUp,
+  Copy,
   RotateCcw,
   ShieldAlert,
   UserRound,
-  Wallet,
-  Wrench,
 } from "lucide-react";
 import Link from "next/link";
 import { startTransition, useEffect, useMemo, useState } from "react";
@@ -51,22 +50,6 @@ const OWNER_STATUSES = [
   "cancellation_requested",
 ];
 
-function prettyJson(value: unknown): string {
-  if (value === null || value === undefined) {
-    return "-";
-  }
-
-  if (typeof value === "string") {
-    return value;
-  }
-
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
-}
-
 export function JobDetail({ jobId }: { jobId: string }) {
   const { session } = useAuth();
   const isMobile = useMobileBreakpoint();
@@ -80,7 +63,14 @@ export function JobDetail({ jobId }: { jobId: string }) {
   const [paymentDecision, setPaymentDecision] = useState<"retain" | "void">("retain");
   const [paymentMethodId, setPaymentMethodId] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
-  const [expandedRevisitId, setExpandedRevisitId] = useState<string | null>(null);
+
+  const [activeTab, setActiveTab] = useState<"details" | "timeline" | "payment" | "review">("details");
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
+  const [reassignOpen, setReassignOpen] = useState(false);
+  const [reassignTechId, setReassignTechId] = useState("");
+  const [advanceStatusOpen, setAdvanceStatusOpen] = useState(false);
+  const [advanceToStatus, setAdvanceToStatus] = useState("");
 
   const role = session?.user.role;
   const isOwner = role === "owner";
@@ -109,6 +99,11 @@ export function JobDetail({ jobId }: { jobId: string }) {
   const configQuery = useQuery({
     queryKey: ["system-config"],
     queryFn: fetchSystemConfig,
+  });
+
+  const techniciansQuery = useQuery({
+    queryKey: ["office-technicians"],
+    queryFn: fetchOfficeTechnicians,
   });
 
   const undoWindowSeconds = useMemo(() => {
@@ -234,6 +229,19 @@ export function JobDetail({ jobId }: { jobId: string }) {
     },
   });
 
+  const reassignMutation = useMutation({
+    mutationFn: () => reassignTechnician(jobId, reassignTechId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["jobs"] }),
+        queryClient.invalidateQueries({ queryKey: ["job-detail", jobId] }),
+        queryClient.invalidateQueries({ queryKey: ["job-timeline", jobId] }),
+      ]);
+      setReassignOpen(false);
+      setReassignTechId("");
+    },
+  });
+
   const transitionError = useMemo(() => {
     if (!transitionMutation.error) {
       return "";
@@ -256,334 +264,507 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
   const detail = detailQuery.data;
   const nextStatuses = getAllowedNextStatuses(detail);
-  const isTransitionLocked = nextStatuses.length === 0;
   const canRollbackOneStep = isOfficeStaff && !TERMINAL_OR_CLOSED.has(detail.status);
   const hasPayment = Boolean(detail.payment);
   const isPaidCompletion = detail.status === "completed" || detail.status === "resolved" || detail.status === "resolved_on_revisit";
   const requiresPaymentDecision = hasPayment && isPaidCompletion;
+  const revisitCount = revisitsQuery.data?.length ?? 0;
+
+  // Advance Status logic
+  const singleNext = nextStatuses.length === 1 ? nextStatuses[0] : null;
+
+  function handleAdvanceStatus() {
+    if (singleNext) {
+      setToStatus(singleNext);
+      transitionMutation.mutate();
+    } else {
+      setAdvanceStatusOpen(true);
+    }
+  }
 
   return (
-    <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "1160px" }}>
-      <header style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", padding: "18px", marginBottom: "14px" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-          <div>
-            <Link href="/jobs" style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#525252", textDecoration: "none", marginBottom: "8px" }}>
-              <ArrowLeft size={12} strokeWidth={1.5} /> Back to jobs
-            </Link>
-            <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 600, color: "#171717" }}>Job #{detail.id}</h2>
-            <div style={{ marginTop: "8px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-              <StatusChip status={detail.status} />
-              <JobTypeChip type={detail.type} />
-              <SourceChip source={detail.source} />
-              <BrandSwatch name={detail.brandName ?? "Unbranded"} colorHex={null} />
-            </div>
-          </div>
-          <div style={{ fontSize: "12px", color: "#737373", borderRadius: "9999px", border: "1px solid #E5E5E5", padding: "4px 9px" }}>Version: {detail.version}</div>
+    <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "1200px" }}>
+
+      {/* ── Breadcrumb ─────────────────────────────────────── */}
+      <div style={{ marginBottom: "16px" }}>
+        <Link
+          href="/jobs"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+            fontSize: "12px",
+            color: "#737373",
+            textDecoration: "none",
+          }}
+        >
+          <ArrowLeft size={12} strokeWidth={1.5} /> All jobs
+        </Link>
+        <span style={{ fontSize: "12px", color: "#737373" }}> / {detail.id.slice(0, 8)}</span>
+      </div>
+
+      {/* ── Header ─────────────────────────────────────────── */}
+      <div style={{ marginBottom: "20px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+          <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 700, color: "#0A0A0A", letterSpacing: "-0.02em" }}>
+            {detail.id.slice(0, 8).toUpperCase()}
+          </h1>
+          <button
+            type="button"
+            title="Copy job ID"
+            onClick={() => navigator.clipboard.writeText(detail.id)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "2px",
+              color: "#A3A3A3",
+              display: "inline-flex",
+              alignItems: "center",
+            }}
+          >
+            <Copy size={14} strokeWidth={1.5} />
+          </button>
+          <StatusChip status={detail.status} />
         </div>
-      </header>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", fontSize: "13px", color: "#525252" }}>
+          {detail.brandName ? <span>{detail.brandName}</span> : null}
+          {detail.brandName ? <span>·</span> : null}
+          <span>{detail.type === "installation" ? "Installation" : "Complaint"}</span>
+          {revisitCount > 0 ? <span>·</span> : null}
+          {revisitCount > 0 ? <span>Revisit #{revisitCount}</span> : null}
+          {detail.tags.map((tag) => (
+            <span key={tag} style={{ color: tag === "chronic" ? "#9F1239" : tag === "frequent" ? "#854D0E" : "#1E293B", fontWeight: 500 }}>
+              · {tag.charAt(0).toUpperCase() + tag.slice(1)}
+            </span>
+          ))}
+        </div>
+      </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: "14px" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          <article style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", padding: "16px" }}>
-            <h3 style={{ margin: "0 0 12px", fontSize: "13px", fontWeight: 600, color: "#171717", display: "inline-flex", alignItems: "center", gap: "6px" }}><UserRound size={13} strokeWidth={1.5} /> Customer</h3>
-            <dl style={{ margin: 0, display: "grid", gap: "10px", fontSize: "13px" }}>
-              <div><dt style={{ color: "#737373", marginBottom: "2px" }}>Name</dt><dd style={{ color: "#171717", margin: 0 }}>{detail.customerName}</dd></div>
-              <div><dt style={{ color: "#737373", marginBottom: "2px", display: "inline-flex", alignItems: "center", gap: "4px" }}><Phone size={11} strokeWidth={1.5} /> Phone</dt><dd style={{ color: "#171717", margin: 0 }}>{detail.phone}</dd></div>
-              <div><dt style={{ color: "#737373", marginBottom: "2px", display: "inline-flex", alignItems: "center", gap: "4px" }}><MapPin size={11} strokeWidth={1.5} /> Address</dt><dd style={{ color: "#171717", margin: 0 }}>{detail.address}</dd></div>
-            </dl>
-          </article>
+      {/* ── Main grid ──────────────────────────────────────── */}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 280px", gap: "24px", alignItems: "start" }}>
 
-          <article style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", padding: "16px" }}>
-            <h3 style={{ margin: "0 0 12px", fontSize: "13px", fontWeight: 600, color: "#171717", display: "inline-flex", alignItems: "center", gap: "6px" }}><Wrench size={13} strokeWidth={1.5} /> Assignment</h3>
-            <dl style={{ margin: 0, display: "grid", gap: "10px", fontSize: "13px" }}>
-              <div><dt style={{ color: "#737373", marginBottom: "2px" }}>Technician</dt><dd style={{ color: "#171717", margin: 0 }}>{detail.assignedTechnicianName ?? "Unassigned"}</dd></div>
-              <div><dt style={{ color: "#737373", marginBottom: "2px" }}>Brand</dt><dd style={{ color: "#171717", margin: 0 }}>{detail.brandName ?? "-"}</dd></div>
-              <div><dt style={{ color: "#737373", marginBottom: "2px" }}>Source</dt><dd style={{ color: "#171717", margin: 0 }}>{detail.source}</dd></div>
-              <div><dt style={{ color: "#737373", marginBottom: "2px", display: "inline-flex", alignItems: "center", gap: "4px" }}><CalendarClock size={11} strokeWidth={1.5} /> Scheduled</dt><dd style={{ color: "#171717", margin: 0 }}>{detail.scheduledAt ? new Date(detail.scheduledAt).toLocaleString() : "-"}</dd></div>
-            </dl>
-          </article>
-
-          <article style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", padding: "16px" }}>
-            <h3 style={{ margin: "0 0 10px", fontSize: "13px", fontWeight: 600, color: "#171717", display: "inline-flex", alignItems: "center", gap: "6px" }}><ClipboardList size={13} strokeWidth={1.5} /> Job notes</h3>
-            <p style={{ margin: 0, fontSize: "13px", color: "#404040", lineHeight: 1.6 }}>
-              {detail.type === "complaint"
-                ? detail.issueDescription || "No issue description available."
-                : detail.installationNotes || "No installation notes available."}
-            </p>
-          </article>
-
-          <article style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", padding: "16px" }}>
-            <h3 style={{ margin: "0 0 12px", fontSize: "13px", fontWeight: 600, color: "#171717" }}>Status transition</h3>
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr auto", gap: "10px", alignItems: "end" }}>
-              <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "12px", color: "#737373" }}>
-                Next status
-                <select
-                  value={toStatus}
-                  onChange={(event) => setToStatus(event.target.value)}
-                  disabled={isTransitionLocked}
-                  style={{ borderRadius: "8px", border: "1px solid #E5E5E5", padding: "8px 10px", fontSize: "13px", color: "#171717", backgroundColor: isTransitionLocked ? "#FAFAFA" : "#fff" }}
-                >
-                  <option value="">Select status</option>
-                  {nextStatuses.map((status) => (
-                    <option key={status} value={status}>{status}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "12px", color: "#737373" }}>
-                Reason (optional)
-                <input
-                  value={reason}
-                  onChange={(event) => setReason(event.target.value)}
-                  placeholder="Enter reason for timeline/audit"
-                  disabled={isTransitionLocked}
-                  style={{ borderRadius: "8px", border: "1px solid #E5E5E5", padding: "8px 10px", fontSize: "13px", color: "#171717", backgroundColor: isTransitionLocked ? "#FAFAFA" : "#fff" }}
-                />
-              </label>
-
+        {/* ── Left column: tabs + content ──────────────────── */}
+        <div>
+          {/* Tab bar */}
+          <div style={{ display: "flex", gap: "24px", borderBottom: "1px solid #E5E5E5", marginBottom: "24px" }}>
+            {(["details", "timeline", "payment", "review"] as const).map((tab) => (
               <button
+                key={tab}
                 type="button"
-                onClick={() => transitionMutation.mutate()}
-                disabled={isTransitionLocked || !toStatus || transitionMutation.isPending}
-                style={{ borderRadius: "8px", border: "none", backgroundColor: "#0A0A0A", color: "#fff", padding: "9px 13px", fontSize: "13px", cursor: "pointer", opacity: isTransitionLocked || !toStatus || transitionMutation.isPending ? 0.55 : 1 }}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  borderBottom: activeTab === tab ? "2px solid #0A0A0A" : "2px solid transparent",
+                  padding: "10px 0",
+                  marginBottom: "-1px",
+                  fontSize: "14px",
+                  fontWeight: activeTab === tab ? 600 : 400,
+                  color: activeTab === tab ? "#171717" : "#737373",
+                  cursor: "pointer",
+                  textTransform: "capitalize",
+                }}
               >
-                {transitionMutation.isPending ? "Updating..." : "Update status"}
+                {tab}
               </button>
-            </div>
-            {isTransitionLocked ? <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#737373" }}>No forward transitions available from the current status.</p> : null}
-            {transitionError ? <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#991B1B" }}>{transitionError}</p> : null}
+            ))}
+          </div>
 
-            {undoSecondsLeft > 0 ? (
-              <div style={{ marginTop: "10px", borderRadius: "8px", border: "1px solid #DCFCE7", backgroundColor: "#F0FDF4", padding: "10px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "12px", color: "#166534" }}>Undo available for {undoSecondsLeft}s</span>
-                  <button
-                    type="button"
-                    onClick={() => rollbackMutation.mutate({ reason: "Undo transition" })}
-                    disabled={rollbackMutation.isPending}
-                    style={{ border: "1px solid #BBF7D0", borderRadius: "6px", backgroundColor: "#fff", color: "#166534", fontSize: "12px", padding: "4px 8px", cursor: "pointer" }}
-                  >
-                    {rollbackMutation.isPending ? "Undoing..." : "Undo"}
-                  </button>
+          {/* Details tab */}
+          {activeTab === "details" ? (
+            <div>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "32px", marginBottom: "24px" }}>
+                {/* Customer */}
+                <div>
+                  <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: 600, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>Customer</p>
+                  <div style={{ display: "grid", gap: "12px" }}>
+                    <div>
+                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#A3A3A3" }}>Name</p>
+                      <p style={{ margin: 0, fontSize: "13px", color: "#171717" }}>{detail.customerName}</p>
+                    </div>
+                    <div>
+                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#A3A3A3" }}>Phone</p>
+                      <p style={{ margin: 0, fontSize: "13px", color: "#171717" }}>{detail.phone}</p>
+                    </div>
+                    <div>
+                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#A3A3A3" }}>Address</p>
+                      <p style={{ margin: 0, fontSize: "13px", color: "#171717" }}>{detail.address}</p>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ height: "4px", borderRadius: "9999px", backgroundColor: "#DCFCE7", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${(undoSecondsLeft / Math.max(1, undoWindowSeconds)) * 100}%`, backgroundColor: "#22C55E", transition: "width 1s linear" }} />
+                {/* Schedule */}
+                <div>
+                  <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: 600, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>Schedule</p>
+                  <div style={{ display: "grid", gap: "12px" }}>
+                    <div>
+                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#A3A3A3" }}>Technician</p>
+                      <p style={{ margin: 0, fontSize: "13px", color: detail.assignedTechnicianName ? "#171717" : "#737373", fontStyle: detail.assignedTechnicianName ? "normal" : "italic" }}>
+                        {detail.assignedTechnicianName ?? "Unassigned"}
+                      </p>
+                    </div>
+                    <div>
+                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#A3A3A3" }}>Scheduled</p>
+                      <p style={{ margin: 0, fontSize: "13px", color: "#171717" }}>
+                        {detail.scheduledAt ? new Date(detail.scheduledAt).toLocaleString([], { weekday: "short", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            ) : null}
 
-            {(canRollbackOneStep || isOwner) ? (
-              <div style={{ marginTop: "12px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              {/* Show technical details */}
+              <button
+                type="button"
+                onClick={() => setShowTechnicalDetails((v) => !v)}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "13px", color: "#737373", padding: 0, display: "inline-flex", alignItems: "center", gap: "4px" }}
+              >
+                {showTechnicalDetails ? <ChevronUp size={13} strokeWidth={1.5} /> : <ChevronDown size={13} strokeWidth={1.5} />}
+                {showTechnicalDetails ? "Hide" : "Show"} technical details
+              </button>
+
+              {showTechnicalDetails ? (
+                <div style={{ marginTop: "12px", display: "grid", gap: "10px", padding: "16px", borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#FAFAFA" }}>
+                  <div>
+                    <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#A3A3A3", textTransform: "uppercase", letterSpacing: "0.05em" }}>Source</p>
+                    <p style={{ margin: 0, fontSize: "13px", color: "#525252" }}>{detail.source === "via_dealer" ? `Via dealer${detail.dealerName ? ` — ${detail.dealerName}` : ""}` : "Direct"}</p>
+                  </div>
+                  <div>
+                    <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#A3A3A3", textTransform: "uppercase", letterSpacing: "0.05em" }}>Version</p>
+                    <p style={{ margin: 0, fontSize: "13px", fontFamily: '"JetBrains Mono", monospace', color: "#525252" }}>{detail.version}</p>
+                  </div>
+                  {detail.type === "complaint" && detail.issueDescription ? (
+                    <div>
+                      <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#A3A3A3", textTransform: "uppercase", letterSpacing: "0.05em" }}>Issue description</p>
+                      <p style={{ margin: 0, fontSize: "13px", color: "#525252", lineHeight: 1.6 }}>{detail.issueDescription}</p>
+                    </div>
+                  ) : null}
+                  {detail.type === "installation" && detail.installationNotes ? (
+                    <div>
+                      <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#A3A3A3", textTransform: "uppercase", letterSpacing: "0.05em" }}>Installation notes</p>
+                      <p style={{ margin: 0, fontSize: "13px", color: "#525252", lineHeight: 1.6 }}>{detail.installationNotes}</p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* Timeline tab */}
+          {activeTab === "timeline" ? (
+            <div>
+              {timelineQuery.isLoading ? <p style={{ fontSize: "13px", color: "#737373" }}>Loading timeline...</p> : null}
+              {timelineQuery.error ? <p style={{ fontSize: "13px", color: "#991B1B" }}>Unable to load timeline.</p> : null}
+              {!timelineQuery.isLoading && !timelineQuery.error && timelineQuery.data?.length === 0 ? (
+                <p style={{ fontSize: "13px", color: "#737373" }}>No timeline events yet.</p>
+              ) : null}
+              <div style={{ display: "grid", gap: "12px" }}>
+                {timelineQuery.data?.map((event) => {
+                  const prevStatus = typeof event.previousValue === "string" ? event.previousValue : null;
+                  const nextStatus = typeof event.newValue === "string" ? event.newValue : null;
+                  const isStatusChange = event.eventType.toLowerCase().includes("status");
+
+                  return (
+                    <div key={event.id} style={{ display: "grid", gridTemplateColumns: "16px 1fr", gap: "12px", alignItems: "start" }}>
+                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: event.actorName === "System" ? "#6B7280" : "#0A0A0A", marginTop: "4px", justifySelf: "center" }} />
+                      <div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "4px" }}>
+                          <span style={{ fontSize: "13px", fontWeight: 600, color: "#171717" }}>
+                            {event.eventType.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                          </span>
+                          <span style={{ fontSize: "11px", color: "#A3A3A3", whiteSpace: "nowrap" }}>
+                            {new Date(event.occurredAt).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                        {event.actorName ? (
+                          <p style={{ margin: "0 0 6px", fontSize: "12px", color: "#737373" }}>{event.actorName}</p>
+                        ) : null}
+                        {event.reason ? (
+                          <div style={{ margin: "6px 0", padding: "8px 10px", borderRadius: "6px", backgroundColor: "#F9F9F9", border: "1px solid #F1F1F1" }}>
+                            <p style={{ margin: 0, fontSize: "13px", color: "#525252", fontStyle: "italic" }}>"{event.reason}"</p>
+                          </div>
+                        ) : null}
+                        {isStatusChange && prevStatus && nextStatus ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" }}>
+                            <StatusChip status={prevStatus} />
+                            <span style={{ fontSize: "12px", color: "#A3A3A3" }}>→</span>
+                            <StatusChip status={nextStatus} />
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Payment tab */}
+          {activeTab === "payment" ? (
+            <div style={{ padding: "40px 0", textAlign: "center" }}>
+              <p style={{ margin: 0, fontSize: "13px", color: "#737373" }}>Payment details coming soon.</p>
+            </div>
+          ) : null}
+
+          {/* Review tab */}
+          {activeTab === "review" ? (
+            <div style={{ padding: "40px 0", textAlign: "center" }}>
+              <p style={{ margin: 0, fontSize: "13px", color: "#737373" }}>Customer review coming soon.</p>
+            </div>
+          ) : null}
+        </div>
+
+        {/* ── Right sidebar ───────────────────────────────── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", position: isMobile ? "static" : "sticky", top: "24px" }}>
+
+          {/* Advance Status button */}
+          {advanceStatusOpen && nextStatuses.length > 1 ? (
+            <div style={{ border: "1px solid #E5E5E5", borderRadius: "10px", padding: "12px", backgroundColor: "#fff" }}>
+              <p style={{ margin: "0 0 8px", fontSize: "12px", color: "#737373" }}>Select next status</p>
+              <select
+                value={toStatus}
+                onChange={(e) => setToStatus(e.target.value)}
+                style={{ width: "100%", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "8px", fontSize: "13px", marginBottom: "8px" }}
+              >
+                <option value="">Choose...</option>
+                {nextStatuses.map((s) => (
+                  <option key={s} value={s}>{s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</option>
+                ))}
+              </select>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  type="button"
+                  onClick={() => { transitionMutation.mutate(); setAdvanceStatusOpen(false); }}
+                  disabled={!toStatus || transitionMutation.isPending}
+                  style={{ flex: 1, border: "none", borderRadius: "8px", backgroundColor: "#0A0A0A", color: "#fff", padding: "9px", fontSize: "13px", cursor: "pointer", opacity: !toStatus || transitionMutation.isPending ? 0.5 : 1 }}
+                >
+                  Confirm
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdvanceStatusOpen(false)}
+                  style={{ flex: 1, border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", color: "#525252", padding: "9px", fontSize: "13px", cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAdvanceStatus}
+              disabled={nextStatuses.length === 0 || transitionMutation.isPending}
+              style={{
+                width: "100%",
+                border: "none",
+                borderRadius: "10px",
+                backgroundColor: "#0A0A0A",
+                color: "#fff",
+                padding: "14px",
+                fontSize: "14px",
+                fontWeight: 600,
+                cursor: nextStatuses.length === 0 ? "not-allowed" : "pointer",
+                opacity: nextStatuses.length === 0 ? 0.4 : 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+              }}
+            >
+              {transitionMutation.isPending ? "Updating..." : "Advance Status →"}
+            </button>
+          )}
+
+          {/* Actions dropdown */}
+          <div style={{ position: "relative" }}>
+            <button
+              type="button"
+              onClick={() => setActionsOpen((v) => !v)}
+              style={{
+                width: "100%",
+                border: "1px solid #E5E5E5",
+                borderRadius: "10px",
+                backgroundColor: "#fff",
+                color: "#171717",
+                padding: "10px 14px",
+                fontSize: "14px",
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+              }}
+            >
+              Actions {actionsOpen ? <ChevronUp size={14} strokeWidth={1.5} /> : <ChevronDown size={14} strokeWidth={1.5} />}
+            </button>
+            {actionsOpen ? (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 4px)",
+                  left: 0,
+                  right: 0,
+                  backgroundColor: "#fff",
+                  border: "1px solid #E5E5E5",
+                  borderRadius: "10px",
+                  overflow: "hidden",
+                  zIndex: 10,
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                }}
+              >
                 {canRollbackOneStep ? (
                   <button
                     type="button"
-                    onClick={() => rollbackMutation.mutate({ reason: "Office rollback one step" })}
+                    onClick={() => { rollbackMutation.mutate({ reason: "Office rollback" }); setActionsOpen(false); }}
                     disabled={rollbackMutation.isPending}
-                    style={{ border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", color: "#171717", padding: "8px 10px", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "6px", cursor: "pointer" }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid #F5F5F5", cursor: "pointer", fontSize: "13px", color: "#171717", textAlign: "left" }}
                   >
-                    <RotateCcw size={12} strokeWidth={1.5} />
-                    {rollbackMutation.isPending ? "Rolling back..." : "Roll back one step"}
+                    <RotateCcw size={13} strokeWidth={1.5} /> Roll back status
                   </button>
                 ) : null}
-
                 {isOwner ? (
                   <button
                     type="button"
-                    onClick={() => setOverrideOpen(true)}
-                    style={{ border: "1px solid #FECACA", borderRadius: "8px", backgroundColor: "#fff", color: "#991B1B", padding: "8px 10px", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "6px", cursor: "pointer" }}
+                    onClick={() => { setOverrideOpen(true); setActionsOpen(false); }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid #F5F5F5", cursor: "pointer", fontSize: "13px", color: "#171717", textAlign: "left" }}
                   >
-                    <ShieldAlert size={12} strokeWidth={1.5} /> Override status
+                    <ShieldAlert size={13} strokeWidth={1.5} /> Override status
+                  </button>
+                ) : null}
+                {(isOwner || isOfficeStaff) ? (
+                  <button
+                    type="button"
+                    onClick={() => { setReassignOpen(true); setActionsOpen(false); }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid #F5F5F5", cursor: "pointer", fontSize: "13px", color: "#171717", textAlign: "left" }}
+                  >
+                    <UserRound size={13} strokeWidth={1.5} /> Reassign technician
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => { setActiveTab("payment"); setActionsOpen(false); }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid #F5F5F5", cursor: "pointer", fontSize: "13px", color: "#171717", textAlign: "left" }}
+                >
+                  Manage payment
+                </button>
+                {isOwner ? (
+                  <button
+                    type="button"
+                    onClick={() => { setOverrideStatus("cancelled"); setOverrideOpen(true); setActionsOpen(false); }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "11px 14px", background: "none", border: "none", cursor: "pointer", fontSize: "13px", color: "#991B1B", textAlign: "left" }}
+                  >
+                    Cancel job
                   </button>
                 ) : null}
               </div>
             ) : null}
-          </article>
+          </div>
 
-          <article style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", padding: "16px" }}>
-            <h3 style={{ margin: "0 0 12px", fontSize: "13px", fontWeight: 600, color: "#171717", display: "inline-flex", alignItems: "center", gap: "6px" }}>
-              <Wallet size={13} strokeWidth={1.5} />
-              Payment
-            </h3>
+          {/* Payment card */}
+          <div style={{ border: "1px solid #E5E5E5", borderRadius: "10px", padding: "14px", backgroundColor: "#fff" }}>
+            <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 600, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>Payment</p>
             {!detail.payment ? (
-              <p style={{ margin: 0, fontSize: "12px", color: "#737373" }}>Payment is not recorded for this job yet.</p>
+              <p style={{ margin: 0, fontSize: "13px", color: "#737373" }}>No payment recorded</p>
             ) : (
-              <div style={{ display: "grid", gap: "8px", fontSize: "12px" }}>
-                <div style={{ color: "#404040" }}>Amount: ₹{detail.payment.amount.toFixed(2)}</div>
-                <div style={{ color: "#404040" }}>Method: {detail.payment.paymentMethodName ?? "-"}</div>
-                <div style={{ color: "#737373" }}>Recorded by: {detail.payment.recordedByName ?? "-"}</div>
-                <div style={{ color: "#A3A3A3" }}>{new Date(detail.payment.recordedAt).toLocaleString()}</div>
-
-                {isOfficeStaff ? (
-                  <div style={{ marginTop: "6px", display: "grid", gridTemplateColumns: "1fr auto", gap: "8px", alignItems: "end" }}>
-                    <label style={{ display: "flex", flexDirection: "column", gap: "4px", color: "#737373" }}>
-                      Payment method
-                      <select
-                        value={paymentMethodId}
-                        onChange={(event) => setPaymentMethodId(event.target.value)}
-                        style={{ borderRadius: "8px", border: "1px solid #E5E5E5", padding: "8px", fontSize: "12px", color: "#171717" }}
-                      >
-                        <option value="">Select method</option>
-                        {(paymentMethodsQuery.data ?? []).filter((item) => item.isActive).map((method) => (
-                          <option key={method.id} value={method.id}>{method.name}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => paymentMutation.mutate()}
-                      disabled={!paymentMethodId || paymentMutation.isPending}
-                      style={{ border: "none", borderRadius: "8px", backgroundColor: "#0A0A0A", color: "#fff", padding: "9px 10px", fontSize: "12px", cursor: "pointer", opacity: !paymentMethodId || paymentMutation.isPending ? 0.6 : 1 }}
-                    >
-                      Save
-                    </button>
-                  </div>
-                ) : null}
-
-                {isOwner ? (
-                  <div style={{ marginTop: "6px", display: "grid", gridTemplateColumns: "1fr auto", gap: "8px", alignItems: "end" }}>
-                    <label style={{ display: "flex", flexDirection: "column", gap: "4px", color: "#737373" }}>
-                      Payment amount
-                      <input
-                        type="number"
-                        value={paymentAmount}
-                        onChange={(event) => setPaymentAmount(event.target.value)}
-                        min="0"
-                        step="0.01"
-                        style={{ borderRadius: "8px", border: "1px solid #E5E5E5", padding: "8px", fontSize: "12px", color: "#171717" }}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => paymentMutation.mutate()}
-                      disabled={!paymentAmount || paymentMutation.isPending}
-                      style={{ border: "none", borderRadius: "8px", backgroundColor: "#0A0A0A", color: "#fff", padding: "9px 10px", fontSize: "12px", cursor: "pointer", opacity: !paymentAmount || paymentMutation.isPending ? 0.6 : 1 }}
-                    >
-                      Save
-                    </button>
-                  </div>
-                ) : null}
+              <div style={{ display: "grid", gap: "4px" }}>
+                <p style={{ margin: 0, fontSize: "13px", color: "#171717", fontWeight: 500 }}>₹{detail.payment.amount.toFixed(2)}</p>
+                <p style={{ margin: 0, fontSize: "12px", color: "#737373" }}>{detail.payment.paymentMethodName ?? "—"}</p>
               </div>
             )}
-          </article>
+          </div>
 
-          <article style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", padding: "16px" }}>
-            <h3 style={{ margin: "0 0 12px", fontSize: "13px", fontWeight: 600, color: "#171717" }}>Revisit history</h3>
-            {revisitsQuery.isLoading ? <p style={{ margin: 0, fontSize: "12px", color: "#737373" }}>Loading revisits...</p> : null}
-            {revisitsQuery.isError ? <p style={{ margin: 0, fontSize: "12px", color: "#991B1B" }}>Unable to load revisit history.</p> : null}
-            {!revisitsQuery.isLoading && !revisitsQuery.isError && (revisitsQuery.data?.length ?? 0) === 0 ? <p style={{ margin: 0, fontSize: "12px", color: "#737373" }}>No revisits recorded.</p> : null}
-
-            <div style={{ display: "grid", gap: "8px" }}>
-              {revisitsQuery.data?.map((revisit) => {
-                const expanded = expandedRevisitId === revisit.id;
-                return (
-                  <button
-                    key={revisit.id}
-                    type="button"
-                    onClick={() => setExpandedRevisitId((current) => current === revisit.id ? null : revisit.id)}
-                    style={{ textAlign: "left", border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", padding: "10px", cursor: "pointer" }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
-                      <span style={{ fontSize: "12px", fontWeight: 600, color: "#171717" }}>Revisit #{revisit.sequenceNumber}</span>
-                      <span style={{ fontSize: "11px", color: "#737373" }}>{revisit.status}</span>
-                    </div>
-                    {expanded ? (
-                      <div style={{ marginTop: "8px", display: "grid", gap: "4px", fontSize: "12px", color: "#525252" }}>
-                        <div>Reason: {revisit.reason}</div>
-                        {revisit.customReason ? <div>Detail: {revisit.customReason}</div> : null}
-                        <div>Technician: {revisit.assignedTechnicianName ?? "-"}</div>
-                        <div>{new Date(revisit.createdAt).toLocaleString()}</div>
-                      </div>
-                    ) : null}
-                  </button>
-                );
-              })}
+          {/* Undo banner */}
+          {undoSecondsLeft > 0 ? (
+            <div style={{ borderRadius: "8px", border: "1px solid #DCFCE7", backgroundColor: "#F0FDF4", padding: "10px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                <span style={{ fontSize: "12px", color: "#166534" }}>Undo available for {undoSecondsLeft}s</span>
+                <button
+                  type="button"
+                  onClick={() => rollbackMutation.mutate({ reason: "Undo transition" })}
+                  disabled={rollbackMutation.isPending}
+                  style={{ border: "1px solid #BBF7D0", borderRadius: "6px", backgroundColor: "#fff", color: "#166534", fontSize: "12px", padding: "4px 8px", cursor: "pointer" }}
+                >
+                  Undo
+                </button>
+              </div>
+              <div style={{ height: "4px", borderRadius: "9999px", backgroundColor: "#DCFCE7", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${(undoSecondsLeft / Math.max(1, undoWindowSeconds)) * 100}%`, backgroundColor: "#22C55E", transition: "width 1s linear" }} />
+              </div>
             </div>
-          </article>
+          ) : null}
+
+          {transitionError ? (
+            <p style={{ margin: 0, fontSize: "12px", color: "#991B1B", padding: "8px 10px", border: "1px solid #FECACA", borderRadius: "8px", backgroundColor: "#FEF2F2" }}>{transitionError}</p>
+          ) : null}
         </div>
-
-        <article style={{ borderRadius: "12px", border: "1px solid #E5E5E5", backgroundColor: "#fff", padding: "16px", alignSelf: "start" }}>
-          <h3 style={{ margin: "0 0 12px", fontSize: "13px", fontWeight: 600, color: "#171717" }}>Timeline</h3>
-          {timelineQuery.isLoading ? <p style={{ margin: 0, fontSize: "13px", color: "#737373" }}>Loading timeline...</p> : null}
-          {timelineQuery.error ? <p style={{ margin: 0, fontSize: "13px", color: "#991B1B" }}>Unable to load timeline.</p> : null}
-          {!timelineQuery.isLoading && !timelineQuery.error && timelineQuery.data?.length === 0 ? <p style={{ margin: 0, fontSize: "13px", color: "#737373" }}>No timeline events yet.</p> : null}
-
-          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: "10px" }}>
-            {timelineQuery.data?.map((event) => (
-              <li key={event.id} style={{ borderRadius: "8px", border: "1px solid #E5E5E5", padding: "10px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#171717" }}>{event.eventType}</span>
-                  <span style={{ fontSize: "11px", color: "#A3A3A3" }}>{new Date(event.occurredAt).toLocaleString()}</span>
-                </div>
-                {event.reason ? <p style={{ margin: "6px 0 0", fontSize: "12px", color: "#525252" }}>Reason: {event.reason}</p> : null}
-                <details style={{ marginTop: "8px", borderRadius: "8px", border: "1px solid #F1F1F1", backgroundColor: "#FAFAFA", padding: "8px" }}>
-                  <summary style={{ cursor: "pointer", fontSize: "12px", color: "#404040", fontWeight: 500 }}>Payload details</summary>
-                  <div style={{ marginTop: "8px", display: "grid", gap: "8px", gridTemplateColumns: "1fr" }}>
-                    <div>
-                      <p style={{ margin: "0 0 4px", fontSize: "11px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.03em" }}>Previous</p>
-                      <pre style={{ margin: 0, maxHeight: "140px", overflow: "auto", borderRadius: "6px", border: "1px solid #E5E5E5", backgroundColor: "#fff", padding: "8px", fontSize: "11px", color: "#404040", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{prettyJson(event.previousValue)}</pre>
-                    </div>
-                    <div>
-                      <p style={{ margin: "0 0 4px", fontSize: "11px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.03em" }}>New</p>
-                      <pre style={{ margin: 0, maxHeight: "140px", overflow: "auto", borderRadius: "6px", border: "1px solid #E5E5E5", backgroundColor: "#fff", padding: "8px", fontSize: "11px", color: "#404040", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{prettyJson(event.newValue)}</pre>
-                    </div>
-                  </div>
-                </details>
-              </li>
-            ))}
-          </ul>
-        </article>
       </div>
 
-      <Modal isOpen={overrideOpen} onClose={() => setOverrideOpen(false)} title="Owner override" blocking={requiresPaymentDecision}>
+      {/* ── Reassign modal ─────────────────────────────────── */}
+      <Modal isOpen={reassignOpen} onClose={() => setReassignOpen(false)} title="Reassign technician">
+        <div style={{ display: "grid", gap: "12px" }}>
+          <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px", color: "#737373" }}>
+            New technician
+            <select
+              value={reassignTechId}
+              onChange={(e) => setReassignTechId(e.target.value)}
+              style={{ borderRadius: "8px", border: "1px solid #E5E5E5", padding: "8px 10px", fontSize: "13px", color: "#171717" }}
+            >
+              <option value="">Select technician</option>
+              {(techniciansQuery.data ?? []).map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={() => reassignMutation.mutate()}
+            disabled={!reassignTechId || reassignMutation.isPending}
+            style={{ border: "none", borderRadius: "8px", backgroundColor: "#0A0A0A", color: "#fff", padding: "10px 14px", fontSize: "13px", cursor: "pointer", opacity: !reassignTechId || reassignMutation.isPending ? 0.6 : 1 }}
+          >
+            {reassignMutation.isPending ? "Reassigning..." : "Confirm"}
+          </button>
+        </div>
+      </Modal>
+
+      {/* ── Override modal (owner) ─────────────────────────── */}
+      <Modal isOpen={overrideOpen} onClose={() => setOverrideOpen(false)} title="Override status" blocking={requiresPaymentDecision}>
         <div style={{ display: "grid", gap: "12px" }}>
           <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px", color: "#737373" }}>
             Target status
             <select
               value={overrideStatus}
-              onChange={(event) => setOverrideStatus(event.target.value)}
+              onChange={(e) => setOverrideStatus(e.target.value)}
               style={{ borderRadius: "8px", border: "1px solid #E5E5E5", padding: "8px 10px", fontSize: "13px", color: "#171717" }}
             >
               <option value="">Select status</option>
-              {OWNER_STATUSES.map((status) => (
-                <option key={status} value={status}>{status}</option>
+              {OWNER_STATUSES.map((s) => (
+                <option key={s} value={s}>{s}</option>
               ))}
             </select>
           </label>
-
           <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px", color: "#737373" }}>
             Reason
             <input
               value={overrideReason}
-              onChange={(event) => setOverrideReason(event.target.value)}
+              onChange={(e) => setOverrideReason(e.target.value)}
               placeholder="Reason is required"
               style={{ borderRadius: "8px", border: "1px solid #E5E5E5", padding: "8px 10px", fontSize: "13px", color: "#171717" }}
             />
           </label>
-
           {requiresPaymentDecision ? (
             <div style={{ borderRadius: "8px", border: "1px solid #FDE68A", backgroundColor: "#FFFBEB", padding: "10px", fontSize: "12px", color: "#92400E", display: "grid", gap: "8px" }}>
               <div>This job has payment recorded. Choose how payment should be handled.</div>
               <div style={{ display: "flex", gap: "12px" }}>
                 <label style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                  <input
-                    type="radio"
-                    checked={paymentDecision === "retain"}
-                    onChange={() => setPaymentDecision("retain")}
-                  />
-                  Retain payment
+                  <input type="radio" checked={paymentDecision === "retain"} onChange={() => setPaymentDecision("retain")} /> Retain payment
                 </label>
                 <label style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                  <input
-                    type="radio"
-                    checked={paymentDecision === "void"}
-                    onChange={() => setPaymentDecision("void")}
-                  />
-                  Void payment
+                  <input type="radio" checked={paymentDecision === "void"} onChange={() => setPaymentDecision("void")} /> Void payment
                 </label>
               </div>
             </div>
           ) : null}
-
           <button
             type="button"
             onClick={() => ownerOverrideMutation.mutate()}
