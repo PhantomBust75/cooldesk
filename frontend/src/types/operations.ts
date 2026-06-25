@@ -103,3 +103,12 @@ export type AnalyticsDailyItem = {
   total: number;
   completed: number;
 };
+
+export type ServiceItem = {
+  id: string;
+  name: string;
+  pricingType: 'fixed' | 'variable';
+  unitPrice: number;
+  unitLabel: string | null;
+  createdAt: string;
+};

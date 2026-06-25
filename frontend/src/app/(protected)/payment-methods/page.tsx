@@ -6,15 +6,36 @@ import {
   createPaymentMethod,
   fetchPaymentMethods,
   setPaymentMethodActive,
+  fetchOfficeBrands,
+  createBrand,
 } from "@/lib/api/operations";
+import {
+  fetchServiceItems,
+  createServiceItem,
+  updateServiceItem,
+  deleteServiceItem,
+  type CreateServiceItemInput,
+} from "@/lib/api/service-items";
+import type { ServiceItem } from "@/types/operations";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, CreditCard, Plus } from "lucide-react";
+import {
+  Building2,
+  CheckCircle2,
+  CreditCard,
+  Pencil,
+  Plus,
+  Tag,
+  Trash2,
+  X,
+} from "lucide-react";
 import { FormEvent, useState } from "react";
 
-export default function PaymentMethodsPage() {
+// ─── Payment Methods Section ────────────────────────────────────────────────
+
+function PaymentMethodsSection() {
   const queryClient = useQueryClient();
+  const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const methodsQuery = useQuery({
@@ -26,16 +47,14 @@ export default function PaymentMethodsPage() {
     mutationFn: () => createPaymentMethod({ name: name.trim() }),
     onSuccess: () => {
       setName("");
-      setMessage("Payment method created.");
+      setShowAdd(false);
       setErrorMessage(null);
       queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
     },
     onError: (error) => {
-      if (error instanceof ApiError) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Unable to create payment method.");
-      }
+      setErrorMessage(
+        error instanceof ApiError ? error.message : "Unable to create payment method."
+      );
     },
   });
 
@@ -43,88 +62,562 @@ export default function PaymentMethodsPage() {
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       setPaymentMethodActive(id, { isActive }),
     onSuccess: () => {
-      setMessage("Payment method updated.");
-      setErrorMessage(null);
       queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
-    },
-    onError: (error) => {
-      if (error instanceof ApiError) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Unable to update payment method.");
-      }
     },
   });
 
-  function onCreate(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage(null);
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setErrorMessage(null);
-    if (!name.trim()) {
-      setErrorMessage("Name is required.");
-      return;
-    }
+    if (!name.trim()) { setErrorMessage("Name is required."); return; }
     createMutation.mutate();
   }
 
   return (
-    <RoleGate allowedRoles={["owner"]}>
-      <section style={{ padding: "24px", maxWidth: "880px" }}>
-        <div style={{ marginBottom: "20px" }}>
-          <h1 style={{ fontSize: "36px", fontWeight: 600, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Payment Methods</h1>
-          <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0", fontWeight: 400 }}>Owner-managed organization payment methods.</p>
+    <div style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "20px", marginBottom: "20px" }}>
+      {/* Section header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <CreditCard size={18} strokeWidth={1.5} color="#525252" />
+          <div>
+            <div style={{ fontSize: "15px", fontWeight: 600, color: "#171717" }}>Payment Methods</div>
+            <div style={{ fontSize: "12px", color: "#737373" }}>Organization payment options for job billing</div>
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={() => { setShowAdd(true); setName(""); setErrorMessage(null); }}
+          style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "7px 14px", border: "none", borderRadius: "8px", backgroundColor: "#0A0A0A", color: "#fff", fontSize: "13px", cursor: "pointer" }}
+        >
+          <Plus size={13} strokeWidth={1.5} /> Add
+        </button>
+      </div>
 
-        <div style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "16px", marginBottom: "14px" }}>
-          <form onSubmit={onCreate} style={{ display: "flex", gap: "8px" }}>
+      {/* Add form */}
+      {showAdd && (
+        <div style={{ marginBottom: "16px", padding: "14px", backgroundColor: "#F5F5F5", borderRadius: "10px" }}>
+          <form onSubmit={onSubmit} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
             <input
               value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Add payment method"
-              style={{ flex: 1, borderRadius: "8px", border: "1px solid #E5E5E5", padding: "9px 12px", fontSize: "13px" }}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Cash, Bank Transfer, Credit Card"
+              autoFocus
+              style={{ flex: 1, borderRadius: "8px", border: "1px solid #E5E5E5", padding: "9px 12px", fontSize: "13px", backgroundColor: "#fff" }}
             />
             <button
               type="submit"
               disabled={createMutation.isPending}
-              style={{ borderRadius: "8px", border: "none", backgroundColor: "#0A0A0A", color: "#fff", padding: "9px 14px", fontSize: "13px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "5px", opacity: createMutation.isPending ? 0.6 : 1 }}
+              style={{ borderRadius: "8px", border: "none", backgroundColor: "#0A0A0A", color: "#fff", padding: "9px 14px", fontSize: "13px", cursor: "pointer", opacity: createMutation.isPending ? 0.6 : 1 }}
             >
-              <Plus size={13} strokeWidth={1.5} /> Add
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowAdd(false); setErrorMessage(null); }}
+              style={{ borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#525252", padding: "9px 12px", fontSize: "13px", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
+            >
+              <X size={14} strokeWidth={1.5} />
             </button>
           </form>
+          {errorMessage && (
+            <div style={{ marginTop: "8px", fontSize: "12px", color: "#EF4444" }}>{errorMessage}</div>
+          )}
+        </div>
+      )}
+
+      {/* Table */}
+      {methodsQuery.isLoading && (
+        <div style={{ fontSize: "13px", color: "#737373", padding: "12px 0" }}>Loading…</div>
+      )}
+      {methodsQuery.isError && (
+        <div style={{ fontSize: "13px", color: "#EF4444", padding: "12px 0" }}>Failed to load payment methods.</div>
+      )}
+      {methodsQuery.data && methodsQuery.data.length === 0 && (
+        <div style={{ fontSize: "13px", color: "#737373", padding: "12px 0", textAlign: "center" }}>No payment methods yet.</div>
+      )}
+      {methodsQuery.data && methodsQuery.data.length > 0 && (
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #F5F5F5" }}>
+              <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>METHOD</th>
+              <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>STATUS</th>
+              <th style={{ textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {methodsQuery.data.map((method) => (
+              <tr key={method.id} style={{ borderBottom: "1px solid #F5F5F5" }}>
+                <td style={{ padding: "12px 0", fontSize: "13px", fontWeight: 500, color: "#171717" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+                    <div style={{ width: "28px", height: "28px", borderRadius: "7px", border: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#FAFAFA" }}>
+                      <CreditCard size={14} strokeWidth={1.5} color="#525252" />
+                    </div>
+                    {method.name}
+                  </div>
+                </td>
+                <td style={{ padding: "12px 0" }}>
+                  <span style={{
+                    borderRadius: "9999px",
+                    border: `1px solid ${method.isActive ? "#CCFBF1" : "#E5E5E5"}`,
+                    backgroundColor: method.isActive ? "#F0FDFA" : "#F5F5F5",
+                    color: method.isActive ? "#134E4A" : "#525252",
+                    padding: "3px 9px",
+                    fontSize: "12px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                  }}>
+                    <CheckCircle2 size={11} strokeWidth={1.5} />
+                    {method.isActive ? "Active" : "Inactive"}
+                  </span>
+                </td>
+                <td style={{ padding: "12px 0", textAlign: "right" }}>
+                  <button
+                    type="button"
+                    onClick={() => toggleMutation.mutate({ id: method.id, isActive: !method.isActive })}
+                    style={{ borderRadius: "7px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#404040", padding: "5px 11px", fontSize: "12px", cursor: "pointer" }}
+                  >
+                    {method.isActive ? "Deactivate" : "Activate"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+// ─── Service Items Modal ─────────────────────────────────────────────────────
+
+type ServiceItemModalProps = {
+  item?: ServiceItem | null;
+  onClose: () => void;
+  onSaved: () => void;
+};
+
+function ServiceItemModal({ item, onClose, onSaved }: ServiceItemModalProps) {
+  const isEdit = !!item;
+  const [name, setName] = useState(item?.name ?? "");
+  const [pricingType, setPricingType] = useState<"fixed" | "variable">(item?.pricingType ?? "fixed");
+  const [unitPrice, setUnitPrice] = useState(item ? String(item.unitPrice) : "");
+  const [unitLabel, setUnitLabel] = useState(item?.unitLabel ?? "");
+  const [error, setError] = useState<string | null>(null);
+
+  const createMutation = useMutation({
+    mutationFn: (input: CreateServiceItemInput) => createServiceItem(input),
+    onSuccess: () => { onSaved(); onClose(); },
+    onError: (e) => setError(e instanceof ApiError ? e.message : "Failed to save."),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (input: Partial<CreateServiceItemInput>) => updateServiceItem(item!.id, input),
+    onSuccess: () => { onSaved(); onClose(); },
+    onError: (e) => setError(e instanceof ApiError ? e.message : "Failed to save."),
+  });
+
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    if (!name.trim()) { setError("Name is required."); return; }
+    const price = Number(unitPrice);
+    if (Number.isNaN(price) || price < 0) { setError("Unit price must be a valid number."); return; }
+    const input: CreateServiceItemInput = {
+      name: name.trim(),
+      pricingType,
+      unitPrice: price,
+      unitLabel: pricingType === "variable" && unitLabel.trim() ? unitLabel.trim() : undefined,
+    };
+    if (isEdit) {
+      updateMutation.mutate(input);
+    } else {
+      createMutation.mutate(input);
+    }
+  }
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ backgroundColor: "#fff", borderRadius: "14px", padding: "24px", width: "100%", maxWidth: "420px", boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+          <div style={{ fontSize: "15px", fontWeight: 600, color: "#171717" }}>{isEdit ? "Edit Service Item" : "Add Service Item"}</div>
+          <button type="button" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#737373", display: "flex", alignItems: "center" }}>
+            <X size={18} strokeWidth={1.5} />
+          </button>
         </div>
 
-        {message ? <div style={{ borderRadius: "8px", border: "1px solid #BBF7D0", backgroundColor: "#F0FDF4", padding: "12px", color: "#166534", fontSize: "13px", marginBottom: "12px" }}>{message}</div> : null}
-        {errorMessage ? <div style={{ borderRadius: "8px", border: "1px solid #FECACA", backgroundColor: "#FEF2F2", padding: "12px", color: "#991B1B", fontSize: "13px", marginBottom: "12px" }}>{errorMessage}</div> : null}
+        <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          {/* Name */}
+          <div>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "#525252", marginBottom: "6px" }}>Item Name</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. AC Service, Filter Replacement"
+              autoFocus
+              style={{ width: "100%", borderRadius: "8px", border: "1px solid #E5E5E5", padding: "9px 12px", fontSize: "13px", boxSizing: "border-box" }}
+            />
+          </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {methodsQuery.isLoading ? <div style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "16px", fontSize: "13px", color: "#737373" }}>Loading payment methods...</div> : null}
-          {methodsQuery.isError ? <div style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "16px", fontSize: "13px", color: "#991B1B" }}>Failed to load payment methods.</div> : null}
-          {methodsQuery.data?.map((method) => (
-            <article key={method.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "14px 16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ width: "30px", height: "30px", borderRadius: "8px", border: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#FAFAFA" }}>
-                  <CreditCard size={15} strokeWidth={1.5} color="#525252" />
-                </div>
-                <div>
-                  <div style={{ fontSize: "13px", fontWeight: 500, color: "#171717" }}>{method.name}</div>
-                  <div style={{ fontSize: "12px", color: "#737373" }}>Created: {method.createdAt ? new Date(method.createdAt).toLocaleDateString() : "-"}</div>
-                </div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ borderRadius: "9999px", border: `1px solid ${method.isActive ? "#CCFBF1" : "#E5E5E5"}`, backgroundColor: method.isActive ? "#F0FDFA" : "#F5F5F5", color: method.isActive ? "#134E4A" : "#525252", padding: "4px 9px", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "5px" }}>
-                  <CheckCircle2 size={11} strokeWidth={1.5} /> {method.isActive ? "Active" : "Inactive"}
-                </span>
+          {/* Pricing type toggle */}
+          <div>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "#525252", marginBottom: "6px" }}>Pricing Type</label>
+            <div style={{ display: "flex", gap: "8px" }}>
+              {(["fixed", "variable"] as const).map((t) => (
                 <button
+                  key={t}
                   type="button"
-                  onClick={() => toggleMutation.mutate({ id: method.id, isActive: !method.isActive })}
-                  style={{ borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#404040", padding: "6px 10px", fontSize: "12px", cursor: "pointer" }}
+                  onClick={() => setPricingType(t)}
+                  style={{
+                    flex: 1,
+                    borderRadius: "8px",
+                    border: `1px solid ${pricingType === t ? "#0A0A0A" : "#E5E5E5"}`,
+                    backgroundColor: pricingType === t ? "#0A0A0A" : "#fff",
+                    color: pricingType === t ? "#fff" : "#525252",
+                    padding: "8px",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    fontWeight: pricingType === t ? 600 : 400,
+                    textTransform: "capitalize",
+                  }}
                 >
-                  {method.isActive ? "Deactivate" : "Activate"}
+                  {t}
                 </button>
-              </div>
-            </article>
+              ))}
+            </div>
+          </div>
+
+          {/* Unit price */}
+          <div>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "#525252", marginBottom: "6px" }}>Unit Price</label>
+            <input
+              value={unitPrice}
+              onChange={(e) => setUnitPrice(e.target.value)}
+              placeholder="0.00"
+              type="number"
+              min="0"
+              step="0.01"
+              style={{ width: "100%", borderRadius: "8px", border: "1px solid #E5E5E5", padding: "9px 12px", fontSize: "13px", boxSizing: "border-box" }}
+            />
+          </div>
+
+          {/* Unit label — only for variable */}
+          {pricingType === "variable" && (
+            <div>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "#525252", marginBottom: "6px" }}>Unit Label <span style={{ color: "#737373", fontWeight: 400 }}>(optional)</span></label>
+              <input
+                value={unitLabel}
+                onChange={(e) => setUnitLabel(e.target.value)}
+                placeholder="e.g. per unit, per hour"
+                style={{ width: "100%", borderRadius: "8px", border: "1px solid #E5E5E5", padding: "9px 12px", fontSize: "13px", boxSizing: "border-box" }}
+              />
+            </div>
+          )}
+
+          {error && (
+            <div style={{ fontSize: "12px", color: "#EF4444" }}>{error}</div>
+          )}
+
+          <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+            <button
+              type="submit"
+              disabled={isPending}
+              style={{ flex: 1, borderRadius: "8px", border: "none", backgroundColor: "#0A0A0A", color: "#fff", padding: "10px", fontSize: "13px", cursor: "pointer", fontWeight: 500, opacity: isPending ? 0.6 : 1 }}
+            >
+              {isPending ? "Saving…" : isEdit ? "Save Changes" : "Add Item"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{ borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#404040", padding: "10px 16px", fontSize: "13px", cursor: "pointer" }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Service Items Section ───────────────────────────────────────────────────
+
+function ServiceItemsSection() {
+  const queryClient = useQueryClient();
+  const [modalItem, setModalItem] = useState<ServiceItem | null | undefined>(undefined);
+  // undefined = modal closed, null = adding new, ServiceItem = editing
+
+  const itemsQuery = useQuery({
+    queryKey: ["service-items"],
+    queryFn: fetchServiceItems,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteServiceItem(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["service-items"] });
+    },
+  });
+
+  return (
+    <div style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "20px", marginBottom: "20px" }}>
+      {/* Section header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <Tag size={18} strokeWidth={1.5} color="#525252" />
+          <div>
+            <div style={{ fontSize: "15px", fontWeight: 600, color: "#171717" }}>Service Items & Pricing</div>
+            <div style={{ fontSize: "12px", color: "#737373" }}>Standard items and pricing for job invoices</div>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setModalItem(null)}
+          style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "7px 14px", border: "none", borderRadius: "8px", backgroundColor: "#0A0A0A", color: "#fff", fontSize: "13px", cursor: "pointer" }}
+        >
+          <Plus size={13} strokeWidth={1.5} /> Add
+        </button>
+      </div>
+
+      {/* Table */}
+      {itemsQuery.isLoading && (
+        <div style={{ fontSize: "13px", color: "#737373", padding: "12px 0" }}>Loading…</div>
+      )}
+      {itemsQuery.isError && (
+        <div style={{ fontSize: "13px", color: "#EF4444", padding: "12px 0" }}>Failed to load service items.</div>
+      )}
+      {itemsQuery.data && itemsQuery.data.length === 0 && (
+        <div style={{ fontSize: "13px", color: "#737373", padding: "12px 0", textAlign: "center" }}>No service items yet. Add your first item.</div>
+      )}
+      {itemsQuery.data && itemsQuery.data.length > 0 && (
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #F5F5F5" }}>
+              <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>ITEM</th>
+              <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>PRICING</th>
+              <th style={{ textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {itemsQuery.data.map((item) => (
+              <tr key={item.id} style={{ borderBottom: "1px solid #F5F5F5" }}>
+                <td style={{ padding: "12px 0", fontSize: "13px", fontWeight: 500, color: "#171717" }}>{item.name}</td>
+                <td style={{ padding: "12px 0" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{
+                      borderRadius: "6px",
+                      backgroundColor: item.pricingType === "variable" ? "#DBEAFE" : "#F5F5F5",
+                      color: item.pricingType === "variable" ? "#1E40AF" : "#525252",
+                      padding: "3px 8px",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      textTransform: "capitalize",
+                    }}>
+                      {item.pricingType}
+                    </span>
+                    <span style={{ fontSize: "13px", color: "#404040", fontWeight: 500 }}>
+                      {item.unitPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {item.unitLabel ? <span style={{ fontSize: "11px", color: "#737373", fontWeight: 400 }}> {item.unitLabel}</span> : null}
+                    </span>
+                  </div>
+                </td>
+                <td style={{ padding: "12px 0", textAlign: "right" }}>
+                  <div style={{ display: "inline-flex", gap: "6px" }}>
+                    <button
+                      type="button"
+                      onClick={() => setModalItem(item)}
+                      style={{ borderRadius: "7px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#404040", padding: "6px 8px", fontSize: "12px", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
+                      title="Edit"
+                    >
+                      <Pencil size={13} strokeWidth={1.5} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { if (confirm("Delete this service item?")) deleteMutation.mutate(item.id); }}
+                      style={{ borderRadius: "7px", border: "1px solid #FECACA", backgroundColor: "#FEF2F2", color: "#EF4444", padding: "6px 8px", fontSize: "12px", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
+                      title="Delete"
+                    >
+                      <Trash2 size={13} strokeWidth={1.5} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {/* Modal */}
+      {modalItem !== undefined && (
+        <ServiceItemModal
+          item={modalItem}
+          onClose={() => setModalItem(undefined)}
+          onSaved={() => queryClient.invalidateQueries({ queryKey: ["service-items"] })}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Brands Section ──────────────────────────────────────────────────────────
+
+function BrandsSection() {
+  const queryClient = useQueryClient();
+  const [showAdd, setShowAdd] = useState(false);
+  const [brandName, setBrandName] = useState("");
+  const [brandColor, setBrandColor] = useState("#3B82F6");
+  const [error, setError] = useState<string | null>(null);
+
+  const brandsQuery = useQuery({
+    queryKey: ["office-brands"],
+    queryFn: fetchOfficeBrands,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: () => createBrand({ name: brandName.trim(), colorHex: brandColor }),
+    onSuccess: () => {
+      setBrandName("");
+      setBrandColor("#3B82F6");
+      setShowAdd(false);
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ["office-brands"] });
+    },
+    onError: (e) => setError(e instanceof ApiError ? e.message : "Unable to create brand."),
+  });
+
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    if (!brandName.trim()) { setError("Brand name is required."); return; }
+    createMutation.mutate();
+  }
+
+  return (
+    <div style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "20px" }}>
+      {/* Section header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <Building2 size={18} strokeWidth={1.5} color="#525252" />
+          <div>
+            <div style={{ fontSize: "15px", fontWeight: 600, color: "#171717" }}>Brands</div>
+            <div style={{ fontSize: "12px", color: "#737373" }}>Product brands handled by your organization</div>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => { setShowAdd(true); setBrandName(""); setError(null); }}
+          style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "7px 14px", border: "none", borderRadius: "8px", backgroundColor: "#0A0A0A", color: "#fff", fontSize: "13px", cursor: "pointer" }}
+        >
+          <Plus size={13} strokeWidth={1.5} /> Add brand
+        </button>
+      </div>
+
+      {/* Add form */}
+      {showAdd && (
+        <div style={{ marginBottom: "16px", padding: "14px", backgroundColor: "#F5F5F5", borderRadius: "10px" }}>
+          <form onSubmit={onSubmit} style={{ display: "flex", gap: "8px", alignItems: "flex-start", flexWrap: "wrap" }}>
+            <input
+              value={brandName}
+              onChange={(e) => setBrandName(e.target.value)}
+              placeholder="Brand name"
+              autoFocus
+              style={{ flex: "1 1 200px", borderRadius: "8px", border: "1px solid #E5E5E5", padding: "9px 12px", fontSize: "13px", backgroundColor: "#fff" }}
+            />
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <label style={{ fontSize: "12px", color: "#525252", fontWeight: 500 }}>Color</label>
+              <input
+                type="color"
+                value={brandColor}
+                onChange={(e) => setBrandColor(e.target.value)}
+                style={{ width: "36px", height: "36px", borderRadius: "6px", border: "1px solid #E5E5E5", cursor: "pointer", padding: "2px", backgroundColor: "#fff" }}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={createMutation.isPending}
+              style={{ borderRadius: "8px", border: "none", backgroundColor: "#0A0A0A", color: "#fff", padding: "9px 14px", fontSize: "13px", cursor: "pointer", opacity: createMutation.isPending ? 0.6 : 1 }}
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowAdd(false); setError(null); }}
+              style={{ borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#525252", padding: "9px 12px", fontSize: "13px", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
+            >
+              <X size={14} strokeWidth={1.5} />
+            </button>
+          </form>
+          {error && (
+            <div style={{ marginTop: "8px", fontSize: "12px", color: "#EF4444" }}>{error}</div>
+          )}
+        </div>
+      )}
+
+      {/* Brands list */}
+      {brandsQuery.isLoading && (
+        <div style={{ fontSize: "13px", color: "#737373", padding: "12px 0" }}>Loading…</div>
+      )}
+      {brandsQuery.isError && (
+        <div style={{ fontSize: "13px", color: "#EF4444", padding: "12px 0" }}>Failed to load brands.</div>
+      )}
+      {brandsQuery.data && brandsQuery.data.length === 0 && (
+        <div style={{ fontSize: "13px", color: "#737373", padding: "12px 0", textAlign: "center" }}>No brands yet. Add your first brand.</div>
+      )}
+      {brandsQuery.data && brandsQuery.data.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+          {brandsQuery.data.map((brand) => (
+            <div
+              key={brand.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "9px",
+                borderRadius: "10px",
+                border: "1px solid #E5E5E5",
+                padding: "9px 14px",
+                backgroundColor: "#FAFAFA",
+              }}
+            >
+              <div
+                style={{
+                  width: "18px",
+                  height: "18px",
+                  borderRadius: "50%",
+                  backgroundColor: brand.colorHex ?? "#E5E5E5",
+                  flexShrink: 0,
+                  border: "1px solid rgba(0,0,0,0.08)",
+                }}
+              />
+              <span style={{ fontSize: "13px", fontWeight: 500, color: "#171717" }}>{brand.name}</span>
+            </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Page ────────────────────────────────────────────────────────────────────
+
+export default function PaymentMethodsPage() {
+  return (
+    <RoleGate allowedRoles={["owner"]}>
+      <section style={{ padding: "24px", maxWidth: "880px" }}>
+        {/* Page title */}
+        <div style={{ marginBottom: "28px" }}>
+          <h1 style={{ fontSize: "36px", fontWeight: 600, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+            Payments &amp; Brands
+          </h1>
+          <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0" }}>
+            Manage payment methods, service item pricing, and brands
+          </p>
+        </div>
+
+        <PaymentMethodsSection />
+        <ServiceItemsSection />
+        <BrandsSection />
       </section>
     </RoleGate>
   );
