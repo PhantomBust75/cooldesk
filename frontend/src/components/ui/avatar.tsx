@@ -4,9 +4,9 @@ const PALETTE = [
   { bg: 'rgba(139,92,246,0.12)', color: '#8B5CF6' },
   { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B' },
   { bg: 'rgba(239,68,68,0.12)', color: '#EF4444' },
-  { bg: 'rgba(20,184,166,0.12)', color: '#14B8A6' },
-  { bg: 'rgba(249,115,22,0.12)', color: '#F97316' },
-  { bg: 'rgba(100,116,139,0.12)', color: '#64748B' },
+  { bg: 'rgba(59,130,246,0.18)', color: '#3B82F6' },
+  { bg: 'rgba(239,68,68,0.18)', color: '#EF4444' },
+  { bg: 'rgba(115,115,115,0.15)', color: '#525252' },
 ];
 
 function initials(name: string) {

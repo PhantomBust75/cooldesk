@@ -81,7 +81,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
         <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #E5E5E5', boxShadow: '0 16px 48px rgba(0,0,0,0.15)', overflow: 'hidden' }}>
           {/* Search input */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #E5E5E5', gap: '10px' }}>
-            <Search size={16} strokeWidth={1.5} style={{ color: '#A3A3A3', flexShrink: 0 }} />
+            <Search size={16} strokeWidth={1.5} style={{ color: '#737373', flexShrink: 0 }} />
             <input
               autoFocus
               value={query}
@@ -89,7 +89,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
               placeholder="Search jobs, customers…"
               style={{ flex: 1, border: 'none', outline: 'none', fontSize: '14px', color: '#171717', backgroundColor: 'transparent' }}
             />
-            <button type="button" onClick={onClose} style={{ border: 'none', backgroundColor: 'transparent', cursor: 'pointer', color: '#A3A3A3', padding: 0, display: 'inline-flex' }}>
+            <button type="button" onClick={onClose} style={{ border: 'none', backgroundColor: 'transparent', cursor: 'pointer', color: '#737373', padding: 0, display: 'inline-flex' }}>
               <X size={16} strokeWidth={1.5} />
             </button>
           </div>
@@ -102,7 +102,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
               <div style={{ padding: '16px', fontSize: '13px', color: '#737373' }}>No results for &quot;{query}&quot;</div>
             ) : results.length > 0 ? (
               <div>
-                <div style={{ padding: '8px 16px 4px', fontSize: '11px', fontWeight: 600, color: '#A3A3A3', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Jobs</div>
+                <div style={{ padding: '8px 16px 4px', fontSize: '11px', fontWeight: 600, color: '#737373', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Jobs</div>
                 {results.map((job) => {
                   const colors = getStatusColors(job.status);
                   return (
@@ -124,7 +124,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
                 })}
               </div>
             ) : (
-              <div style={{ padding: '20px 16px', fontSize: '13px', color: '#A3A3A3', textAlign: 'center' }}>
+              <div style={{ padding: '20px 16px', fontSize: '13px', color: '#737373', textAlign: 'center' }}>
                 Type to search jobs and customers
               </div>
             )}

@@ -3921,12 +3921,13 @@ export class JobsService {
       return { jobs: [] };
     }
 
-    const pattern = `%${q}%`;
+    const escaped = q.replace(/%/g, '\\%').replace(/_/g, '\\_');
+    const pattern = `%${escaped}%`;
     const result = await this.db.query(
       `SELECT id, customer_name, status FROM jobs
        WHERE organization_id = $1
          AND is_deleted = false
-         AND (id ILIKE $2 OR customer_name ILIKE $2)
+         AND (id::text ILIKE $2 ESCAPE '\\' OR customer_name ILIKE $2 ESCAPE '\\')
        ORDER BY created_at DESC
        LIMIT $3`,
       [ctx.organizationId, pattern, limit],
