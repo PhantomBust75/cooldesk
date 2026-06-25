@@ -15,6 +15,7 @@ export type JobListItem = {
   assignedTechnicianId: string | null;
   assignedTechnicianName: string | null;
   version: number;
+  tags: string[];
 };
 
 export type JobListFilter = {
@@ -24,6 +25,7 @@ export type JobListFilter = {
   brandId?: string;
   dateFrom?: string;
   dateTo?: string;
+  chronicOnly?: boolean;
 };
 
 export type JobListQuery = JobListFilter & {
@@ -49,6 +51,7 @@ export type JobTimelineItem = {
   eventType: string;
   actorUserId: string | null;
   actorDealerId: string | null;
+  actorName: string | null;
   previousValue: unknown;
   newValue: unknown;
   reason: string | null;
@@ -96,6 +99,7 @@ export type JobDetail = {
   createdAt: string;
   updatedAt: string;
   version: number;
+  tags: string[];
 };
 
 export type TransitionJobStatusInput = {

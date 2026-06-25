@@ -32,6 +32,11 @@ function asNumber(value: unknown, fallback = 0): number {
 }
 
 function mapJobListItem(row: UnknownRecord): JobListItem {
+  const tags: string[] = [];
+  if (row.is_chronic === true) tags.push("chronic");
+  if (row.is_frequent === true) tags.push("frequent");
+  if (row.is_repeat === true) tags.push("repeat");
+
   return {
     id: asString(row.id),
     type: (asString(row.type) as JobListItem["type"]) || "installation",
@@ -49,12 +54,18 @@ function mapJobListItem(row: UnknownRecord): JobListItem {
     assignedTechnicianId: asNullableString(row.assigned_technician_id),
     assignedTechnicianName: asNullableString(row.assigned_technician_name),
     version: asNumber(row.version),
+    tags,
   };
 }
 
 function mapJobDetail(row: UnknownRecord): JobDetail {
   const paymentRecord = asRecord(row.payment);
   const hasPayment = Object.keys(paymentRecord).length > 0;
+
+  const tags: string[] = [];
+  if (row.is_chronic === true) tags.push("chronic");
+  if (row.is_frequent === true) tags.push("frequent");
+  if (row.is_repeat === true) tags.push("repeat");
 
   return {
     id: asString(row.id),
@@ -73,6 +84,10 @@ function mapJobDetail(row: UnknownRecord): JobDetail {
     assignedTechnicianName: asNullableString(row.assigned_technician_name),
     issueDescription: asNullableString(row.issue_description),
     installationNotes: asNullableString(row.installation_notes),
+    createdAt: asString(row.created_at),
+    updatedAt: asString(row.updated_at),
+    version: asNumber(row.version),
+    tags,
     payment: hasPayment
       ? {
           id: asString(paymentRecord.id),
@@ -84,9 +99,6 @@ function mapJobDetail(row: UnknownRecord): JobDetail {
           recordedAt: asString(paymentRecord.recorded_at),
         }
       : null,
-    createdAt: asString(row.created_at),
-    updatedAt: asString(row.updated_at),
-    version: asNumber(row.version),
   };
 }
 
@@ -96,6 +108,7 @@ function mapTimelineItem(row: UnknownRecord): JobTimelineItem {
     eventType: asString(row.event_type),
     actorUserId: asNullableString(row.actor_user_id),
     actorDealerId: asNullableString(row.actor_dealer_id),
+    actorName: asNullableString(row.actor_name),
     previousValue: row.previous_value,
     newValue: row.new_value,
     reason: asNullableString(row.reason),
@@ -132,6 +145,7 @@ export async function fetchJobs(filter: JobListQuery = {}): Promise<JobListResul
   if (filter.dateFrom) params.set("dateFrom", filter.dateFrom);
   if (filter.dateTo) params.set("dateTo", filter.dateTo);
   if (filter.search) params.set("search", filter.search);
+  if (filter.chronicOnly) params.set("chronicOnly", "true");
   params.set("page", String(filter.page ?? 1));
   params.set("limit", String(filter.limit ?? 10));
   const query = params.toString();
@@ -199,4 +213,14 @@ export function updateJobPayment(
   input: { paymentMethodId?: string; amount?: number },
 ): Promise<{ ok: true }> {
   return apiClient.patch<{ ok: true }>(`/office/jobs/${jobId}/payment`, input);
+}
+
+export async function reassignTechnician(
+  jobId: string,
+  technicianId: string
+): Promise<void> {
+  await apiClient.post(`/jobs/${jobId}/reassign`, {
+    technicianId,
+    acknowledgeConflict: false,
+  });
 }
