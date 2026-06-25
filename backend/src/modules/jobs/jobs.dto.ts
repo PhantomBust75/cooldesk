@@ -15,7 +15,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export type JobType = 'installation' | 'complaint';
 export type JobSource = 'direct' | 'via_dealer';
@@ -461,6 +461,15 @@ export class OfficeJobsQueryDto {
   @IsInt()
   @Min(1)
   limit?: number;
+
+  @IsOptional()
+  @IsUUID()
+  brandId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  chronicOnly?: boolean;
 }
 
 export class OfficeTransitionJobDto {

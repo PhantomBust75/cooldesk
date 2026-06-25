@@ -3616,6 +3616,8 @@ export class JobsService {
       search?: string;
       page?: number;
       limit?: number;
+      brandId?: string;
+      chronicOnly?: boolean;
     },
     ctx: RequestContext,
   ): Promise<{ jobs: Record<string, unknown>[]; total: number; page: number; limit: number; totalPages: number }> {
@@ -3642,6 +3644,8 @@ export class JobsService {
         `(j.customer_name ILIKE $${params.length} OR j.phone ILIKE $${params.length} OR j.address ILIKE $${params.length})`,
       );
     }
+    if (query.brandId) add('j.brand_id = :p', query.brandId);
+    if (query.chronicOnly) conditions.push('j.is_chronic = TRUE');
 
     const where = conditions.join(' AND ');
 
@@ -3672,7 +3676,10 @@ export class JobsService {
         j.address,
         j.scheduled_at,
         j.created_at,
-        j.version
+        j.version,
+        j.is_repeat,
+        j.is_frequent,
+        j.is_chronic
       FROM jobs j
       LEFT JOIN brands b ON b.id = j.brand_id
       LEFT JOIN dealers d ON d.id = j.dealer_id
@@ -3770,11 +3777,13 @@ export class JobsService {
         jt.event_type,
         jt.actor_user_id,
         jt.actor_dealer_id,
+        u.full_name AS actor_name,
         jt.previous_value,
         jt.new_value,
         jt.reason,
         jt.occurred_at
       FROM job_timeline jt
+      LEFT JOIN users u ON u.id = jt.actor_user_id
       WHERE jt.job_id = $1
         AND jt.organization_id = $2
       ORDER BY jt.occurred_at ASC
