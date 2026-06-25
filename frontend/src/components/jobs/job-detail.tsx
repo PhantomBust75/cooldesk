@@ -382,7 +382,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
               </button>
 
               {showTechnicalDetails ? (
-                <div style={{ marginTop: "12px", display: "grid", gap: "10px", padding: "16px", borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#FAFAFA" }}>
+                <div style={{ marginTop: "12px", display: "grid", gap: "10px", padding: "16px", borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#F9F9F9" }}>
                   <div>
                     <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em" }}>Source</p>
                     <p style={{ margin: 0, fontSize: "13px", color: "#525252" }}>{detail.source === "via_dealer" ? `Via dealer${detail.dealerName ? ` — ${detail.dealerName}` : ""}` : "Direct"}</p>
@@ -576,7 +576,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                     type="button"
                     onClick={() => { rollbackMutation.mutate({ reason: "Office rollback" }); setActionsOpen(false); }}
                     disabled={rollbackMutation.isPending}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid #F5F5F5", cursor: "pointer", fontSize: "13px", color: "#171717", textAlign: "left" }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid #E5E5E5", cursor: "pointer", fontSize: "13px", color: "#171717", textAlign: "left" }}
                   >
                     <RotateCcw size={13} strokeWidth={1.5} /> Roll back status
                   </button>
@@ -585,7 +585,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                   <button
                     type="button"
                     onClick={() => { setOverrideOpen(true); setActionsOpen(false); }}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid #F5F5F5", cursor: "pointer", fontSize: "13px", color: "#171717", textAlign: "left" }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid #E5E5E5", cursor: "pointer", fontSize: "13px", color: "#171717", textAlign: "left" }}
                   >
                     <ShieldAlert size={13} strokeWidth={1.5} /> Override status
                   </button>
@@ -594,7 +594,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                   <button
                     type="button"
                     onClick={() => { setReassignOpen(true); setActionsOpen(false); }}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid #F5F5F5", cursor: "pointer", fontSize: "13px", color: "#171717", textAlign: "left" }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid #E5E5E5", cursor: "pointer", fontSize: "13px", color: "#171717", textAlign: "left" }}
                   >
                     <UserRound size={13} strokeWidth={1.5} /> Reassign technician
                   </button>
@@ -602,7 +602,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                 <button
                   type="button"
                   onClick={() => { setActiveTab("payment"); setActionsOpen(false); }}
-                  style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid #F5F5F5", cursor: "pointer", fontSize: "13px", color: "#171717", textAlign: "left" }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid #E5E5E5", cursor: "pointer", fontSize: "13px", color: "#171717", textAlign: "left" }}
                 >
                   Manage payment
                 </button>
