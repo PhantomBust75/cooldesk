@@ -219,7 +219,7 @@ export async function reassignTechnician(
   jobId: string,
   technicianId: string
 ): Promise<void> {
-  await apiClient.post(`/jobs/${jobId}/reassign`, {
+  await apiClient.post(`/office/jobs/${jobId}/reassign`, {
     technicianId,
     acknowledgeConflict: false,
   });
