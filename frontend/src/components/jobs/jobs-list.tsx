@@ -5,6 +5,7 @@ import {
   JobTypeChip,
   BrandSwatch,
   SourceChip,
+  TagChip,
 } from "@/components/ui/job-type-chip";
 import { useAuth } from "@/contexts/auth-context";
 import { isTerminalStatus } from "@/lib/job-status-groups";
@@ -75,6 +76,12 @@ export function JobsList() {
   // Drawer open/close
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false);
 
+  // Inline filter state (applies immediately, no Apply button)
+  const [inlineStatus, setInlineStatus] = useState("");
+  const [inlineType, setInlineType] = useState<"" | "installation" | "complaint">("");
+  const [inlineBrandId, setInlineBrandId] = useState("");
+  const [inlineChronic, setInlineChronic] = useState(false);
+
   // Draft filter state inside the drawer (applied on "Apply")
   const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
   const [draftType, setDraftType] = useState<"" | "installation" | "complaint">(
@@ -88,14 +95,16 @@ export function JobsList() {
   const queryInput = useMemo<JobListQuery>(
     () => ({
       ...filter,
+      status: inlineStatus || filter.status,
+      type: (inlineType || filter.type) as JobListQuery["type"],
+      brandId: inlineBrandId || filter.brandId,
+      chronicOnly: inlineChronic || undefined,
       search: search.trim() || undefined,
-      technicianId: isTechnician
-        ? session?.user.userId
-        : filter.technicianId,
+      technicianId: isTechnician ? session?.user.userId : filter.technicianId,
       page,
       limit: PAGE_SIZE,
     }),
-    [filter, search, page, isTechnician, session?.user.userId]
+    [filter, inlineStatus, inlineType, inlineBrandId, inlineChronic, search, page, isTechnician, session?.user.userId]
   );
 
   const { data, isLoading, error } = useQuery({
@@ -408,6 +417,96 @@ export function JobsList() {
         />
       </div>
 
+      {/* ── Inline filter bar ─────────────────────────────── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          padding: "0 24px 12px",
+          flexWrap: "wrap",
+        }}
+      >
+        <select
+          value={inlineStatus}
+          onChange={(e) => { setInlineStatus(e.target.value); setPage(1); }}
+          style={{
+            border: "1px solid #E5E5E5",
+            borderRadius: "8px",
+            padding: "6px 10px",
+            fontSize: "13px",
+            color: inlineStatus ? "#171717" : "#737373",
+            backgroundColor: "#fff",
+            outline: "none",
+            cursor: "pointer",
+          }}
+        >
+          <option value="">All statuses</option>
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>{formatStatusLabel(s)}</option>
+          ))}
+        </select>
+
+        <select
+          value={inlineType}
+          onChange={(e) => { setInlineType(e.target.value as "" | "installation" | "complaint"); setPage(1); }}
+          style={{
+            border: "1px solid #E5E5E5",
+            borderRadius: "8px",
+            padding: "6px 10px",
+            fontSize: "13px",
+            color: inlineType ? "#171717" : "#737373",
+            backgroundColor: "#fff",
+            outline: "none",
+            cursor: "pointer",
+          }}
+        >
+          <option value="">All types</option>
+          <option value="installation">Installation</option>
+          <option value="complaint">Complaint</option>
+        </select>
+
+        <select
+          value={inlineBrandId}
+          onChange={(e) => { setInlineBrandId(e.target.value); setPage(1); }}
+          style={{
+            border: "1px solid #E5E5E5",
+            borderRadius: "8px",
+            padding: "6px 10px",
+            fontSize: "13px",
+            color: inlineBrandId ? "#171717" : "#737373",
+            backgroundColor: "#fff",
+            outline: "none",
+            cursor: "pointer",
+          }}
+        >
+          <option value="">All brands</option>
+          {(brandsQuery.data ?? []).map((brand) => (
+            <option key={brand.id} value={brand.id}>{brand.name}</option>
+          ))}
+        </select>
+
+        <label
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            fontSize: "13px",
+            color: "#525252",
+            cursor: "pointer",
+            userSelect: "none",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={inlineChronic}
+            onChange={(e) => { setInlineChronic(e.target.checked); setPage(1); }}
+            style={{ width: "14px", height: "14px", cursor: "pointer" }}
+          />
+          Chronic only
+        </label>
+      </div>
+
       {/* ── Jobs content ───────────────────────────────────── */}
       {displayedJobs.length === 0 ? (
         <div
@@ -584,6 +683,7 @@ export function JobsList() {
                     "TECHNICIAN",
                     "SCHEDULED",
                     "STATUS",
+                    "TAGS",
                   ].map((heading) => (
                     <th
                       key={heading}
@@ -600,6 +700,7 @@ export function JobsList() {
                       {heading}
                     </th>
                   ))}
+                  <th style={{ width: "40px" }} />
                 </tr>
               </thead>
               <tbody>
@@ -706,6 +807,18 @@ export function JobsList() {
                     {/* STATUS */}
                     <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       <StatusChip status={job.status} />
+                    </td>
+                    {/* TAGS */}
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
+                      <div style={{ display: "flex", gap: "4px" }}>
+                        {job.tags.map((tag) => (
+                          <TagChip key={tag} label={tag.charAt(0).toUpperCase() + tag.slice(1)} variant={tag as "chronic" | "frequent" | "repeat"} />
+                        ))}
+                      </div>
+                    </td>
+                    {/* CHEVRON */}
+                    <td style={{ padding: "14px 16px", width: "40px" }}>
+                      <ChevronRight size={14} strokeWidth={1.5} color="#A3A3A3" />
                     </td>
                   </tr>
                 ))}
