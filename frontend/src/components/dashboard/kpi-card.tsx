@@ -71,18 +71,17 @@ export function KpiCard({ title, value, accent, trend }: KpiCardProps) {
       }}
     >
       <div style={{ position: 'relative', zIndex: 1, padding: '16px 18px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
             <Icon size={12} strokeWidth={1.6} color="#B8B8B8" />
             <span
               style={{
                 color: '#A3A3A3',
-                fontSize: '11px',
+                fontSize: '10.5px',
                 fontWeight: 500,
-                letterSpacing: '0.12em',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                letterSpacing: '0.08em',
+                lineHeight: 1.2,
+                whiteSpace: 'normal',
               }}
             >
               {title}

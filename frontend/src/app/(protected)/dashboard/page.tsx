@@ -2,6 +2,8 @@
 
 import { RoleGate } from '@/components/auth/role-gate';
 import { KpiCard } from '@/components/dashboard/kpi-card';
+import { useAuth } from '@/contexts/auth-context';
+import { ApiError } from '@/lib/api/client';
 import { fetchDashboardMetrics } from '@/lib/api/dashboard';
 import { fetchJobs } from '@/lib/api/jobs';
 import { StatusChip } from '@/components/ui/status-chip';
@@ -10,6 +12,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useMobileBreakpoint } from '@/hooks/use-mobile-breakpoint';
+import { useEffect } from 'react';
 import type { CSSProperties } from 'react';
 
 const TAG_STYLES: Record<string, { bg: string; color: string; label: string }> = {
@@ -84,24 +87,51 @@ function getJobTagType(job: { status: string; source: string; createdAt: string 
   return null;
 }
 
+function shouldRetryDashboardQuery(failureCount: number, error: Error): boolean {
+  if (error instanceof ApiError && error.status === 401) {
+    return false;
+  }
+
+  return failureCount < 3;
+}
+
+function isUnauthorizedError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 401;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
+  const { logout } = useAuth();
   const isMobile = useMobileBreakpoint();
 
   const metricsQuery = useQuery({
     queryKey: ['dashboard', 'metrics'],
     queryFn: fetchDashboardMetrics,
+    retry: shouldRetryDashboardQuery,
   });
 
   const needsRevisitQuery = useQuery({
     queryKey: ['dashboard', 'needs-revisit'],
     queryFn: () => fetchJobs({ status: 'needs_revisit', page: 1, limit: 8 }),
+    retry: shouldRetryDashboardQuery,
   });
 
   const activeJobsQuery = useQuery({
     queryKey: ['dashboard', 'active-jobs'],
     queryFn: () => fetchJobs({ page: 1, limit: 9 }),
+    retry: shouldRetryDashboardQuery,
   });
+
+  const hasUnauthorizedDashboardError =
+    isUnauthorizedError(metricsQuery.error) ||
+    isUnauthorizedError(needsRevisitQuery.error) ||
+    isUnauthorizedError(activeJobsQuery.error);
+
+  useEffect(() => {
+    if (hasUnauthorizedDashboardError) {
+      logout();
+    }
+  }, [hasUnauthorizedDashboardError, logout]);
 
   const m = metricsQuery.data;
   const needsRevisitJobs = needsRevisitQuery.data?.jobs ?? [];

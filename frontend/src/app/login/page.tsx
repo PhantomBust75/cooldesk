@@ -1,11 +1,11 @@
 "use client";
-
+import { useEffect } from "react";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/contexts/auth-context";
 import type { LoginRequest } from "@/types/auth";
 import { Eye, EyeOff, Lock, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState, useSyncExternalStore } from "react";
 
 const INITIAL_FORM: LoginRequest = {
   email: "",
@@ -20,6 +20,12 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const hasHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+
   const nextPath = useMemo(() => {
     if (typeof window === "undefined") {
       return "/dashboard";
@@ -132,78 +138,35 @@ export default function LoginPage() {
             Sign in to your account
           </h2>
 
-          <form
-            onSubmit={onSubmit}
-            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-            suppressHydrationWarning
-          >
-            <div>
-              <label
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 500,
-                  color: "#404040",
-                  display: "block",
-                  marginBottom: "5px",
-                }}
-              >
-                Email address <span style={{ color: "#EF4444" }}>*</span>
-              </label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, email: event.target.value }))
-                }
-                style={{
-                  width: "100%",
-                  padding: "9px 12px",
-                  border: "1px solid #E5E5E5",
-                  borderRadius: "8px",
-                  fontSize: "13px",
-                  outline: "none",
-                  boxSizing: "border-box",
-                  color: "#171717",
-                  fontFamily: "inherit",
-                }}
-                onFocus={(event) =>
-                  (event.currentTarget.style.borderColor = "#2563EB")
-                }
-                onBlur={(event) =>
-                  (event.currentTarget.style.borderColor = "#E5E5E5")
-                }
-                placeholder="you@company.com"
-                autoComplete="email"
-                required
-                suppressHydrationWarning
-              />
-            </div>
-
-            <div>
-              <label
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 500,
-                  color: "#404040",
-                  display: "block",
-                  marginBottom: "5px",
-                }}
-              >
-                Password <span style={{ color: "#EF4444" }}>*</span>
-              </label>
-              <div style={{ position: "relative" }}>
+          {hasHydrated ? (
+            <form
+              className="keeper-ignore"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              onSubmit={onSubmit}
+              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+            >
+              <div>
+                <label
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    color: "#404040",
+                    display: "block",
+                    marginBottom: "5px",
+                  }}
+                >
+                  Email address <span style={{ color: "#EF4444" }}>*</span>
+                </label>
                 <input
-                  type={showPassword ? "text" : "password"}
-                  value={form.password}
+                  type="email"
+                  value={form.email}
                   onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      password: event.target.value,
-                    }))
+                    setForm((prev) => ({ ...prev, email: event.target.value }))
                   }
                   style={{
                     width: "100%",
-                    padding: "9px 40px 9px 12px",
+                    padding: "9px 12px",
                     border: "1px solid #E5E5E5",
                     borderRadius: "8px",
                     fontSize: "13px",
@@ -218,77 +181,128 @@ export default function LoginPage() {
                   onBlur={(event) =>
                     (event.currentTarget.style.borderColor = "#E5E5E5")
                   }
-                  placeholder="••••••••"
-                  autoComplete="current-password"
+                  placeholder="you@company.com"
+                  autoComplete="email"
                   required
+                  suppressHydrationWarning
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  style={{
-                    position: "absolute",
-                    right: "10px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#A3A3A3",
-                    lineHeight: 0,
-                  }}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <EyeOff size={15} strokeWidth={1.5} />
-                  ) : (
-                    <Eye size={15} strokeWidth={1.5} />
-                  )}
-                </button>
               </div>
-            </div>
 
-            {errorMessage ? (
-              <div
+              <div>
+                <label
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    color: "#404040",
+                    display: "block",
+                    marginBottom: "5px",
+                  }}
+                >
+                  Password <span style={{ color: "#EF4444" }}>*</span>
+                </label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        password: event.target.value,
+                      }))
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "9px 40px 9px 12px",
+                      border: "1px solid #E5E5E5",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      outline: "none",
+                      boxSizing: "border-box",
+                      color: "#171717",
+                      fontFamily: "inherit",
+                    }}
+                    onFocus={(event) =>
+                      (event.currentTarget.style.borderColor = "#2563EB")
+                    }
+                    onBlur={(event) =>
+                      (event.currentTarget.style.borderColor = "#E5E5E5")
+                    }
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "#A3A3A3",
+                      lineHeight: 0,
+                    }}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOff size={15} strokeWidth={1.5} />
+                    ) : (
+                      <Eye size={15} strokeWidth={1.5} />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {errorMessage ? (
+                <div
+                  style={{
+                    padding: "9px 12px",
+                    backgroundColor: "#FEE2E2",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                    color: "#991B1B",
+                    display: "flex",
+                    gap: "6px",
+                    alignItems: "center",
+                  }}
+                >
+                  <Lock size={14} strokeWidth={1.5} />
+                  {errorMessage}
+                </div>
+              ) : null}
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
                 style={{
-                  padding: "9px 12px",
-                  backgroundColor: "#FEE2E2",
+                  width: "100%",
+                  padding: "10px",
                   borderRadius: "8px",
+                  border: "none",
+                  backgroundColor: isSubmitting ? "#A3A3A3" : "#0A0A0A",
+                  color: "#fff",
                   fontSize: "13px",
-                  color: "#991B1B",
+                  fontWeight: 500,
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
                   display: "flex",
-                  gap: "6px",
                   alignItems: "center",
+                  justifyContent: "center",
+                  gap: "7px",
+                  marginTop: "4px",
                 }}
               >
                 <Lock size={14} strokeWidth={1.5} />
-                {errorMessage}
-              </div>
-            ) : null}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: "8px",
-                border: "none",
-                backgroundColor: isSubmitting ? "#A3A3A3" : "#0A0A0A",
-                color: "#fff",
-                fontSize: "13px",
-                fontWeight: 500,
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "7px",
-                marginTop: "4px",
-              }}
-            >
-              <Lock size={14} strokeWidth={1.5} />
-              {isSubmitting ? "Signing in…" : "Sign in"}
-            </button>
-          </form>
+                {isSubmitting ? "Signing in…" : "Sign in"}
+              </button>
+            </form>
+          ) : (
+            <div style={{ height: "229px" }} aria-hidden="true" />
+          )}
         </div>
 
         <div
