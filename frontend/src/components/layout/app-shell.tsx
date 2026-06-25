@@ -272,42 +272,48 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               zIndex: 30,
             }}
           >
-            <div />
-
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              style={{
-                border: "1px solid #E5E5E5",
-                borderRadius: "8px",
-                backgroundColor: "#fff",
-                height: "34px",
-                minWidth: "240px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "0 10px",
-                color: "#737373",
-                fontSize: "13px",
-                cursor: "pointer",
-              }}
-            >
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                <Search size={13} strokeWidth={1.5} />
-                Search jobs, customers…
-              </span>
-              <span
+            <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
                 style={{
-                  backgroundColor: "#F5F5F5",
-                  borderRadius: "4px",
-                  fontSize: "11px",
-                  padding: "2px 5px",
+                  border: "1px solid #E5E5E5",
+                  borderRadius: "8px",
+                  backgroundColor: "#fff",
+                  height: "34px",
+                  width: "380px",
+                  maxWidth: "min(380px, calc(100vw - 560px))",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "0 10px",
                   color: "#737373",
+                  fontSize: "13px",
+                  cursor: "pointer",
                 }}
               >
-                ⌘K
-              </span>
-            </button>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                  <Search size={14} strokeWidth={1.5} color="#A3A3A3" />
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    Search jobs, customers...
+                  </span>
+                </span>
+                <span
+                  style={{
+                    backgroundColor: "#F5F5F5",
+                    border: "1px solid #E5E5E5",
+                    borderRadius: "5px",
+                    fontSize: "11px",
+                    lineHeight: 1,
+                    padding: "4px 6px",
+                    color: "#A3A3A3",
+                    flexShrink: 0,
+                  }}
+                >
+                  ⌘K
+                </span>
+              </button>
+            </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <button

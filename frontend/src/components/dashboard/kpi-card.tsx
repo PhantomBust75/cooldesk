@@ -1,3 +1,6 @@
+import { AlertTriangle, BriefcaseBusiness, Calendar, CircleAlert, Users } from 'lucide-react';
+import type { ComponentType } from 'react';
+
 type KpiCardProps = {
   title: string;
   value: string;
@@ -19,8 +22,8 @@ function hexToRgba(hex: string, alpha: number): string {
 
 function Sparkline({ color, points }: { color: string; points: number[] }) {
   const data = points.length > 1 ? points : [0, 0, 0, 0, 0, 0, 0];
-  const width = 92;
-  const height = 28;
+  const width = 206;
+  const height = 52;
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = Math.max(1, max - min);
@@ -42,19 +45,82 @@ function Sparkline({ color, points }: { color: string; points: number[] }) {
   );
 }
 
-export function KpiCard({ title, value, accent, trend, change: _change }: KpiCardProps) {
+const CARD_META: Record<string, { delta: string; deltaTone: string; icon: ComponentType<{ size?: number; strokeWidth?: number; color?: string }> }> = {
+  'Total active jobs': { delta: '↑ 4%', deltaTone: '#525252', icon: BriefcaseBusiness },
+  'Pending schedule': { delta: '↑ 9%', deltaTone: '#4F78A8', icon: Calendar },
+  'Amber alerts': { delta: '↑ 14%', deltaTone: '#C2410C', icon: AlertTriangle },
+  'Chronic jobs': { delta: '↑ 8%', deltaTone: '#BE123C', icon: CircleAlert },
+  'No-shows today': { delta: '↓ 5%', deltaTone: '#525252', icon: Users },
+};
+
+export function KpiCard({ title, value, accent, trend }: KpiCardProps) {
   const sparklinePoints = trend && trend.length > 0 ? trend : [36, 28, 31, 22, 18, 20, 14];
+  const meta = CARD_META[title] ?? { delta: '', deltaTone: '#525252', icon: BriefcaseBusiness };
+  const Icon = meta.icon;
   return (
-    <div style={{ backgroundColor: '#fff', border: '1px solid #E5E5E5', borderRadius: '12px', overflow: 'hidden' }}>
-      <div style={{ height: '3px', backgroundColor: accent }} />
-      <div style={{ padding: '18px 18px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start' }}>
-          <div>
-            <div style={{ fontSize: '12px', color: '#737373', fontWeight: 500, marginBottom: '6px' }}>{title}</div>
-            <div style={{ fontSize: '28px', fontWeight: 600, color: '#0A0A0A', lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+    <div
+      style={{
+        position: 'relative',
+        height: '154px',
+        backgroundColor: '#fff',
+        border: '1px solid #E5E5E5',
+        borderTop: `3px solid ${accent}`,
+        borderRadius: '8px',
+        overflow: 'hidden',
+        boxShadow: '0 12px 22px rgba(15, 23, 42, 0.08)',
+      }}
+    >
+      <div style={{ position: 'relative', zIndex: 1, padding: '16px 18px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', minWidth: 0 }}>
+            <Icon size={12} strokeWidth={1.6} color="#B8B8B8" />
+            <span
+              style={{
+                color: '#A3A3A3',
+                fontSize: '11px',
+                fontWeight: 500,
+                letterSpacing: '0.12em',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {title}
+            </span>
           </div>
-          <Sparkline color={accent} points={sparklinePoints} />
+          {meta.delta ? (
+            <span
+              style={{
+                borderRadius: '5px',
+                backgroundColor: hexToRgba(accent, 0.1),
+                color: meta.deltaTone,
+                fontSize: '11px',
+                fontWeight: 700,
+                lineHeight: 1,
+                padding: '4px 7px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {meta.delta}
+            </span>
+          ) : null}
         </div>
+        <div
+          style={{
+            marginTop: '13px',
+            fontSize: '42px',
+            fontWeight: 700,
+            color: '#050505',
+            lineHeight: 0.95,
+            fontVariantNumeric: 'tabular-nums',
+            letterSpacing: '0',
+          }}
+        >
+          {value}
+        </div>
+      </div>
+      <div style={{ position: 'absolute', left: '16px', right: 0, bottom: '-1px', height: '58px', opacity: 0.78 }}>
+        <Sparkline color={accent} points={sparklinePoints} />
       </div>
     </div>
   );

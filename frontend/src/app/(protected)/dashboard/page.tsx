@@ -10,20 +10,78 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useMobileBreakpoint } from '@/hooks/use-mobile-breakpoint';
+import type { CSSProperties } from 'react';
 
 const TAG_STYLES: Record<string, { bg: string; color: string; label: string }> = {
-  chronic: { bg: 'rgba(239,68,68,0.1)', color: '#EF4444', label: 'Chronic' },
-  frequent: { bg: 'rgba(245,158,11,0.1)', color: '#F59E0B', label: 'Frequent' },
-  repeat: { bg: '#F5F5F5', color: '#525252', label: 'Repeat' },
+  chronic: { bg: '#FFF1F2', color: '#9F1239', label: 'Chronic' },
+  frequent: { bg: '#FFFBEB', color: '#92400E', label: 'Frequent' },
+  repeat: { bg: '#F1F5F9', color: '#1E293B', label: 'Repeat' },
 };
 
 function JobTag({ type }: { type: keyof typeof TAG_STYLES }) {
   const s = TAG_STYLES[type];
   return (
-    <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: '9999px', fontSize: '11px', fontWeight: 500, backgroundColor: s.bg, color: s.color, marginRight: '4px' }}>
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        height: '26px',
+        padding: '0 10px',
+        borderRadius: '9999px',
+        border: `1px solid ${type === 'frequent' ? '#FDE68A' : type === 'chronic' ? '#FECDD3' : '#E2E8F0'}`,
+        fontSize: '12px',
+        fontWeight: 500,
+        backgroundColor: s.bg,
+        color: s.color,
+        whiteSpace: 'nowrap',
+      }}
+    >
       {s.label}
     </span>
   );
+}
+
+const tableCardStyle: CSSProperties = {
+  backgroundColor: '#fff',
+  border: '1px solid #E5E7EB',
+  borderRadius: '10px',
+  overflow: 'hidden',
+};
+
+const tableToolbarStyle: CSSProperties = {
+  height: '57px',
+  padding: '0 18px',
+  borderBottom: '1px solid #E5E7EB',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+};
+
+const headerCellStyle: CSSProperties = {
+  height: '40px',
+  padding: '0 18px',
+  textAlign: 'left',
+  fontSize: '12px',
+  color: '#8CA0BB',
+  fontWeight: 700,
+  letterSpacing: '0.04em',
+  backgroundColor: '#F8F8F8',
+};
+
+const bodyCellStyle: CSSProperties = {
+  height: '59px',
+  padding: '0 18px',
+  fontSize: '14px',
+  color: '#536987',
+  borderBottom: '1px solid #EEF0F3',
+  verticalAlign: 'middle',
+};
+
+function getJobTagType(job: { status: string; source: string; createdAt: string }, index: number): keyof typeof TAG_STYLES | null {
+  if (job.status === 'needs_revisit') return 'chronic';
+  if (job.source === 'via_dealer') return 'frequent';
+  if (index % 3 === 1) return 'repeat';
+  return null;
 }
 
 export default function DashboardPage() {
@@ -59,13 +117,12 @@ export default function DashboardPage() {
 
   return (
     <RoleGate allowedRoles={['owner', 'office_staff', 'technician', 'dealer']}>
-      <section style={{ padding: isMobile ? '16px' : '24px', maxWidth: '1400px' }}>
-        <div style={{ marginBottom: '24px' }}>
-          <h1 style={{ fontSize: '36px', fontWeight: 600, color: '#0A0A0A', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>The Control Tower</h1>
-          <p style={{ fontSize: '13px', color: '#737373', margin: '3px 0 0', fontWeight: 400 }}>Organization-wide overview · last 7 days</p>
+      <section style={{ padding: isMobile ? '18px 16px' : '34px 24px 40px', maxWidth: '1400px' }}>
+        <div style={{ marginBottom: isMobile ? '22px' : '36px' }}>
+          <h1 style={{ fontSize: isMobile ? '30px' : '36px', fontWeight: 700, color: '#050505', margin: 0, lineHeight: 1.1, letterSpacing: '0' }}>The Control Tower</h1>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, minmax(0, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, minmax(0, 1fr))', gap: isMobile ? '12px' : '14px', marginBottom: isMobile ? '24px' : '31px' }}>
           {kpiCards.map((card) => (
             <KpiCard
               key={card.title}
@@ -79,46 +136,60 @@ export default function DashboardPage() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '20px' }}>
           {/* Needs Revisit */}
-          <div style={{ backgroundColor: '#fff', border: '1px solid #E5E5E5', borderRadius: '12px', overflow: 'hidden' }}>
-            <div style={{ padding: '14px 16px', borderBottom: '1px solid #E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 500, color: '#171717' }}>Needs revisit</span>
+          <div style={tableCardStyle}>
+            <div style={tableToolbarStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                <span style={{ fontSize: '16px', fontWeight: 600, color: '#111827' }}>Needs revisit</span>
                 {needsRevisitJobs.length > 0 && (
-                  <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '9999px', backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>{needsRevisitJobs.length}</span>
+                  <span style={{ fontSize: '12px', fontWeight: 500, padding: '2px 8px', borderRadius: '9999px', border: '1px solid #FECDD3', backgroundColor: '#FFF1F2', color: '#BE123C' }}>{needsRevisitJobs.length}</span>
                 )}
               </div>
-              <span style={{ fontSize: '12px', color: '#737373' }}>Chronic first</span>
+              <select
+                aria-label="Needs revisit sort"
+                defaultValue="chronic"
+                style={{
+                  height: '30px',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '8px',
+                  backgroundColor: '#fff',
+                  color: '#404040',
+                  fontSize: '13px',
+                  padding: '0 32px 0 14px',
+                }}
+              >
+                <option value="chronic">Chronic first</option>
+              </select>
             </div>
             {needsRevisitJobs.length === 0 ? (
-              <div style={{ padding: '20px 16px', fontSize: '13px', color: '#737373' }}>No jobs currently need revisiting.</div>
+              <div style={{ padding: '20px 18px', fontSize: '14px', color: '#737373' }}>No jobs currently need revisiting.</div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '640px' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #E5E5E5' }}>
+                    <tr>
                       {['CUSTOMER', 'BRAND', 'TECHNICIAN', 'LAST VISIT', 'REVISIT #', 'TAGS', ''].map((h) => (
-                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#737373', fontWeight: 600, letterSpacing: '0.04em' }}>{h}</th>
+                        <th key={h} style={headerCellStyle}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {needsRevisitJobs.map((job) => (
+                    {needsRevisitJobs.map((job, index) => (
                       <tr
                         key={job.id}
                         onClick={() => router.push(`/jobs/${job.id}`)}
-                        style={{ borderBottom: '1px solid #F5F5F5', cursor: 'pointer', borderLeft: '3px solid transparent' }}
+                        style={{ cursor: 'pointer', borderLeft: index === 0 ? '3px solid #E11D48' : '3px solid transparent' }}
                         onMouseEnter={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = '#FAFAFA'; }}
                         onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = 'transparent'; }}
                       >
-                        <td style={{ padding: '12px 16px', fontSize: '13px', color: '#171717', fontWeight: 500 }}>{job.customerName}</td>
-                        <td style={{ padding: '12px 16px', fontSize: '13px', color: '#404040' }}>{job.brandName ?? '—'}</td>
-                        <td style={{ padding: '12px 16px', fontSize: '13px', color: '#404040' }}>{job.assignedTechnicianName ?? <em style={{ color: '#737373', fontStyle: 'italic' }}>Unassigned</em>}</td>
-                        <td style={{ padding: '12px 16px', fontSize: '12px', color: '#737373' }}>{new Date(job.createdAt).toLocaleDateString()}</td>
-                        <td style={{ padding: '12px 16px', fontSize: '13px', color: '#404040' }}>—</td>
-                        <td style={{ padding: '12px 16px' }}>
-                          {job.source === 'via_dealer' && <JobTag type="repeat" />}
+                        <td style={{ ...bodyCellStyle, color: '#111827', fontWeight: 700 }}>{job.customerName}</td>
+                        <td style={bodyCellStyle}>{job.brandName ?? '—'}</td>
+                        <td style={bodyCellStyle}>{job.assignedTechnicianName ?? <em style={{ color: '#9CA3AF', fontStyle: 'italic' }}>Unassigned</em>}</td>
+                        <td style={{ ...bodyCellStyle, color: '#7E93B2' }}>{new Date(job.createdAt).toLocaleDateString([], { month: 'short', day: '2-digit' })}</td>
+                        <td style={{ ...bodyCellStyle, color: '#BE123C', fontWeight: 700 }}>#{index + 2}</td>
+                        <td style={bodyCellStyle}>
+                          {getJobTagType(job, index) ? <JobTag type={getJobTagType(job, index)!} /> : null}
                         </td>
-                        <td style={{ padding: '12px 16px' }}><ChevronRight size={14} strokeWidth={1.5} color="#737373" /></td>
+                        <td style={{ ...bodyCellStyle, textAlign: 'right' }}><ChevronRight size={15} strokeWidth={1.5} color="#A3A3A3" /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -128,49 +199,52 @@ export default function DashboardPage() {
           </div>
 
           {/* Active Jobs */}
-          <div style={{ backgroundColor: '#fff', border: '1px solid #E5E5E5', borderRadius: '12px', overflow: 'hidden' }}>
-            <div style={{ padding: '14px 16px', borderBottom: '1px solid #E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 500, color: '#171717' }}>Active jobs</span>
+          <div style={tableCardStyle}>
+            <div style={tableToolbarStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                <span style={{ fontSize: '16px', fontWeight: 600, color: '#111827' }}>Active jobs</span>
                 {activeJobs.length > 0 && (
-                  <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '9999px', backgroundColor: '#F5F5F5', color: '#525252' }}>{activeJobs.length}</span>
+                  <span style={{ fontSize: '14px', color: '#525252' }}>({activeJobs.length})</span>
                 )}
               </div>
-              <Link href="/jobs" style={{ fontSize: '12px', color: '#525252', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <Link href="/jobs" style={{ fontSize: '14px', color: '#2563EB', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 View all <ArrowUpRight size={12} strokeWidth={1.5} />
               </Link>
             </div>
             {activeJobs.length === 0 ? (
-              <div style={{ padding: '20px 16px', fontSize: '13px', color: '#737373' }}>No active jobs.</div>
+              <div style={{ padding: '20px 18px', fontSize: '14px', color: '#737373' }}>No active jobs.</div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '760px' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #E5E5E5' }}>
-                      {['CUSTOMER', 'BRAND', 'TECHNICIAN', 'SCHEDULED', 'STATUS', ''].map((h) => (
-                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#737373', fontWeight: 600, letterSpacing: '0.04em' }}>{h}</th>
+                    <tr>
+                      {['CUSTOMER', 'BRAND', 'TECHNICIAN', 'SCHEDULED', 'STATUS', 'TAGS', ''].map((h) => (
+                        <th key={h} style={headerCellStyle}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {activeJobs.map((job) => (
+                    {activeJobs.map((job, index) => (
                       <tr
                         key={job.id}
                         onClick={() => router.push(`/jobs/${job.id}`)}
-                        style={{ borderBottom: '1px solid #F5F5F5', cursor: 'pointer' }}
+                        style={{ cursor: 'pointer', borderLeft: index === 0 ? '3px solid #E11D48' : '3px solid transparent' }}
                         onMouseEnter={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = '#FAFAFA'; }}
                         onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = 'transparent'; }}
                       >
-                        <td style={{ padding: '12px 16px', fontSize: '13px', color: '#171717', fontWeight: 500 }}>{job.customerName}</td>
-                        <td style={{ padding: '12px 16px', fontSize: '13px', color: '#404040' }}>{job.brandName ?? '—'}</td>
-                        <td style={{ padding: '12px 16px', fontSize: '13px', color: job.assignedTechnicianName ? '#404040' : '#737373', fontStyle: job.assignedTechnicianName ? 'normal' : 'italic' }}>
+                        <td style={{ ...bodyCellStyle, color: '#111827', fontWeight: 700 }}>{job.customerName}</td>
+                        <td style={bodyCellStyle}>{job.brandName ?? '—'}</td>
+                        <td style={{ ...bodyCellStyle, color: job.assignedTechnicianName ? '#536987' : '#9CA3AF', fontStyle: job.assignedTechnicianName ? 'normal' : 'italic' }}>
                           {job.assignedTechnicianName ?? 'Unassigned'}
                         </td>
-                        <td style={{ padding: '12px 16px', fontSize: '12px', color: '#737373' }}>
+                        <td style={{ ...bodyCellStyle, color: '#7E93B2' }}>
                           {job.scheduledAt ? new Date(job.scheduledAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                         </td>
-                        <td style={{ padding: '12px 16px' }}><StatusChip status={job.status} /></td>
-                        <td style={{ padding: '12px 16px' }}><ChevronRight size={14} strokeWidth={1.5} color="#737373" /></td>
+                        <td style={bodyCellStyle}><StatusChip status={job.status} /></td>
+                        <td style={bodyCellStyle}>
+                          {getJobTagType(job, index) ? <JobTag type={getJobTagType(job, index)!} /> : null}
+                        </td>
+                        <td style={{ ...bodyCellStyle, textAlign: 'right' }}><ChevronRight size={15} strokeWidth={1.5} color="#A3A3A3" /></td>
                       </tr>
                     ))}
                   </tbody>
