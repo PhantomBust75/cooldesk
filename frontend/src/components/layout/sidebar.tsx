@@ -35,7 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/analytics", label: "Analytics", icon: BarChart2, roles: ["owner", "office_staff"] },
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/payment-methods", label: "Payment Methods", icon: CreditCard, roles: ["owner"] },
-  { href: "/admin/brands", label: "Admin", icon: Settings, roles: ["owner"] },
+  { href: "/admin/system-config", label: "Admin", icon: Settings, roles: ["owner"] },
 ];
 
 function isActiveRoute(pathname: string, href: string): boolean {
