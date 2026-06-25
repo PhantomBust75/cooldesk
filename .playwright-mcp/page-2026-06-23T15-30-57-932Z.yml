@@ -1,0 +1,103 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e7]:
+    - complementary [ref=e8]:
+      - generic [ref=e9]:
+        - img [ref=e10]
+        - generic [ref=e12]: CoolDesk
+      - navigation [ref=e13]:
+        - link "Dashboard" [ref=e1770] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e1771]
+          - generic [ref=e1774]: Dashboard
+        - link "All jobs" [ref=e1775] [cursor=pointer]:
+          - /url: /jobs
+          - img [ref=e1776]
+          - generic [ref=e1779]: All jobs
+        - link "Schedule and Assign" [ref=e1780] [cursor=pointer]:
+          - /url: /pending-schedule
+          - img [ref=e1781]
+          - generic [ref=e1784]: Schedule and Assign
+        - link "Technicians" [ref=e1785] [cursor=pointer]:
+          - /url: /technicians
+          - img [ref=e1786]
+          - generic [ref=e1791]: Technicians
+        - link "Dealers" [ref=e1792] [cursor=pointer]:
+          - /url: /dealers
+          - img [ref=e1793]
+          - generic [ref=e1797]: Dealers
+        - link "Analytics" [ref=e1798] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e1799]
+          - generic [ref=e1801]: Analytics
+        - link "Payments & Brands" [ref=e1802] [cursor=pointer]:
+          - /url: /payment-methods
+          - img [ref=e1803]
+          - generic [ref=e1805]: Payments & Brands
+        - link "System config" [ref=e1806] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e1807]
+          - generic [ref=e1810]: System config
+      - button "Collapse" [ref=e56] [cursor=pointer]:
+        - img [ref=e58]
+        - generic [ref=e60]: Collapse
+    - generic [ref=e61]:
+      - banner [ref=e62]:
+        - generic [ref=e63]:
+          - img
+          - textbox "Search jobs, customers..." [ref=e64]
+          - generic: ⌘K
+        - link "Log new job" [ref=e65] [cursor=pointer]:
+          - /url: /log-new-job
+          - img [ref=e66]
+          - text: Log new job
+        - button [ref=e69] [cursor=pointer]:
+          - img [ref=e70]
+        - button "OW" [ref=e75] [cursor=pointer]:
+          - generic [ref=e76]: OW
+      - main [ref=e78]:
+        - generic [ref=e1811]:
+          - generic [ref=e1812]:
+            - generic [ref=e1813]:
+              - heading "Dealer Management" [level=1] [ref=e1814]
+              - paragraph [ref=e1815]: 4 dealers
+            - button "Add dealer" [ref=e1816] [cursor=pointer]:
+              - img [ref=e1817]
+              - text: Add dealer
+          - generic [ref=e1818]:
+            - generic [ref=e1820] [cursor=pointer]:
+              - generic [ref=e1821]: CS
+              - generic [ref=e1822]: CoolAir Solutions LLC
+              - generic [ref=e1824]:
+                - button "Active" [ref=e1825]: Active
+                - button "Inactive" [ref=e1827]: Inactive
+              - button "Edit" [ref=e1829]:
+                - img [ref=e1830]
+                - text: Edit
+            - generic [ref=e1834] [cursor=pointer]:
+              - generic [ref=e1835]: PH
+              - generic [ref=e1836]: Premium HVAC Trading
+              - generic [ref=e1838]:
+                - button "Active" [ref=e1839]: Active
+                - button "Inactive" [ref=e1841]: Inactive
+              - button "Edit" [ref=e1843]:
+                - img [ref=e1844]
+                - text: Edit
+            - generic [ref=e1848] [cursor=pointer]:
+              - generic [ref=e1849]: GC
+              - generic [ref=e1850]: Gulf Climate Systems
+              - generic [ref=e1852]:
+                - button "Active" [ref=e1853]: Active
+                - button "Inactive" [ref=e1855]: Inactive
+              - button "Edit" [ref=e1857]:
+                - img [ref=e1858]
+                - text: Edit
+            - generic [ref=e1862] [cursor=pointer]:
+              - generic [ref=e1863]: AC
+              - generic [ref=e1864]: AlMutlaq Cooling
+              - generic [ref=e1866]:
+                - button "Active" [ref=e1867]: Active
+                - button "Inactive" [ref=e1869]: Inactive
+              - button "Edit" [ref=e1871]:
+                - img [ref=e1872]
+                - text: Edit
+  - generic [ref=e1130]: "2"

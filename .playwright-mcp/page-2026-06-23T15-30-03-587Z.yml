@@ -1,0 +1,127 @@
+- generic [ref=e7]:
+  - complementary [ref=e8]:
+    - generic [ref=e9]:
+      - img [ref=e10]
+      - generic [ref=e12]: CoolDesk
+    - navigation [ref=e13]:
+      - link "Dashboard" [ref=e722] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e723]
+        - generic [ref=e726]: Dashboard
+      - link "All jobs" [ref=e727] [cursor=pointer]:
+        - /url: /jobs
+        - img [ref=e728]
+        - generic [ref=e731]: All jobs
+      - link "Schedule and Assign" [ref=e732] [cursor=pointer]:
+        - /url: /pending-schedule
+        - img [ref=e733]
+        - generic [ref=e736]: Schedule and Assign
+      - link "Technicians" [ref=e737] [cursor=pointer]:
+        - /url: /technicians
+        - img [ref=e738]
+        - generic [ref=e743]: Technicians
+      - link "Dealers" [ref=e744] [cursor=pointer]:
+        - /url: /dealers
+        - img [ref=e745]
+        - generic [ref=e749]: Dealers
+      - link "Analytics" [ref=e750] [cursor=pointer]:
+        - /url: /analytics
+        - img [ref=e751]
+        - generic [ref=e753]: Analytics
+      - link "Payments & Brands" [ref=e754] [cursor=pointer]:
+        - /url: /payment-methods
+        - img [ref=e755]
+        - generic [ref=e757]: Payments & Brands
+      - link "System config" [ref=e758] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e759]
+        - generic [ref=e762]: System config
+    - button "Collapse" [ref=e56] [cursor=pointer]:
+      - img [ref=e58]
+      - generic [ref=e60]: Collapse
+  - generic [ref=e61]:
+    - banner [ref=e62]:
+      - generic [ref=e63]:
+        - img
+        - textbox "Search jobs, customers..." [ref=e64]
+        - generic: ⌘K
+      - link "Log new job" [ref=e65] [cursor=pointer]:
+        - /url: /log-new-job
+        - img [ref=e66]
+        - text: Log new job
+      - button [ref=e69] [cursor=pointer]:
+        - img [ref=e70]
+      - button "OW" [ref=e75] [cursor=pointer]:
+        - generic [ref=e76]: OW
+    - main [ref=e78]:
+      - generic [ref=e763]:
+        - generic [ref=e764]:
+          - generic [ref=e765]:
+            - heading "Schedule and Assign" [level=1] [ref=e766]
+            - paragraph [ref=e767]: 2 jobs awaiting scheduling
+          - button "Batch schedule" [ref=e768] [cursor=pointer]:
+            - img [ref=e769]
+            - text: Batch schedule
+        - table [ref=e776]:
+          - rowgroup [ref=e777]:
+            - row "Job ID Customer Type Brand Dealer Submitted Days waiting Schedule & assign" [ref=e778]:
+              - columnheader "Job ID" [ref=e779]
+              - columnheader "Customer" [ref=e780]
+              - columnheader "Type" [ref=e781]
+              - columnheader "Brand" [ref=e782]
+              - columnheader "Dealer" [ref=e783]
+              - columnheader "Submitted" [ref=e784]
+              - columnheader "Days waiting" [ref=e785]
+              - columnheader "Schedule & assign" [ref=e786]
+              - columnheader [ref=e787]
+          - rowgroup [ref=e788]:
+            - row "EF345678 Sara Al-Mutairi Installation Carrier — 01 May 418d Assign technician…" [ref=e789] [cursor=pointer]:
+              - cell "EF345678" [ref=e790]
+              - cell "Sara Al-Mutairi" [ref=e791]
+              - cell "Installation" [ref=e792]:
+                - generic [ref=e793]:
+                  - img [ref=e794]
+                  - text: Installation
+              - cell "Carrier" [ref=e796]
+              - cell "—" [ref=e797]
+              - cell "01 May" [ref=e798]
+              - cell "418d" [ref=e799]:
+                - generic [ref=e801]:
+                  - img [ref=e802]
+                  - generic [ref=e805]: 418d
+              - cell "Assign technician…" [ref=e808]:
+                - generic [ref=e809]:
+                  - textbox [ref=e810]
+                  - combobox [ref=e811]:
+                    - option "Assign technician…" [selected]
+                    - option "Ahmed Al-Rashid"
+                    - option "Mohamed Ibrahim"
+                    - option "Khalid Al-Sayed"
+                    - option "Omar Hassan"
+              - cell [ref=e812]:
+                - img [ref=e813]
+            - row "QR901234 Mona Al-Harbi Complaint Carrier — 02 May 417d Assign technician…" [ref=e815] [cursor=pointer]:
+              - cell "QR901234" [ref=e816]
+              - cell "Mona Al-Harbi" [ref=e817]
+              - cell "Complaint" [ref=e818]:
+                - generic [ref=e819]:
+                  - img [ref=e820]
+                  - text: Complaint
+              - cell "Carrier" [ref=e822]
+              - cell "—" [ref=e823]
+              - cell "02 May" [ref=e824]
+              - cell "417d" [ref=e825]:
+                - generic [ref=e827]:
+                  - img [ref=e828]
+                  - generic [ref=e831]: 417d
+              - cell "Assign technician…" [ref=e834]:
+                - generic [ref=e835]:
+                  - textbox [ref=e836]
+                  - combobox [ref=e837]:
+                    - option "Assign technician…" [selected]
+                    - option "Ahmed Al-Rashid"
+                    - option "Mohamed Ibrahim"
+                    - option "Khalid Al-Sayed"
+                    - option "Omar Hassan"
+              - cell [ref=e838]:
+                - img [ref=e839]

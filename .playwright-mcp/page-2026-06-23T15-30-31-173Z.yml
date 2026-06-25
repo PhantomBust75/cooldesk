@@ -1,0 +1,130 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e7]:
+    - complementary [ref=e8]:
+      - generic [ref=e9]:
+        - img [ref=e10]
+        - generic [ref=e12]: CoolDesk
+      - navigation [ref=e13]:
+        - link "Dashboard" [ref=e960] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e961]
+          - generic [ref=e964]: Dashboard
+        - link "All jobs" [ref=e965] [cursor=pointer]:
+          - /url: /jobs
+          - img [ref=e966]
+          - generic [ref=e969]: All jobs
+        - link "Schedule and Assign" [ref=e970] [cursor=pointer]:
+          - /url: /pending-schedule
+          - img [ref=e971]
+          - generic [ref=e974]: Schedule and Assign
+        - link "Technicians" [ref=e975] [cursor=pointer]:
+          - /url: /technicians
+          - img [ref=e976]
+          - generic [ref=e981]: Technicians
+        - link "Dealers" [ref=e982] [cursor=pointer]:
+          - /url: /dealers
+          - img [ref=e983]
+          - generic [ref=e987]: Dealers
+        - link "Analytics" [ref=e988] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e989]
+          - generic [ref=e991]: Analytics
+        - link "Payments & Brands" [ref=e992] [cursor=pointer]:
+          - /url: /payment-methods
+          - img [ref=e993]
+          - generic [ref=e995]: Payments & Brands
+        - link "System config" [ref=e996] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e997]
+          - generic [ref=e1000]: System config
+      - button "Collapse" [ref=e56] [cursor=pointer]:
+        - img [ref=e58]
+        - generic [ref=e60]: Collapse
+    - generic [ref=e61]:
+      - banner [ref=e62]:
+        - generic [ref=e63]:
+          - img
+          - textbox "Search jobs, customers..." [ref=e64]
+          - generic: ⌘K
+        - link "Log new job" [ref=e65] [cursor=pointer]:
+          - /url: /log-new-job
+          - img [ref=e66]
+          - text: Log new job
+        - button [ref=e69] [cursor=pointer]:
+          - img [ref=e70]
+        - button "OW" [ref=e75] [cursor=pointer]:
+          - generic [ref=e76]: OW
+      - main [ref=e78]:
+        - generic [ref=e1001]:
+          - generic [ref=e1002]:
+            - generic [ref=e1003]:
+              - heading "Analytics" [level=1] [ref=e1004]
+              - paragraph [ref=e1005]: Last 7 days · May 2025
+            - button "Export CSV" [ref=e1006] [cursor=pointer]:
+              - img [ref=e1007]
+              - text: Export CSV
+          - generic [ref=e1010]:
+            - generic [ref=e1011]:
+              - button "Business" [ref=e1012] [cursor=pointer]
+              - button "Technician scorecards" [ref=e1013] [cursor=pointer]
+              - button "Brand" [ref=e1014] [cursor=pointer]
+              - button "Dealer" [ref=e1015] [cursor=pointer]
+            - generic [ref=e1017]:
+              - generic [ref=e1018]:
+                - generic [ref=e1019]:
+                  - generic [ref=e1020]: Total revenue (7d)
+                  - generic [ref=e1021]: SAR 43,850
+                  - generic [ref=e1022]: +12% vs prev week
+                - generic [ref=e1023]:
+                  - generic [ref=e1024]: Completion rate
+                  - generic [ref=e1025]: 85.3%
+                  - generic [ref=e1026]: +3.1% vs prev week
+                - generic [ref=e1027]:
+                  - generic [ref=e1028]: On-time rate
+                  - generic [ref=e1029]: 78.4%
+                  - generic [ref=e1030]: "-2.1% vs prev week"
+                - generic [ref=e1031]:
+                  - generic [ref=e1032]: Avg resolution
+                  - generic [ref=e1033]: 1h 52m
+                  - generic [ref=e1034]: +8min vs prev week
+              - generic [ref=e1035]:
+                - heading "Daily revenue (SAR)" [level=3] [ref=e1036]
+                - img [ref=e1039]:
+                  - generic [ref=e1044]:
+                    - generic [ref=e1046]: Apr 30
+                    - generic [ref=e1048]: May 1
+                    - generic [ref=e1050]: May 2
+                    - generic [ref=e1052]: May 3
+                    - generic [ref=e1054]: May 4
+                    - generic [ref=e1056]: May 5
+                  - generic [ref=e1058]:
+                    - generic [ref=e1060]: "0"
+                    - generic [ref=e1062]: "2500"
+                    - generic [ref=e1064]: "5000"
+                    - generic [ref=e1066]: "7500"
+                    - generic [ref=e1068]: "10000"
+              - generic [ref=e1084]:
+                - heading "Daily jobs" [level=3] [ref=e1085]
+                - generic [ref=e1087]:
+                  - img [ref=e1088]:
+                    - generic [ref=e1093]:
+                      - generic [ref=e1095]: Apr 30
+                      - generic [ref=e1097]: May 1
+                      - generic [ref=e1099]: May 2
+                      - generic [ref=e1101]: May 3
+                      - generic [ref=e1103]: May 4
+                      - generic [ref=e1105]: May 5
+                    - generic [ref=e1107]:
+                      - generic [ref=e1109]: "0"
+                      - generic [ref=e1111]: "2"
+                      - generic [ref=e1113]: "4"
+                      - generic [ref=e1115]: "6"
+                      - generic [ref=e1117]: "8"
+                  - list [ref=e1123]:
+                    - listitem [ref=e1124]:
+                      - img [ref=e1125]
+                      - text: Installations
+                    - listitem [ref=e1127]:
+                      - img [ref=e1128]
+                      - text: Complaints
+  - generic [ref=e1130]: "2"

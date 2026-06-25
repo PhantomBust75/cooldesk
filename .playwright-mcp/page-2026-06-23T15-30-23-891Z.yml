@@ -1,0 +1,110 @@
+- generic [ref=e7]:
+  - complementary [ref=e8]:
+    - generic [ref=e9]:
+      - img [ref=e10]
+      - generic [ref=e12]: CoolDesk
+    - navigation [ref=e13]:
+      - link "Dashboard" [ref=e841] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e842]
+        - generic [ref=e845]: Dashboard
+      - link "All jobs" [ref=e846] [cursor=pointer]:
+        - /url: /jobs
+        - img [ref=e847]
+        - generic [ref=e850]: All jobs
+      - link "Schedule and Assign" [ref=e851] [cursor=pointer]:
+        - /url: /pending-schedule
+        - img [ref=e852]
+        - generic [ref=e855]: Schedule and Assign
+      - link "Technicians" [ref=e856] [cursor=pointer]:
+        - /url: /technicians
+        - img [ref=e857]
+        - generic [ref=e862]: Technicians
+      - link "Dealers" [ref=e863] [cursor=pointer]:
+        - /url: /dealers
+        - img [ref=e864]
+        - generic [ref=e868]: Dealers
+      - link "Analytics" [ref=e869] [cursor=pointer]:
+        - /url: /analytics
+        - img [ref=e870]
+        - generic [ref=e872]: Analytics
+      - link "Payments & Brands" [ref=e873] [cursor=pointer]:
+        - /url: /payment-methods
+        - img [ref=e874]
+        - generic [ref=e876]: Payments & Brands
+      - link "System config" [ref=e877] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e878]
+        - generic [ref=e881]: System config
+    - button "Collapse" [ref=e56] [cursor=pointer]:
+      - img [ref=e58]
+      - generic [ref=e60]: Collapse
+  - generic [ref=e61]:
+    - banner [ref=e62]:
+      - generic [ref=e63]:
+        - img
+        - textbox "Search jobs, customers..." [ref=e64]
+        - generic: ⌘K
+      - link "Log new job" [ref=e65] [cursor=pointer]:
+        - /url: /log-new-job
+        - img [ref=e66]
+        - text: Log new job
+      - button [ref=e69] [cursor=pointer]:
+        - img [ref=e70]
+      - button "OW" [ref=e75] [cursor=pointer]:
+        - generic [ref=e76]: OW
+    - main [ref=e78]:
+      - generic [ref=e882]:
+        - generic [ref=e883]:
+          - generic [ref=e884]:
+            - heading "Technicians" [level=1] [ref=e885]
+            - paragraph [ref=e886]: 4 active · 5 total
+          - button "Add technician" [ref=e887] [cursor=pointer]:
+            - img [ref=e888]
+            - text: Add technician
+        - generic [ref=e889]:
+          - generic [ref=e891] [cursor=pointer]:
+            - generic [ref=e892]: AA
+            - generic [ref=e893]: Ahmed Al-Rashid
+            - generic [ref=e895]:
+              - button "Active" [ref=e896]: Active
+              - button "Inactive" [ref=e898]: Inactive
+            - button "Edit" [ref=e900]:
+              - img [ref=e901]
+              - text: Edit
+          - generic [ref=e905] [cursor=pointer]:
+            - generic [ref=e906]: MI
+            - generic [ref=e907]: Mohamed Ibrahim
+            - generic [ref=e909]:
+              - button "Active" [ref=e910]: Active
+              - button "Inactive" [ref=e912]: Inactive
+            - button "Edit" [ref=e914]:
+              - img [ref=e915]
+              - text: Edit
+          - generic [ref=e919] [cursor=pointer]:
+            - generic [ref=e920]: KA
+            - generic [ref=e921]: Khalid Al-Sayed
+            - generic [ref=e923]:
+              - button "Active" [ref=e924]: Active
+              - button "Inactive" [ref=e926]: Inactive
+            - button "Edit" [ref=e928]:
+              - img [ref=e929]
+              - text: Edit
+          - generic [ref=e933] [cursor=pointer]:
+            - generic [ref=e934]: OH
+            - generic [ref=e935]: Omar Hassan
+            - generic [ref=e937]:
+              - button "Active" [ref=e938]: Active
+              - button "Inactive" [ref=e940]: Inactive
+            - button "Edit" [ref=e942]:
+              - img [ref=e943]
+              - text: Edit
+          - generic [ref=e947] [cursor=pointer]:
+            - generic [ref=e948]: AM
+            - generic [ref=e949]: Ali Mahmoud
+            - generic [ref=e951]:
+              - button "Active" [ref=e952]: Active
+              - button "Inactive" [ref=e954]: Inactive
+            - button "Edit" [ref=e956]:
+              - img [ref=e957]
+              - text: Edit

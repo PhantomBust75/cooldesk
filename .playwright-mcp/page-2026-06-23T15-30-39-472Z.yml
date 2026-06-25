@@ -1,0 +1,387 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e7]:
+    - complementary [ref=e8]:
+      - generic [ref=e9]:
+        - img [ref=e10]
+        - generic [ref=e12]: CoolDesk
+      - navigation [ref=e13]:
+        - link "Dashboard" [ref=e1145] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e1146]
+          - generic [ref=e1149]: Dashboard
+        - link "All jobs" [ref=e1150] [cursor=pointer]:
+          - /url: /jobs
+          - img [ref=e1151]
+          - generic [ref=e1154]: All jobs
+        - link "Schedule and Assign" [ref=e1155] [cursor=pointer]:
+          - /url: /pending-schedule
+          - img [ref=e1156]
+          - generic [ref=e1159]: Schedule and Assign
+        - link "Technicians" [ref=e1160] [cursor=pointer]:
+          - /url: /technicians
+          - img [ref=e1161]
+          - generic [ref=e1166]: Technicians
+        - link "Dealers" [ref=e1167] [cursor=pointer]:
+          - /url: /dealers
+          - img [ref=e1168]
+          - generic [ref=e1172]: Dealers
+        - link "Analytics" [ref=e1173] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e1174]
+          - generic [ref=e1176]: Analytics
+        - link "Payments & Brands" [ref=e1177] [cursor=pointer]:
+          - /url: /payment-methods
+          - img [ref=e1178]
+          - generic [ref=e1180]: Payments & Brands
+        - link "System config" [ref=e1181] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e1182]
+          - generic [ref=e1185]: System config
+      - button "Collapse" [ref=e56] [cursor=pointer]:
+        - img [ref=e58]
+        - generic [ref=e60]: Collapse
+    - generic [ref=e61]:
+      - banner [ref=e62]:
+        - generic [ref=e63]:
+          - img
+          - textbox "Search jobs, customers..." [ref=e64]
+          - generic: ⌘K
+        - link "Log new job" [ref=e65] [cursor=pointer]:
+          - /url: /log-new-job
+          - img [ref=e66]
+          - text: Log new job
+        - button [ref=e69] [cursor=pointer]:
+          - img [ref=e70]
+        - button "OW" [ref=e75] [cursor=pointer]:
+          - generic [ref=e76]: OW
+      - main [ref=e78]:
+        - generic [ref=e1186]:
+          - generic [ref=e1187]:
+            - heading "Payments & Brands" [level=1] [ref=e1188]
+            - paragraph [ref=e1189]: Manage payment methods, service item pricing, and brands
+          - generic [ref=e1190]:
+            - generic [ref=e1191]:
+              - generic [ref=e1192]:
+                - img [ref=e1194]
+                - generic [ref=e1196]:
+                  - generic [ref=e1197]: Payment Methods
+                  - generic [ref=e1198]: Methods available to technicians when collecting payment
+              - button "Add" [ref=e1200] [cursor=pointer]:
+                - img [ref=e1201]
+                - text: Add
+            - table [ref=e1203]:
+              - rowgroup [ref=e1204]:
+                - row "Method Status Actions" [ref=e1205]:
+                  - columnheader "Method" [ref=e1206]
+                  - columnheader "Status" [ref=e1207]
+                  - columnheader "Actions" [ref=e1208]
+              - rowgroup [ref=e1209]:
+                - row "Cash Active" [ref=e1210]:
+                  - cell "Cash" [ref=e1211]:
+                    - generic [ref=e1212]:
+                      - img [ref=e1213]
+                      - generic [ref=e1215]: Cash
+                  - cell "Active" [ref=e1216]:
+                    - button "Active" [ref=e1217] [cursor=pointer]: Active
+                  - cell [ref=e1219]:
+                    - generic [ref=e1220]:
+                      - button "Edit" [ref=e1221] [cursor=pointer]:
+                        - img [ref=e1222]
+                      - button "Delete" [ref=e1225] [cursor=pointer]:
+                        - img [ref=e1226]
+                - row "Bank Transfer Active" [ref=e1229]:
+                  - cell "Bank Transfer" [ref=e1230]:
+                    - generic [ref=e1231]:
+                      - img [ref=e1232]
+                      - generic [ref=e1234]: Bank Transfer
+                  - cell "Active" [ref=e1235]:
+                    - button "Active" [ref=e1236] [cursor=pointer]: Active
+                  - cell [ref=e1238]:
+                    - generic [ref=e1239]:
+                      - button "Edit" [ref=e1240] [cursor=pointer]:
+                        - img [ref=e1241]
+                      - button "Delete" [ref=e1244] [cursor=pointer]:
+                        - img [ref=e1245]
+                - row "Credit Card (POS) Active" [ref=e1248]:
+                  - cell "Credit Card (POS)" [ref=e1249]:
+                    - generic [ref=e1250]:
+                      - img [ref=e1251]
+                      - generic [ref=e1253]: Credit Card (POS)
+                  - cell "Active" [ref=e1254]:
+                    - button "Active" [ref=e1255] [cursor=pointer]: Active
+                  - cell [ref=e1257]:
+                    - generic [ref=e1258]:
+                      - button "Edit" [ref=e1259] [cursor=pointer]:
+                        - img [ref=e1260]
+                      - button "Delete" [ref=e1263] [cursor=pointer]:
+                        - img [ref=e1264]
+                - row "STC Pay Active" [ref=e1267]:
+                  - cell "STC Pay" [ref=e1268]:
+                    - generic [ref=e1269]:
+                      - img [ref=e1270]
+                      - generic [ref=e1272]: STC Pay
+                  - cell "Active" [ref=e1273]:
+                    - button "Active" [ref=e1274] [cursor=pointer]: Active
+                  - cell [ref=e1276]:
+                    - generic [ref=e1277]:
+                      - button "Edit" [ref=e1278] [cursor=pointer]:
+                        - img [ref=e1279]
+                      - button "Delete" [ref=e1282] [cursor=pointer]:
+                        - img [ref=e1283]
+                - row "Cheque Inactive" [ref=e1286]:
+                  - cell "Cheque" [ref=e1287]:
+                    - generic [ref=e1288]:
+                      - img [ref=e1289]
+                      - generic [ref=e1291]: Cheque
+                  - cell "Inactive" [ref=e1292]:
+                    - button "Inactive" [ref=e1293] [cursor=pointer]: Inactive
+                  - cell [ref=e1295]:
+                    - generic [ref=e1296]:
+                      - button "Edit" [ref=e1297] [cursor=pointer]:
+                        - img [ref=e1298]
+                      - button "Delete" [ref=e1301] [cursor=pointer]:
+                        - img [ref=e1302]
+          - generic [ref=e1305]:
+            - generic [ref=e1306]:
+              - generic [ref=e1307]:
+                - img [ref=e1309]
+                - generic [ref=e1313]:
+                  - generic [ref=e1314]: Service Items & Pricing
+                  - generic [ref=e1315]: Fixed items charge a flat rate. Variable items (pipe, gas) charge per unit — technicians enter the quantity used.
+              - button "Add" [ref=e1317] [cursor=pointer]:
+                - img [ref=e1318]
+                - text: Add
+            - generic [ref=e1319]:
+              - table [ref=e1320]:
+                - rowgroup [ref=e1321]:
+                  - row "Item Pricing Actions" [ref=e1322]:
+                    - columnheader "Item" [ref=e1323]
+                    - columnheader "Pricing" [ref=e1324]
+                    - columnheader "Actions" [ref=e1325]
+                - rowgroup [ref=e1326]:
+                  - row "Copper Pipe Variable SAR 25 / meter" [ref=e1327]:
+                    - cell "Copper Pipe" [ref=e1328]
+                    - cell "Variable SAR 25 / meter" [ref=e1329]:
+                      - generic [ref=e1330]:
+                        - generic [ref=e1331]: Variable
+                        - generic [ref=e1332]: SAR 25 / meter
+                    - cell [ref=e1333]:
+                      - generic [ref=e1334]:
+                        - button "Edit" [ref=e1335] [cursor=pointer]:
+                          - img [ref=e1336]
+                        - button "Delete" [ref=e1339] [cursor=pointer]:
+                          - img [ref=e1340]
+                  - row "AC Gas Variable SAR 40 / kg" [ref=e1343]:
+                    - cell "AC Gas" [ref=e1344]
+                    - cell "Variable SAR 40 / kg" [ref=e1345]:
+                      - generic [ref=e1346]:
+                        - generic [ref=e1347]: Variable
+                        - generic [ref=e1348]: SAR 40 / kg
+                    - cell [ref=e1349]:
+                      - generic [ref=e1350]:
+                        - button "Edit" [ref=e1351] [cursor=pointer]:
+                          - img [ref=e1352]
+                        - button "Delete" [ref=e1355] [cursor=pointer]:
+                          - img [ref=e1356]
+                  - row "Dismantling Fixed SAR 15" [ref=e1359]:
+                    - cell "Dismantling" [ref=e1360]
+                    - cell "Fixed SAR 15" [ref=e1361]:
+                      - generic [ref=e1362]:
+                        - generic [ref=e1363]: Fixed
+                        - generic [ref=e1364]: SAR 15
+                    - cell [ref=e1365]:
+                      - generic [ref=e1366]:
+                        - button "Edit" [ref=e1367] [cursor=pointer]:
+                          - img [ref=e1368]
+                        - button "Delete" [ref=e1371] [cursor=pointer]:
+                          - img [ref=e1372]
+                  - row "Drain Pipe Variable SAR 10 / meter" [ref=e1375]:
+                    - cell "Drain Pipe" [ref=e1376]
+                    - cell "Variable SAR 10 / meter" [ref=e1377]:
+                      - generic [ref=e1378]:
+                        - generic [ref=e1379]: Variable
+                        - generic [ref=e1380]: SAR 10 / meter
+                    - cell [ref=e1381]:
+                      - generic [ref=e1382]:
+                        - button "Edit" [ref=e1383] [cursor=pointer]:
+                          - img [ref=e1384]
+                        - button "Delete" [ref=e1387] [cursor=pointer]:
+                          - img [ref=e1388]
+                  - row "Nuts & Bolts Fixed SAR 5" [ref=e1391]:
+                    - cell "Nuts & Bolts" [ref=e1392]
+                    - cell "Fixed SAR 5" [ref=e1393]:
+                      - generic [ref=e1394]:
+                        - generic [ref=e1395]: Fixed
+                        - generic [ref=e1396]: SAR 5
+                    - cell [ref=e1397]:
+                      - generic [ref=e1398]:
+                        - button "Edit" [ref=e1399] [cursor=pointer]:
+                          - img [ref=e1400]
+                        - button "Delete" [ref=e1403] [cursor=pointer]:
+                          - img [ref=e1404]
+                  - row "Transportation Fixed SAR 30" [ref=e1407]:
+                    - cell "Transportation" [ref=e1408]
+                    - cell "Fixed SAR 30" [ref=e1409]:
+                      - generic [ref=e1410]:
+                        - generic [ref=e1411]: Fixed
+                        - generic [ref=e1412]: SAR 30
+                    - cell [ref=e1413]:
+                      - generic [ref=e1414]:
+                        - button "Edit" [ref=e1415] [cursor=pointer]:
+                          - img [ref=e1416]
+                        - button "Delete" [ref=e1419] [cursor=pointer]:
+                          - img [ref=e1420]
+                  - row "Brackets Fixed SAR 20" [ref=e1423]:
+                    - cell "Brackets" [ref=e1424]
+                    - cell "Fixed SAR 20" [ref=e1425]:
+                      - generic [ref=e1426]:
+                        - generic [ref=e1427]: Fixed
+                        - generic [ref=e1428]: SAR 20
+                    - cell [ref=e1429]:
+                      - generic [ref=e1430]:
+                        - button "Edit" [ref=e1431] [cursor=pointer]:
+                          - img [ref=e1432]
+                        - button "Delete" [ref=e1435] [cursor=pointer]:
+                          - img [ref=e1436]
+                  - row "Insulation Tape Variable SAR 8 / meter" [ref=e1439]:
+                    - cell "Insulation Tape" [ref=e1440]
+                    - cell "Variable SAR 8 / meter" [ref=e1441]:
+                      - generic [ref=e1442]:
+                        - generic [ref=e1443]: Variable
+                        - generic [ref=e1444]: SAR 8 / meter
+                    - cell [ref=e1445]:
+                      - generic [ref=e1446]:
+                        - button "Edit" [ref=e1447] [cursor=pointer]:
+                          - img [ref=e1448]
+                        - button "Delete" [ref=e1451] [cursor=pointer]:
+                          - img [ref=e1452]
+              - paragraph [ref=e1456]: Technicians select items and enter quantities for variable items. Prices are centrally controlled and cannot be modified in the field.
+          - generic [ref=e1457]:
+            - generic [ref=e1458]:
+              - generic [ref=e1459]:
+                - img [ref=e1461]
+                - generic [ref=e1465]:
+                  - generic [ref=e1466]: Brands
+                  - generic [ref=e1467]: Colour coding for the owner portal and installation charges for the technician payment flow
+              - button "Add" [ref=e1469] [cursor=pointer]:
+                - img [ref=e1470]
+                - text: Add
+            - generic [ref=e1471]:
+              - table [ref=e1472]:
+                - rowgroup [ref=e1473]:
+                  - row "Brand Installation Charge (SAR) Status Actions" [ref=e1474]:
+                    - columnheader "Brand" [ref=e1475]
+                    - columnheader "Installation Charge (SAR)" [ref=e1476]
+                    - columnheader "Status" [ref=e1477]
+                    - columnheader "Actions" [ref=e1478]
+                - rowgroup [ref=e1479]:
+                  - row "Daikin SAR 280 Active" [ref=e1480]:
+                    - cell "Daikin" [ref=e1481]:
+                      - generic [ref=e1484]: Daikin
+                    - cell "SAR 280" [ref=e1485]
+                    - cell "Active" [ref=e1486]:
+                      - button "Active" [ref=e1487] [cursor=pointer]: Active
+                    - cell [ref=e1489]:
+                      - generic [ref=e1490]:
+                        - button "Edit" [ref=e1491] [cursor=pointer]:
+                          - img [ref=e1492]
+                        - button "Delete" [ref=e1495] [cursor=pointer]:
+                          - img [ref=e1496]
+                  - row "Carrier SAR 260 Active" [ref=e1499]:
+                    - cell "Carrier" [ref=e1500]:
+                      - generic [ref=e1503]: Carrier
+                    - cell "SAR 260" [ref=e1504]
+                    - cell "Active" [ref=e1505]:
+                      - button "Active" [ref=e1506] [cursor=pointer]: Active
+                    - cell [ref=e1508]:
+                      - generic [ref=e1509]:
+                        - button "Edit" [ref=e1510] [cursor=pointer]:
+                          - img [ref=e1511]
+                        - button "Delete" [ref=e1514] [cursor=pointer]:
+                          - img [ref=e1515]
+                  - row "Midea SAR 175 Active" [ref=e1518]:
+                    - cell "Midea" [ref=e1519]:
+                      - generic [ref=e1522]: Midea
+                    - cell "SAR 175" [ref=e1523]
+                    - cell "Active" [ref=e1524]:
+                      - button "Active" [ref=e1525] [cursor=pointer]: Active
+                    - cell [ref=e1527]:
+                      - generic [ref=e1528]:
+                        - button "Edit" [ref=e1529] [cursor=pointer]:
+                          - img [ref=e1530]
+                        - button "Delete" [ref=e1533] [cursor=pointer]:
+                          - img [ref=e1534]
+                  - row "LG Electronics SAR 240 Active" [ref=e1537]:
+                    - cell "LG Electronics" [ref=e1538]:
+                      - generic [ref=e1541]: LG Electronics
+                    - cell "SAR 240" [ref=e1542]
+                    - cell "Active" [ref=e1543]:
+                      - button "Active" [ref=e1544] [cursor=pointer]: Active
+                    - cell [ref=e1546]:
+                      - generic [ref=e1547]:
+                        - button "Edit" [ref=e1548] [cursor=pointer]:
+                          - img [ref=e1549]
+                        - button "Delete" [ref=e1552] [cursor=pointer]:
+                          - img [ref=e1553]
+                  - row "Samsung SAR 230 Active" [ref=e1556]:
+                    - cell "Samsung" [ref=e1557]:
+                      - generic [ref=e1560]: Samsung
+                    - cell "SAR 230" [ref=e1561]
+                    - cell "Active" [ref=e1562]:
+                      - button "Active" [ref=e1563] [cursor=pointer]: Active
+                    - cell [ref=e1565]:
+                      - generic [ref=e1566]:
+                        - button "Edit" [ref=e1567] [cursor=pointer]:
+                          - img [ref=e1568]
+                        - button "Delete" [ref=e1571] [cursor=pointer]:
+                          - img [ref=e1572]
+                  - row "Gree SAR 200 Active" [ref=e1575]:
+                    - cell "Gree" [ref=e1576]:
+                      - generic [ref=e1579]: Gree
+                    - cell "SAR 200" [ref=e1580]
+                    - cell "Active" [ref=e1581]:
+                      - button "Active" [ref=e1582] [cursor=pointer]: Active
+                    - cell [ref=e1584]:
+                      - generic [ref=e1585]:
+                        - button "Edit" [ref=e1586] [cursor=pointer]:
+                          - img [ref=e1587]
+                        - button "Delete" [ref=e1590] [cursor=pointer]:
+                          - img [ref=e1591]
+                  - row "Haier SAR 180 Inactive" [ref=e1594]:
+                    - cell "Haier" [ref=e1595]:
+                      - generic [ref=e1598]: Haier
+                    - cell "SAR 180" [ref=e1599]
+                    - cell "Inactive" [ref=e1600]:
+                      - button "Inactive" [ref=e1601] [cursor=pointer]: Inactive
+                    - cell [ref=e1603]:
+                      - generic [ref=e1604]:
+                        - button "Edit" [ref=e1605] [cursor=pointer]:
+                          - img [ref=e1606]
+                        - button "Delete" [ref=e1609] [cursor=pointer]:
+                          - img [ref=e1610]
+                  - row "Dawlance SAR 160 Active" [ref=e1613]:
+                    - cell "Dawlance" [ref=e1614]:
+                      - generic [ref=e1617]: Dawlance
+                    - cell "SAR 160" [ref=e1618]
+                    - cell "Active" [ref=e1619]:
+                      - button "Active" [ref=e1620] [cursor=pointer]: Active
+                    - cell [ref=e1622]:
+                      - generic [ref=e1623]:
+                        - button "Edit" [ref=e1624] [cursor=pointer]:
+                          - img [ref=e1625]
+                        - button "Delete" [ref=e1628] [cursor=pointer]:
+                          - img [ref=e1629]
+                  - row "TCL SAR 155 Active" [ref=e1632]:
+                    - cell "TCL" [ref=e1633]:
+                      - generic [ref=e1636]: TCL
+                    - cell "SAR 155" [ref=e1637]
+                    - cell "Active" [ref=e1638]:
+                      - button "Active" [ref=e1639] [cursor=pointer]: Active
+                    - cell [ref=e1641]:
+                      - generic [ref=e1642]:
+                        - button "Edit" [ref=e1643] [cursor=pointer]:
+                          - img [ref=e1644]
+                        - button "Delete" [ref=e1647] [cursor=pointer]:
+                          - img [ref=e1648]
+              - paragraph [ref=e1652]: Inactive brands are hidden from new job forms and the technician payment flow but retained in historical records.
+  - generic [ref=e1130]: "2"

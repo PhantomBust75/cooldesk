@@ -1,0 +1,127 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e7]:
+    - complementary [ref=e8]:
+      - generic [ref=e9]:
+        - img [ref=e10]
+        - generic [ref=e12]: CoolDesk
+      - navigation [ref=e13]:
+        - link "Dashboard" [ref=e1653] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e1654]
+          - generic [ref=e1657]: Dashboard
+        - link "All jobs" [ref=e1658] [cursor=pointer]:
+          - /url: /jobs
+          - img [ref=e1659]
+          - generic [ref=e1662]: All jobs
+        - link "Schedule and Assign" [ref=e1663] [cursor=pointer]:
+          - /url: /pending-schedule
+          - img [ref=e1664]
+          - generic [ref=e1667]: Schedule and Assign
+        - link "Technicians" [ref=e1668] [cursor=pointer]:
+          - /url: /technicians
+          - img [ref=e1669]
+          - generic [ref=e1674]: Technicians
+        - link "Dealers" [ref=e1675] [cursor=pointer]:
+          - /url: /dealers
+          - img [ref=e1676]
+          - generic [ref=e1680]: Dealers
+        - link "Analytics" [ref=e1681] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e1682]
+          - generic [ref=e1684]: Analytics
+        - link "Payments & Brands" [ref=e1685] [cursor=pointer]:
+          - /url: /payment-methods
+          - img [ref=e1686]
+          - generic [ref=e1688]: Payments & Brands
+        - link "System config" [ref=e1689] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e1690]
+          - generic [ref=e1693]: System config
+      - button "Collapse" [ref=e56] [cursor=pointer]:
+        - img [ref=e58]
+        - generic [ref=e60]: Collapse
+    - generic [ref=e61]:
+      - banner [ref=e62]:
+        - generic [ref=e63]:
+          - img
+          - textbox "Search jobs, customers..." [ref=e64]
+          - generic: ⌘K
+        - link "Log new job" [ref=e65] [cursor=pointer]:
+          - /url: /log-new-job
+          - img [ref=e66]
+          - text: Log new job
+        - button [ref=e69] [cursor=pointer]:
+          - img [ref=e70]
+        - button "OW" [ref=e75] [cursor=pointer]:
+          - generic [ref=e76]: OW
+      - main [ref=e78]:
+        - generic [ref=e1694]:
+          - heading "System Config" [level=1] [ref=e1696]
+          - generic [ref=e1697]:
+            - img [ref=e1698]
+            - generic [ref=e1700]: Configuration changes apply only to new evaluations from the save point onward. Existing flags are point-in-time snapshots and are not retroactively recalculated.
+          - generic [ref=e1701]:
+            - generic [ref=e1702]: Customer complaint rules
+            - generic [ref=e1703]:
+              - generic [ref=e1704]:
+                - generic [ref=e1705]:
+                  - generic [ref=e1706]: Repeat complaint window (days) *
+                  - paragraph [ref=e1707]: Number of days used to determine if a complaint is a repeat
+                - spinbutton [ref=e1708]: "30"
+              - generic [ref=e1709]:
+                - generic [ref=e1710]:
+                  - generic [ref=e1711]: Frequent complaint threshold (count) *
+                  - paragraph [ref=e1712]: Number of complaints within the window to flag as frequent
+                - spinbutton [ref=e1713]: "3"
+              - generic [ref=e1714]:
+                - generic [ref=e1715]:
+                  - generic [ref=e1716]: Frequent complaint window (days) *
+                  - paragraph [ref=e1717]: Rolling window for counting frequent complaints
+                - spinbutton [ref=e1718]: "90"
+          - generic [ref=e1719]:
+            - generic [ref=e1720]: Scheduling & punctuality
+            - generic [ref=e1721]:
+              - generic [ref=e1722]:
+                - generic [ref=e1723]:
+                  - generic [ref=e1724]: Punctuality grace period (minutes) *
+                  - paragraph [ref=e1725]: Arrival within this window of scheduled time is considered on-time
+                - spinbutton [ref=e1726]: "15"
+              - generic [ref=e1727]:
+                - generic [ref=e1728]:
+                  - generic [ref=e1729]: Standard job duration (minutes) *
+                  - paragraph [ref=e1730]: Used for scheduling conflict detection and batch schedule spacing
+                - spinbutton [ref=e1731]: "120"
+          - generic [ref=e1732]:
+            - generic [ref=e1733]: Pending schedule thresholds
+            - generic [ref=e1734]:
+              - generic [ref=e1735]:
+                - generic [ref=e1736]: Job type
+                - generic [ref=e1737]: Amber (days)
+                - generic [ref=e1738]: Red (days)
+              - generic [ref=e1740]:
+                - generic [ref=e1741]: Installation
+                - spinbutton [ref=e1742]: "2"
+                - spinbutton [ref=e1743]: "4"
+              - generic [ref=e1745]:
+                - generic [ref=e1746]: Complaint
+                - spinbutton [ref=e1747]: "1"
+                - spinbutton [ref=e1748]: "2"
+          - generic [ref=e1749]:
+            - generic [ref=e1750]: Customer reviews
+            - generic [ref=e1752]:
+              - generic [ref=e1754]: Customer review mode *
+              - combobox [ref=e1755]:
+                - option "Off"
+                - option "Optional" [selected]
+                - option "Mandatory"
+          - generic [ref=e1756]:
+            - generic [ref=e1757]: Cancellation escalation
+            - generic [ref=e1759]:
+              - generic [ref=e1760]:
+                - generic [ref=e1761]: Escalation threshold (minutes) *
+                - paragraph [ref=e1762]: Unactioned cancellation requests escalate to a dashboard banner after this many minutes
+              - spinbutton [ref=e1763]: "30"
+          - button "Save configuration" [ref=e1765] [cursor=pointer]:
+            - img [ref=e1766]
+            - text: Save configuration
+  - generic [ref=e1130]: "2"
