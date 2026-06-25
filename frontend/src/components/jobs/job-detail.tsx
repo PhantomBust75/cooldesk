@@ -188,6 +188,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
     },
   });
 
+  const [reassignError, setReassignError] = useState("");
   const reassignMutation = useMutation({
     mutationFn: () => reassignTechnician(jobId, reassignTechId),
     onSuccess: async () => {
@@ -198,6 +199,10 @@ export function JobDetail({ jobId }: { jobId: string }) {
       ]);
       setReassignOpen(false);
       setReassignTechId("");
+      setReassignError("");
+    },
+    onError: (err: unknown) => {
+      setReassignError(err instanceof Error ? err.message : "Reassignment failed");
     },
   });
 
@@ -424,7 +429,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
                   return (
                     <div key={event.id} style={{ display: "grid", gridTemplateColumns: "16px 1fr", gap: "12px", alignItems: "start" }}>
-                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: event.actorName === "System" ? "#737373" : "#0A0A0A", marginTop: "4px", justifySelf: "center" }} />
+                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: event.eventType === "system_event" ? "#737373" : "#0A0A0A", marginTop: "4px", justifySelf: "center" }} />
                       <div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "4px" }}>
                           <span style={{ fontSize: "13px", fontWeight: 600, color: "#171717" }}>
@@ -682,6 +687,9 @@ export function JobDetail({ jobId }: { jobId: string }) {
           >
             {reassignMutation.isPending ? "Reassigning..." : "Confirm"}
           </button>
+          {reassignError ? (
+            <p style={{ margin: 0, fontSize: "12px", color: "#991B1B", padding: "8px 10px", border: "1px solid #FECACA", borderRadius: "8px", backgroundColor: "#FEF2F2" }}>{reassignError}</p>
+          ) : null}
         </div>
       </Modal>
 

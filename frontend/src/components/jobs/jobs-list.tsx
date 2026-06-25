@@ -818,7 +818,7 @@ export function JobsList() {
                     </td>
                     {/* CHEVRON */}
                     <td style={{ padding: "14px 16px", width: "40px" }}>
-                      <ChevronRight size={14} strokeWidth={1.5} color="#A3A3A3" />
+                      <ChevronRight size={14} strokeWidth={1.5} color="#737373" />
                     </td>
                   </tr>
                 ))}
