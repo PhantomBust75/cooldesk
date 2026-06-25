@@ -17,7 +17,6 @@ import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import { fetchPaymentMethods, fetchSystemConfig } from "@/lib/api/operations";
 import { ApiError } from "@/lib/api/client";
 import { getAllowedNextStatuses } from "@/lib/jobs-state-machine";
-import { TagChip } from "@/components/ui/job-type-chip";
 import { Modal } from "@/components/ui/modal";
 import { StatusChip } from "@/components/ui/status-chip";
 import {
@@ -141,13 +140,14 @@ export function JobDetail({ jobId }: { jobId: string }) {
   }, [detailQuery.data?.payment]);
 
   const transitionMutation = useMutation({
-    mutationFn: async () => {
-      if (!detailQuery.data || !toStatus) {
+    mutationFn: async (statusOverride?: string) => {
+      const target = statusOverride ?? toStatus;
+      if (!detailQuery.data || !target) {
         return null;
       }
 
       return transitionJobStatus(jobId, {
-        toStatus,
+        toStatus: target,
         expectedVersion: detailQuery.data.version,
         reason: reason.trim() || undefined,
       });
@@ -274,8 +274,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
   function handleAdvanceStatus() {
     if (singleNext) {
-      setToStatus(singleNext);
-      transitionMutation.mutate();
+      transitionMutation.mutate(singleNext);
     } else {
       setAdvanceStatusOpen(true);
     }
@@ -317,7 +316,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
               border: "none",
               cursor: "pointer",
               padding: "2px",
-              color: "#A3A3A3",
+              color: "#737373",
               display: "inline-flex",
               alignItems: "center",
             }}
@@ -376,34 +375,34 @@ export function JobDetail({ jobId }: { jobId: string }) {
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "32px", marginBottom: "24px" }}>
                 {/* Customer */}
                 <div>
-                  <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: 600, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>Customer</p>
+                  <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: 600, color: "#737373", letterSpacing: "0.06em", textTransform: "uppercase" }}>Customer</p>
                   <div style={{ display: "grid", gap: "12px" }}>
                     <div>
-                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#A3A3A3" }}>Name</p>
+                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#737373" }}>Name</p>
                       <p style={{ margin: 0, fontSize: "13px", color: "#171717" }}>{detail.customerName}</p>
                     </div>
                     <div>
-                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#A3A3A3" }}>Phone</p>
+                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#737373" }}>Phone</p>
                       <p style={{ margin: 0, fontSize: "13px", color: "#171717" }}>{detail.phone}</p>
                     </div>
                     <div>
-                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#A3A3A3" }}>Address</p>
+                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#737373" }}>Address</p>
                       <p style={{ margin: 0, fontSize: "13px", color: "#171717" }}>{detail.address}</p>
                     </div>
                   </div>
                 </div>
                 {/* Schedule */}
                 <div>
-                  <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: 600, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>Schedule</p>
+                  <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: 600, color: "#737373", letterSpacing: "0.06em", textTransform: "uppercase" }}>Schedule</p>
                   <div style={{ display: "grid", gap: "12px" }}>
                     <div>
-                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#A3A3A3" }}>Technician</p>
+                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#737373" }}>Technician</p>
                       <p style={{ margin: 0, fontSize: "13px", color: detail.assignedTechnicianName ? "#171717" : "#737373", fontStyle: detail.assignedTechnicianName ? "normal" : "italic" }}>
                         {detail.assignedTechnicianName ?? "Unassigned"}
                       </p>
                     </div>
                     <div>
-                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#A3A3A3" }}>Scheduled</p>
+                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#737373" }}>Scheduled</p>
                       <p style={{ margin: 0, fontSize: "13px", color: "#171717" }}>
                         {detail.scheduledAt ? new Date(detail.scheduledAt).toLocaleString([], { weekday: "short", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
                       </p>
@@ -425,22 +424,22 @@ export function JobDetail({ jobId }: { jobId: string }) {
               {showTechnicalDetails ? (
                 <div style={{ marginTop: "12px", display: "grid", gap: "10px", padding: "16px", borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#FAFAFA" }}>
                   <div>
-                    <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#A3A3A3", textTransform: "uppercase", letterSpacing: "0.05em" }}>Source</p>
+                    <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em" }}>Source</p>
                     <p style={{ margin: 0, fontSize: "13px", color: "#525252" }}>{detail.source === "via_dealer" ? `Via dealer${detail.dealerName ? ` — ${detail.dealerName}` : ""}` : "Direct"}</p>
                   </div>
                   <div>
-                    <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#A3A3A3", textTransform: "uppercase", letterSpacing: "0.05em" }}>Version</p>
+                    <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em" }}>Version</p>
                     <p style={{ margin: 0, fontSize: "13px", fontFamily: '"JetBrains Mono", monospace', color: "#525252" }}>{detail.version}</p>
                   </div>
                   {detail.type === "complaint" && detail.issueDescription ? (
                     <div>
-                      <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#A3A3A3", textTransform: "uppercase", letterSpacing: "0.05em" }}>Issue description</p>
+                      <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em" }}>Issue description</p>
                       <p style={{ margin: 0, fontSize: "13px", color: "#525252", lineHeight: 1.6 }}>{detail.issueDescription}</p>
                     </div>
                   ) : null}
                   {detail.type === "installation" && detail.installationNotes ? (
                     <div>
-                      <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#A3A3A3", textTransform: "uppercase", letterSpacing: "0.05em" }}>Installation notes</p>
+                      <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em" }}>Installation notes</p>
                       <p style={{ margin: 0, fontSize: "13px", color: "#525252", lineHeight: 1.6 }}>{detail.installationNotes}</p>
                     </div>
                   ) : null}
@@ -471,7 +470,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                           <span style={{ fontSize: "13px", fontWeight: 600, color: "#171717" }}>
                             {event.eventType.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                           </span>
-                          <span style={{ fontSize: "11px", color: "#A3A3A3", whiteSpace: "nowrap" }}>
+                          <span style={{ fontSize: "11px", color: "#737373", whiteSpace: "nowrap" }}>
                             {new Date(event.occurredAt).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                           </span>
                         </div>
@@ -486,7 +485,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                         {isStatusChange && prevStatus && nextStatus ? (
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" }}>
                             <StatusChip status={prevStatus} />
-                            <span style={{ fontSize: "12px", color: "#A3A3A3" }}>→</span>
+                            <span style={{ fontSize: "12px", color: "#737373" }}>→</span>
                             <StatusChip status={nextStatus} />
                           </div>
                         ) : null}
@@ -662,7 +661,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
           {/* Payment card */}
           <div style={{ border: "1px solid #E5E5E5", borderRadius: "10px", padding: "14px", backgroundColor: "#fff" }}>
-            <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 600, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>Payment</p>
+            <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 600, color: "#737373", letterSpacing: "0.06em", textTransform: "uppercase" }}>Payment</p>
             {!detail.payment ? (
               <p style={{ margin: 0, fontSize: "13px", color: "#737373" }}>No payment recorded</p>
             ) : (
