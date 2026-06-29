@@ -227,10 +227,11 @@ export async function fetchAnalyticsOverview(days = 30): Promise<AnalyticsOvervi
 
   return {
     totalJobs: asNumber(row.total_jobs),
-    resolvedOrCompleted: asNumber(row.resolved_or_completed),
-    cancelled: asNumber(row.cancelled),
-    revisitPending: asNumber(row.revisit_pending),
-    avgStarRating: asNullableNumber(row.avg_star_rating),
+    activeJobs: asNumber(row.active_jobs),
+    completedJobs: asNumber(row.completed_jobs),
+    totalRevenue: asNumber(row.total_revenue),
+    firstVisitResolutionRate: asNullableNumber(row.first_visit_resolution_rate),
+    revisitRate: asNullableNumber(row.revisit_rate),
   };
 }
 
@@ -243,10 +244,11 @@ export async function fetchAnalyticsTechnicians(days = 30): Promise<AnalyticsTec
   return rows.map((row) => ({
     technicianId: asString(row.technician_id),
     technicianName: asString(row.technician_name),
-    totalJobs: asNumber(row.total_jobs),
-    completionRate: asNumber(row.completion_rate),
+    jobsCompleted: asNumber(row.jobs_completed),
+    revenueCollected: asNumber(row.revenue_collected),
+    firstVisitResolutionRate: asNullableNumber(row.first_visit_resolution_rate),
+    avgResolutionMinutes: asNullableNumber(row.avg_resolution_minutes),
     onTimeRate: asNullableNumber(row.on_time_rate),
-    avgResolution: asNullableNumber(row.avg_resolution),
     avgStarRating: asNullableNumber(row.avg_star_rating),
   }));
 }
@@ -257,9 +259,10 @@ export async function fetchAnalyticsBrands(days = 30): Promise<AnalyticsBrandIte
     brandId: asString(row.brand_id),
     brandName: asString(row.brand_name),
     totalJobs: asNumber(row.total_jobs),
-    completionRate: asNumber(row.completion_rate),
+    activeJobs: asNumber(row.active_jobs),
+    completedJobs: asNumber(row.completed_jobs),
+    revenueCollected: asNumber(row.revenue_collected),
     revisitRate: asNullableNumber(row.revisit_rate),
-    avgResolution: asNullableNumber(row.avg_resolution),
   }));
 }
 
@@ -269,8 +272,9 @@ export async function fetchAnalyticsDealers(days = 30): Promise<AnalyticsDealerI
     dealerId: asString(row.dealer_id),
     dealerName: asString(row.dealer_name),
     totalJobs: asNumber(row.total_jobs),
-    completionRate: asNumber(row.completion_rate),
-    avgDaysWaiting: asNullableNumber(row.avg_days_waiting),
+    activeJobs: asNumber(row.active_jobs),
+    completedJobs: asNumber(row.completed_jobs),
+    revenueGenerated: asNumber(row.revenue_generated),
   }));
 }
 

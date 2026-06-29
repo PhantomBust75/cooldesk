@@ -64,19 +64,21 @@ export type SystemConfigItem = {
 
 export type AnalyticsOverview = {
   totalJobs: number;
-  resolvedOrCompleted: number;
-  cancelled: number;
-  revisitPending: number;
-  avgStarRating: number | null;
+  activeJobs: number;
+  completedJobs: number;
+  totalRevenue: number;
+  firstVisitResolutionRate: number | null;
+  revisitRate: number | null;
 };
 
 export type AnalyticsTechnicianItem = {
   technicianId: string;
   technicianName: string;
-  totalJobs: number;
-  completionRate: number;
+  jobsCompleted: number;
+  revenueCollected: number;
+  firstVisitResolutionRate: number | null;
+  avgResolutionMinutes: number | null;
   onTimeRate: number | null;
-  avgResolution: number | null;
   avgStarRating: number | null;
 };
 
@@ -84,17 +86,19 @@ export type AnalyticsBrandItem = {
   brandId: string;
   brandName: string;
   totalJobs: number;
-  completionRate: number;
+  activeJobs: number;
+  completedJobs: number;
+  revenueCollected: number;
   revisitRate: number | null;
-  avgResolution: number | null;
 };
 
 export type AnalyticsDealerItem = {
   dealerId: string;
   dealerName: string;
   totalJobs: number;
-  completionRate: number;
-  avgDaysWaiting: number | null;
+  activeJobs: number;
+  completedJobs: number;
+  revenueGenerated: number;
 };
 
 export type AnalyticsDailyItem = {

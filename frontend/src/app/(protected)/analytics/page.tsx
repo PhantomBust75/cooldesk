@@ -242,17 +242,6 @@ export default function AnalyticsPage() {
   const overview = overviewQuery.data;
   const dailyData = dailyQuery.data ?? [];
 
-  // KPI derivations from available data
-  const techData = techniciansQuery.data ?? [];
-  const avgOnTime =
-    techData.length > 0
-      ? techData.reduce((s, t) => s + (t.onTimeRate ?? 0), 0) / techData.length
-      : null;
-  const avgResolutionKpi =
-    techData.length > 0
-      ? techData.reduce((s, t) => s + (t.avgResolution ?? 0), 0) / techData.length
-      : null;
-
   // Month label for subtitle
   const now = new Date();
   const monthLabel = now.toLocaleDateString([], { month: "long", year: "numeric" });
@@ -341,39 +330,50 @@ export default function AnalyticsPage() {
           {overviewQuery.isLoading ? <LoadingRow /> : null}
           {overviewQuery.isError ? <ErrorRow /> : null}
 
-          {/* KPI cards — 4 columns */}
+          {/* KPI cards — 3 columns, 2 rows */}
           {overview ? (
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
                 gap: "12px",
                 marginBottom: "20px",
               }}
             >
               <KpiCard
                 title="Total Revenue (SAR)"
+                value={overview.totalRevenue.toLocaleString("en", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              />
+              <KpiCard
+                title="Total Jobs"
+                value={String(overview.totalJobs)}
+              />
+              <KpiCard
+                title="Active Jobs"
+                value={String(overview.activeJobs)}
+              />
+              <KpiCard
+                title="Completed Jobs"
+                value={String(overview.completedJobs)}
+              />
+              <KpiCard
+                title="1st Visit Resolution"
                 value={
-                  dailyData.length
-                    ? dailyData.reduce((s, d) => s + d.revenue, 0).toLocaleString()
+                  overview.firstVisitResolutionRate != null
+                    ? `${overview.firstVisitResolutionRate.toFixed(1)}%`
                     : "—"
                 }
               />
               <KpiCard
-                title="Completion Rate"
+                title="Revisit Rate"
                 value={
-                  overview.totalJobs > 0
-                    ? `${Math.round((overview.resolvedOrCompleted / overview.totalJobs) * 100)}%`
+                  overview.revisitRate != null
+                    ? `${overview.revisitRate.toFixed(1)}%`
                     : "—"
                 }
-              />
-              <KpiCard
-                title="On-Time Rate"
-                value={avgOnTime != null ? `${avgOnTime.toFixed(1)}%` : "—"}
-              />
-              <KpiCard
-                title="Avg Resolution (days)"
-                value={avgResolutionKpi != null ? avgResolutionKpi.toFixed(1) : "—"}
               />
             </div>
           ) : null}
@@ -472,48 +472,32 @@ export default function AnalyticsPage() {
             {!techniciansQuery.isLoading && !techniciansQuery.isError ? (
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                 <thead>
-                  <tr
-                    style={{
-                      backgroundColor: "#FAFAFA",
-                      color: "#737373",
-                      textAlign: "left",
-                    }}
-                  >
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      NAME
-                    </th>
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      JOBS COMPLETED
-                    </th>
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      COMPLETION RATE
-                    </th>
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      ON-TIME RATE
-                    </th>
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      AVG RESOLUTION
-                    </th>
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      RATING
-                    </th>
+                  <tr style={{ backgroundColor: "#FAFAFA", color: "#737373", textAlign: "left" }}>
+                    {["NAME", "JOBS COMPLETED", "REVENUE (SAR)", "1ST VISIT RES.", "AVG RESOLUTION", "ON-TIME RATE", "RATING"].map(
+                      (h) => (
+                        <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                          {h}
+                        </th>
+                      ),
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {(techniciansQuery.data ?? []).map((item) => (
                     <tr key={item.technicianId} style={{ borderBottom: "1px solid #F5F5F5" }}>
-                      <td style={{ padding: "10px 12px", color: "#171717" }}>
-                        {item.technicianName || "—"}
-                      </td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.totalJobs}</td>
+                      <td style={{ padding: "10px 12px", color: "#171717" }}>{item.technicianName || "—"}</td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.jobsCompleted}</td>
                       <td style={{ padding: "10px 12px", color: "#404040" }}>
-                        {item.completionRate}%
+                        {item.revenueCollected.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>
+                        {nullFmt(item.firstVisitResolutionRate, 1, "%")}
+                      </td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>
+                        {item.avgResolutionMinutes != null ? `${item.avgResolutionMinutes} min` : "—"}
                       </td>
                       <td style={{ padding: "10px 12px", color: "#404040" }}>
                         {nullFmt(item.onTimeRate, 1, "%")}
-                      </td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>
-                        {nullFmt(item.avgResolution, 1, "d")}
                       </td>
                       <td style={{ padding: "10px 12px", color: "#404040" }}>
                         {nullFmt(item.avgStarRating, 2)}
@@ -552,45 +536,28 @@ export default function AnalyticsPage() {
             {!brandsQuery.isLoading && !brandsQuery.isError ? (
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                 <thead>
-                  <tr
-                    style={{
-                      backgroundColor: "#FAFAFA",
-                      color: "#737373",
-                      textAlign: "left",
-                    }}
-                  >
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      BRAND
-                    </th>
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      TOTAL JOBS
-                    </th>
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      COMPLETION RATE
-                    </th>
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      REVISIT RATE
-                    </th>
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      AVG RESOLUTION
-                    </th>
+                  <tr style={{ backgroundColor: "#FAFAFA", color: "#737373", textAlign: "left" }}>
+                    {["BRAND", "TOTAL JOBS", "ACTIVE JOBS", "COMPLETED JOBS", "REVENUE (SAR)", "REVISIT RATE"].map(
+                      (h) => (
+                        <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                          {h}
+                        </th>
+                      ),
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {(brandsQuery.data ?? []).map((item) => (
                     <tr key={item.brandId} style={{ borderBottom: "1px solid #F5F5F5" }}>
-                      <td style={{ padding: "10px 12px", color: "#171717" }}>
-                        {item.brandName || "—"}
-                      </td>
+                      <td style={{ padding: "10px 12px", color: "#171717" }}>{item.brandName || "—"}</td>
                       <td style={{ padding: "10px 12px", color: "#404040" }}>{item.totalJobs}</td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.activeJobs}</td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.completedJobs}</td>
                       <td style={{ padding: "10px 12px", color: "#404040" }}>
-                        {item.completionRate}%
+                        {item.revenueCollected.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td style={{ padding: "10px 12px", color: "#404040" }}>
                         {nullFmt(item.revisitRate, 1, "%")}
-                      </td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>
-                        {nullFmt(item.avgResolution, 1, "d")}
                       </td>
                     </tr>
                   ))}
@@ -626,39 +593,25 @@ export default function AnalyticsPage() {
             {!dealersQuery.isLoading && !dealersQuery.isError ? (
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                 <thead>
-                  <tr
-                    style={{
-                      backgroundColor: "#FAFAFA",
-                      color: "#737373",
-                      textAlign: "left",
-                    }}
-                  >
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      DEALER
-                    </th>
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      JOBS REFERRED
-                    </th>
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      COMPLETION RATE
-                    </th>
-                    <th style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
-                      AVG DAYS WAITING
-                    </th>
+                  <tr style={{ backgroundColor: "#FAFAFA", color: "#737373", textAlign: "left" }}>
+                    {["DEALER", "JOBS SUBMITTED", "ACTIVE JOBS", "COMPLETED JOBS", "REVENUE (SAR)"].map(
+                      (h) => (
+                        <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                          {h}
+                        </th>
+                      ),
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {(dealersQuery.data ?? []).map((item) => (
                     <tr key={item.dealerId} style={{ borderBottom: "1px solid #F5F5F5" }}>
-                      <td style={{ padding: "10px 12px", color: "#171717" }}>
-                        {item.dealerName || "—"}
-                      </td>
+                      <td style={{ padding: "10px 12px", color: "#171717" }}>{item.dealerName || "—"}</td>
                       <td style={{ padding: "10px 12px", color: "#404040" }}>{item.totalJobs}</td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.activeJobs}</td>
+                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.completedJobs}</td>
                       <td style={{ padding: "10px 12px", color: "#404040" }}>
-                        {item.completionRate}%
-                      </td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>
-                        {nullFmt(item.avgDaysWaiting, 1, "d")}
+                        {item.revenueGenerated.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>
                   ))}
