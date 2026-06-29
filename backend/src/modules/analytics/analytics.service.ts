@@ -359,28 +359,71 @@ export class AnalyticsService {
   ): Promise<Record<string, unknown>> {
     const result = await this.db.query<{
       total_jobs: string;
-      resolved_or_completed: string;
-      cancelled: string;
-      revisit_pending: string;
-      avg_star_rating: string | null;
+      active_jobs: string;
+      completed_jobs: string;
+      total_revenue: string;
+      first_visit_resolution_rate: string | null;
+      revisit_rate: string | null;
     }>(
       `
       SELECT
-        COUNT(*) AS total_jobs,
-        COUNT(*) FILTER (WHERE status IN ('completed', 'resolved', 'resolved_on_revisit')) AS resolved_or_completed,
-        COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled,
-        COUNT(*) FILTER (WHERE status IN ('needs_revisit', 'revisit_scheduled')) AS revisit_pending,
-        (
-          SELECT ROUND(AVG(star_rating)::numeric, 2)
-          FROM customer_reviews
-          WHERE organization_id = $1
-            AND submitted_at IS NOT NULL
-            AND submitted_at >= NOW() - ($2::text || ' days')::interval
-        ) AS avg_star_rating
-      FROM jobs
-      WHERE organization_id = $1
-        AND is_deleted = FALSE
-        AND created_at >= NOW() - ($2::text || ' days')::interval
+        COUNT(j.id)::int AS total_jobs,
+        COUNT(j.id) FILTER (
+          WHERE j.status NOT IN ('completed', 'resolved', 'resolved_on_revisit', 'cancelled')
+        )::int AS active_jobs,
+        COUNT(j.id) FILTER (
+          WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit')
+        )::int AS completed_jobs,
+        ROUND(
+          COALESCE(SUM(p.amount) FILTER (WHERE p.status = 'collected'), 0)::numeric,
+          2
+        ) AS total_revenue,
+        CASE
+          WHEN COUNT(j.id) FILTER (
+            WHERE j.type = 'complaint'
+              AND j.status IN ('resolved', 'resolved_on_revisit')
+          ) = 0 THEN NULL
+          ELSE ROUND(
+            COUNT(j.id) FILTER (
+              WHERE j.type = 'complaint'
+                AND j.status IN ('resolved', 'resolved_on_revisit')
+                AND j.revisit_count = 0
+            )::numeric
+            / COUNT(j.id) FILTER (
+              WHERE j.type = 'complaint'
+                AND j.status IN ('resolved', 'resolved_on_revisit')
+            )::numeric
+            * 100,
+            1
+          )
+        END AS first_visit_resolution_rate,
+        CASE
+          WHEN COUNT(j.id) FILTER (
+            WHERE j.type = 'complaint'
+              AND j.status IN ('resolved', 'resolved_on_revisit')
+          ) = 0 THEN NULL
+          ELSE ROUND(
+            COUNT(j.id) FILTER (
+              WHERE j.type = 'complaint'
+                AND j.status IN ('resolved', 'resolved_on_revisit')
+                AND j.revisit_count > 0
+            )::numeric
+            / COUNT(j.id) FILTER (
+              WHERE j.type = 'complaint'
+                AND j.status IN ('resolved', 'resolved_on_revisit')
+            )::numeric
+            * 100,
+            1
+          )
+        END AS revisit_rate
+      FROM jobs j
+      LEFT JOIN payments p
+        ON p.job_id = j.id
+       AND p.organization_id = j.organization_id
+       AND p.is_deleted = FALSE
+      WHERE j.organization_id = $1
+        AND j.is_deleted = FALSE
+        AND j.created_at >= NOW() - ($2::text || ' days')::interval
       `,
       [ctx.organizationId, days],
     );
@@ -388,10 +431,15 @@ export class AnalyticsService {
     const row = result.rows[0];
     return {
       total_jobs: Number(row.total_jobs),
-      resolved_or_completed: Number(row.resolved_or_completed),
-      cancelled: Number(row.cancelled),
-      revisit_pending: Number(row.revisit_pending),
-      avg_star_rating: row.avg_star_rating !== null ? Number(row.avg_star_rating) : null,
+      active_jobs: Number(row.active_jobs),
+      completed_jobs: Number(row.completed_jobs),
+      total_revenue: Number(row.total_revenue),
+      first_visit_resolution_rate:
+        row.first_visit_resolution_rate !== null
+          ? Number(row.first_visit_resolution_rate)
+          : null,
+      revisit_rate:
+        row.revisit_rate !== null ? Number(row.revisit_rate) : null,
     };
   }
 
