@@ -477,42 +477,88 @@ export class AnalyticsService {
       SELECT
         u.id AS technician_id,
         u.full_name AS technician_name,
-        COUNT(j.id)::int AS total_jobs,
+        COUNT(j.id) FILTER (
+          WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit')
+        )::int AS jobs_completed,
+        ROUND(
+          COALESCE(
+            SUM(p.amount) FILTER (WHERE p.status = 'collected'),
+            0
+          )::numeric,
+          2
+        ) AS revenue_collected,
         CASE
-          WHEN COUNT(j.id) = 0 THEN 0
+          WHEN COUNT(j.id) FILTER (
+            WHERE j.type = 'complaint'
+              AND j.status IN ('resolved', 'resolved_on_revisit')
+          ) = 0 THEN NULL
           ELSE ROUND(
-            COUNT(j.id) FILTER (WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit'))::numeric
-            / COUNT(j.id)::numeric * 100, 2
+            COUNT(j.id) FILTER (
+              WHERE j.type = 'complaint'
+                AND j.status IN ('resolved', 'resolved_on_revisit')
+                AND j.revisit_count = 0
+            )::numeric
+            / COUNT(j.id) FILTER (
+              WHERE j.type = 'complaint'
+                AND j.status IN ('resolved', 'resolved_on_revisit')
+            )::numeric
+            * 100,
+            1
           )
-        END AS completion_rate,
+        END AS first_visit_resolution_rate,
+        ROUND(
+          AVG(
+            EXTRACT(EPOCH FROM (j.updated_at - fa.first_assigned_at)) / 60.0
+          ) FILTER (
+            WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit')
+              AND fa.first_assigned_at IS NOT NULL
+          )
+        )::int AS avg_resolution_minutes,
+        CASE
+          WHEN COUNT(j.id) FILTER (
+            WHERE j.visit_outcome IN ('on_time', 'late', 'no_show')
+          ) = 0 THEN NULL
+          ELSE ROUND(
+            COUNT(j.id) FILTER (WHERE j.visit_outcome = 'on_time')::numeric
+            / COUNT(j.id) FILTER (
+              WHERE j.visit_outcome IN ('on_time', 'late', 'no_show')
+            )::numeric
+            * 100,
+            1
+          )
+        END AS on_time_rate,
         (
           SELECT ROUND(AVG(cr.star_rating)::numeric, 2)
           FROM customer_reviews cr
-          INNER JOIN jobs jj ON jj.id = cr.job_id AND jj.organization_id = cr.organization_id
+          INNER JOIN jobs jj
+            ON jj.id = cr.job_id
+           AND jj.organization_id = cr.organization_id
           WHERE jj.technician_id = u.id
             AND jj.organization_id = $1
             AND cr.submitted_at IS NOT NULL
             AND cr.submitted_at >= NOW() - ($2::text || ' days')::interval
-        ) AS avg_star_rating,
-        CASE WHEN SUM(atd.on_time_count + atd.late_count) > 0
-          THEN ROUND(SUM(atd.on_time_count)::numeric / SUM(atd.on_time_count + atd.late_count) * 100, 1)
-          ELSE NULL
-        END AS on_time_rate
+        ) AS avg_star_rating
       FROM users u
       LEFT JOIN jobs j
         ON j.technician_id = u.id
-        AND j.organization_id = $1
-        AND j.is_deleted = FALSE
-        AND j.created_at >= NOW() - ($2::text || ' days')::interval
-      LEFT JOIN analytics_technician_daily atd
-        ON atd.technician_id = u.id
-        AND atd.organization_id = $1
-        AND atd.metric_date >= CURRENT_DATE - ($2::text || ' days')::interval
+       AND j.organization_id = $1
+       AND j.is_deleted = FALSE
+       AND j.created_at >= NOW() - ($2::text || ' days')::interval
+      LEFT JOIN payments p
+        ON p.job_id = j.id
+       AND p.organization_id = j.organization_id
+       AND p.is_deleted = FALSE
+      LEFT JOIN (
+        SELECT job_id, MIN(assigned_at) AS first_assigned_at
+        FROM job_assignments
+        WHERE organization_id = $1
+        GROUP BY job_id
+      ) fa ON fa.job_id = j.id
       WHERE u.organization_id = $1
         AND u.role = 'technician'
         AND u.is_deleted = FALSE
       GROUP BY u.id, u.full_name
-      ORDER BY total_jobs DESC
+      ORDER BY jobs_completed DESC
       `,
       [ctx.organizationId, days],
     );
