@@ -3,9 +3,6 @@
 import { RoleGate } from "@/components/auth/role-gate";
 import { ApiError } from "@/lib/api/client";
 import {
-  createPaymentMethod,
-  fetchPaymentMethods,
-  setPaymentMethodActive,
   fetchOfficeBrands,
   createBrand,
 } from "@/lib/api/operations";
@@ -17,11 +14,10 @@ import {
   type CreateServiceItemInput,
 } from "@/lib/api/service-items";
 import type { ServiceItem } from "@/types/operations";
+import { PaymentMethodsSection } from "@/components/payment-methods/PaymentMethodsSection";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Building2,
-  CheckCircle2,
-  CreditCard,
   Pencil,
   Plus,
   Tag,
@@ -29,165 +25,6 @@ import {
   X,
 } from "lucide-react";
 import { FormEvent, useState } from "react";
-
-// ─── Payment Methods Section ────────────────────────────────────────────────
-
-function PaymentMethodsSection() {
-  const queryClient = useQueryClient();
-  const [showAdd, setShowAdd] = useState(false);
-  const [name, setName] = useState("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const methodsQuery = useQuery({
-    queryKey: ["payment-methods"],
-    queryFn: fetchPaymentMethods,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: () => createPaymentMethod({ name: name.trim() }),
-    onSuccess: () => {
-      setName("");
-      setShowAdd(false);
-      setErrorMessage(null);
-      queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
-    },
-    onError: (error) => {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Unable to create payment method."
-      );
-    },
-  });
-
-  const toggleMutation = useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      setPaymentMethodActive(id, { isActive }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
-    },
-  });
-
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setErrorMessage(null);
-    if (!name.trim()) { setErrorMessage("Name is required."); return; }
-    createMutation.mutate();
-  }
-
-  return (
-    <div style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "20px", marginBottom: "20px" }}>
-      {/* Section header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <CreditCard size={18} strokeWidth={1.5} color="#525252" />
-          <div>
-            <div style={{ fontSize: "15px", fontWeight: 600, color: "#171717" }}>Payment Methods</div>
-            <div style={{ fontSize: "12px", color: "#737373" }}>Organization payment options for job billing</div>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => { setShowAdd(true); setName(""); setErrorMessage(null); }}
-          style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "7px 14px", border: "none", borderRadius: "8px", backgroundColor: "#0A0A0A", color: "#fff", fontSize: "13px", cursor: "pointer" }}
-        >
-          <Plus size={13} strokeWidth={1.5} /> Add
-        </button>
-      </div>
-
-      {/* Add form */}
-      {showAdd && (
-        <div style={{ marginBottom: "16px", padding: "14px", backgroundColor: "#F5F5F5", borderRadius: "10px" }}>
-          <form onSubmit={onSubmit} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Cash, Bank Transfer, Credit Card"
-              autoFocus
-              style={{ flex: 1, borderRadius: "8px", border: "1px solid #E5E5E5", padding: "9px 12px", fontSize: "13px", backgroundColor: "#fff" }}
-            />
-            <button
-              type="submit"
-              disabled={createMutation.isPending}
-              style={{ borderRadius: "8px", border: "none", backgroundColor: "#0A0A0A", color: "#fff", padding: "9px 14px", fontSize: "13px", cursor: "pointer", opacity: createMutation.isPending ? 0.6 : 1 }}
-            >
-              Save
-            </button>
-            <button
-              type="button"
-              onClick={() => { setShowAdd(false); setErrorMessage(null); }}
-              style={{ borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#525252", padding: "9px 12px", fontSize: "13px", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
-            >
-              <X size={14} strokeWidth={1.5} />
-            </button>
-          </form>
-          {errorMessage && (
-            <div style={{ marginTop: "8px", fontSize: "12px", color: "#EF4444" }}>{errorMessage}</div>
-          )}
-        </div>
-      )}
-
-      {/* Table */}
-      {methodsQuery.isLoading && (
-        <div style={{ fontSize: "13px", color: "#737373", padding: "12px 0" }}>Loading…</div>
-      )}
-      {methodsQuery.isError && (
-        <div style={{ fontSize: "13px", color: "#EF4444", padding: "12px 0" }}>Failed to load payment methods.</div>
-      )}
-      {methodsQuery.data && methodsQuery.data.length === 0 && (
-        <div style={{ fontSize: "13px", color: "#737373", padding: "12px 0", textAlign: "center" }}>No payment methods yet.</div>
-      )}
-      {methodsQuery.data && methodsQuery.data.length > 0 && (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: "1px solid #F5F5F5" }}>
-              <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>METHOD</th>
-              <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>STATUS</th>
-              <th style={{ textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {methodsQuery.data.map((method) => (
-              <tr key={method.id} style={{ borderBottom: "1px solid #F5F5F5" }}>
-                <td style={{ padding: "12px 0", fontSize: "13px", fontWeight: 500, color: "#171717" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
-                    <div style={{ width: "28px", height: "28px", borderRadius: "7px", border: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#FAFAFA" }}>
-                      <CreditCard size={14} strokeWidth={1.5} color="#525252" />
-                    </div>
-                    {method.name}
-                  </div>
-                </td>
-                <td style={{ padding: "12px 0" }}>
-                  <span style={{
-                    borderRadius: "9999px",
-                    border: `1px solid ${method.isActive ? "rgba(16,185,129,0.3)" : "#E5E5E5"}`,
-                    backgroundColor: method.isActive ? "rgba(16,185,129,0.08)" : "#F5F5F5",
-                    color: method.isActive ? "#10B981" : "#525252",
-                    padding: "3px 9px",
-                    fontSize: "12px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "5px",
-                  }}>
-                    <CheckCircle2 size={11} strokeWidth={1.5} />
-                    {method.isActive ? "Active" : "Inactive"}
-                  </span>
-                </td>
-                <td style={{ padding: "12px 0", textAlign: "right" }}>
-                  <button
-                    type="button"
-                    onClick={() => toggleMutation.mutate({ id: method.id, isActive: !method.isActive })}
-                    style={{ borderRadius: "7px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#404040", padding: "5px 11px", fontSize: "12px", cursor: "pointer" }}
-                  >
-                    {method.isActive ? "Deactivate" : "Activate"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-}
 
 // ─── Service Items Modal ─────────────────────────────────────────────────────
 
