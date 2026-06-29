@@ -367,11 +367,11 @@ export class AnalyticsService {
     }>(
       `
       SELECT
-        COUNT(j.id)::int AS total_jobs,
-        COUNT(j.id) FILTER (
+        COUNT(DISTINCT j.id)::int AS total_jobs,
+        COUNT(DISTINCT j.id) FILTER (
           WHERE j.status NOT IN ('completed', 'resolved', 'resolved_on_revisit', 'cancelled')
         )::int AS active_jobs,
-        COUNT(j.id) FILTER (
+        COUNT(DISTINCT j.id) FILTER (
           WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit')
         )::int AS completed_jobs,
         ROUND(
@@ -379,17 +379,17 @@ export class AnalyticsService {
           2
         ) AS total_revenue,
         CASE
-          WHEN COUNT(j.id) FILTER (
+          WHEN COUNT(DISTINCT j.id) FILTER (
             WHERE j.type = 'complaint'
               AND j.status IN ('resolved', 'resolved_on_revisit')
           ) = 0 THEN NULL
           ELSE ROUND(
-            COUNT(j.id) FILTER (
+            COUNT(DISTINCT j.id) FILTER (
               WHERE j.type = 'complaint'
                 AND j.status IN ('resolved', 'resolved_on_revisit')
                 AND j.revisit_count = 0
             )::numeric
-            / COUNT(j.id) FILTER (
+            / COUNT(DISTINCT j.id) FILTER (
               WHERE j.type = 'complaint'
                 AND j.status IN ('resolved', 'resolved_on_revisit')
             )::numeric
@@ -398,17 +398,17 @@ export class AnalyticsService {
           )
         END AS first_visit_resolution_rate,
         CASE
-          WHEN COUNT(j.id) FILTER (
+          WHEN COUNT(DISTINCT j.id) FILTER (
             WHERE j.type = 'complaint'
               AND j.status IN ('resolved', 'resolved_on_revisit')
           ) = 0 THEN NULL
           ELSE ROUND(
-            COUNT(j.id) FILTER (
+            COUNT(DISTINCT j.id) FILTER (
               WHERE j.type = 'complaint'
                 AND j.status IN ('resolved', 'resolved_on_revisit')
                 AND j.revisit_count > 0
             )::numeric
-            / COUNT(j.id) FILTER (
+            / COUNT(DISTINCT j.id) FILTER (
               WHERE j.type = 'complaint'
                 AND j.status IN ('resolved', 'resolved_on_revisit')
             )::numeric
