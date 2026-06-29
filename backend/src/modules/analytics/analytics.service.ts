@@ -477,7 +477,7 @@ export class AnalyticsService {
       SELECT
         u.id AS technician_id,
         u.full_name AS technician_name,
-        COUNT(j.id) FILTER (
+        COUNT(DISTINCT j.id) FILTER (
           WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit')
         )::int AS jobs_completed,
         ROUND(
@@ -488,17 +488,17 @@ export class AnalyticsService {
           2
         ) AS revenue_collected,
         CASE
-          WHEN COUNT(j.id) FILTER (
+          WHEN COUNT(DISTINCT j.id) FILTER (
             WHERE j.type = 'complaint'
               AND j.status IN ('resolved', 'resolved_on_revisit')
           ) = 0 THEN NULL
           ELSE ROUND(
-            COUNT(j.id) FILTER (
+            COUNT(DISTINCT j.id) FILTER (
               WHERE j.type = 'complaint'
                 AND j.status IN ('resolved', 'resolved_on_revisit')
                 AND j.revisit_count = 0
             )::numeric
-            / COUNT(j.id) FILTER (
+            / COUNT(DISTINCT j.id) FILTER (
               WHERE j.type = 'complaint'
                 AND j.status IN ('resolved', 'resolved_on_revisit')
             )::numeric
@@ -515,12 +515,12 @@ export class AnalyticsService {
           )
         )::int AS avg_resolution_minutes,
         CASE
-          WHEN COUNT(j.id) FILTER (
+          WHEN COUNT(DISTINCT j.id) FILTER (
             WHERE j.visit_outcome IN ('on_time', 'late', 'no_show')
           ) = 0 THEN NULL
           ELSE ROUND(
-            COUNT(j.id) FILTER (WHERE j.visit_outcome = 'on_time')::numeric
-            / COUNT(j.id) FILTER (
+            COUNT(DISTINCT j.id) FILTER (WHERE j.visit_outcome = 'on_time')::numeric
+            / COUNT(DISTINCT j.id) FILTER (
               WHERE j.visit_outcome IN ('on_time', 'late', 'no_show')
             )::numeric
             * 100,
