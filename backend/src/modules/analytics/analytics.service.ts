@@ -339,18 +339,43 @@ export class AnalyticsService {
     days: number,
     ctx: RequestContext,
   ): Promise<Array<{ date: string; revenue: number; total: number; completed: number }>> {
-    const result = await this.db.query(
-      `SELECT metric_date::text AS date,
-              COALESCE(revenue_amount, 0)::numeric AS revenue,
-              COALESCE(jobs_total, 0)::int AS total,
-              COALESCE(jobs_completed + jobs_resolved, 0)::int AS completed
-       FROM analytics_business_daily
-       WHERE organization_id = $1
-         AND metric_date >= CURRENT_DATE - ($2 || ' days')::interval
-       ORDER BY metric_date ASC`,
+    const result = await this.db.query<{
+      date: string;
+      revenue: string;
+      total: string;
+      completed: string;
+    }>(
+      `
+      SELECT
+        j.created_at::date::text AS date,
+        ROUND(
+          COALESCE(SUM(p.amount) FILTER (WHERE p.status = 'collected'), 0)::numeric,
+          2
+        ) AS revenue,
+        COUNT(DISTINCT j.id)::int AS total,
+        COUNT(DISTINCT j.id) FILTER (
+          WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit')
+        )::int AS completed
+      FROM jobs j
+      LEFT JOIN payments p
+        ON p.job_id = j.id
+       AND p.organization_id = j.organization_id
+       AND p.is_deleted = FALSE
+      WHERE j.organization_id = $1
+        AND j.is_deleted = FALSE
+        AND j.created_at >= CURRENT_DATE - ($2::text || ' days')::interval
+      GROUP BY j.created_at::date
+      ORDER BY date ASC
+      `,
       [ctx.organizationId, String(days)],
     );
-    return result.rows as Array<{ date: string; revenue: number; total: number; completed: number }>;
+
+    return result.rows.map((row) => ({
+      date: row.date,
+      revenue: Number(row.revenue),
+      total: Number(row.total),
+      completed: Number(row.completed),
+    }));
   }
 
   async getBusinessOverview(
