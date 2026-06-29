@@ -575,20 +575,46 @@ export class AnalyticsService {
       SELECT
         b.id AS brand_id,
         b.name AS brand_name,
-        COUNT(j.id)::int AS total_jobs,
+        COUNT(DISTINCT j.id)::int AS total_jobs,
+        COUNT(DISTINCT j.id) FILTER (
+          WHERE j.status NOT IN ('completed', 'resolved', 'resolved_on_revisit', 'cancelled')
+        )::int AS active_jobs,
+        COUNT(DISTINCT j.id) FILTER (
+          WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit')
+        )::int AS completed_jobs,
+        ROUND(
+          COALESCE(SUM(p.amount) FILTER (WHERE p.status = 'collected'), 0)::numeric,
+          2
+        ) AS revenue_collected,
         CASE
-          WHEN COUNT(j.id) = 0 THEN 0
+          WHEN COUNT(DISTINCT j.id) FILTER (
+            WHERE j.type = 'complaint'
+              AND j.status IN ('resolved', 'resolved_on_revisit')
+          ) = 0 THEN NULL
           ELSE ROUND(
-            COUNT(j.id) FILTER (WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit'))::numeric
-            / COUNT(j.id)::numeric * 100, 2
+            COUNT(DISTINCT j.id) FILTER (
+              WHERE j.type = 'complaint'
+                AND j.status IN ('resolved', 'resolved_on_revisit')
+                AND j.revisit_count > 0
+            )::numeric
+            / COUNT(DISTINCT j.id) FILTER (
+              WHERE j.type = 'complaint'
+                AND j.status IN ('resolved', 'resolved_on_revisit')
+            )::numeric
+            * 100,
+            1
           )
-        END AS completion_rate
+        END AS revisit_rate
       FROM brands b
       LEFT JOIN jobs j
         ON j.brand_id = b.id
-        AND j.organization_id = $1
-        AND j.is_deleted = FALSE
-        AND j.created_at >= NOW() - ($2::text || ' days')::interval
+       AND j.organization_id = $1
+       AND j.is_deleted = FALSE
+       AND j.created_at >= NOW() - ($2::text || ' days')::interval
+      LEFT JOIN payments p
+        ON p.job_id = j.id
+       AND p.organization_id = j.organization_id
+       AND p.is_deleted = FALSE
       WHERE b.organization_id = $1
         AND b.is_deleted = FALSE
       GROUP BY b.id, b.name
@@ -609,29 +635,33 @@ export class AnalyticsService {
       SELECT
         d.id AS dealer_id,
         d.name AS dealer_name,
-        COUNT(j.id)::int AS total_jobs,
-        CASE
-          WHEN COUNT(j.id) = 0 THEN 0
-          ELSE ROUND(
-            COUNT(j.id) FILTER (WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit'))::numeric
-            / COUNT(j.id)::numeric * 100, 2
-          )
-        END AS completion_rate,
-        CASE
-          WHEN COUNT(j.id) FILTER (WHERE j.scheduled_at IS NOT NULL) = 0 THEN NULL
-          ELSE ROUND(
-            AVG(
-              EXTRACT(EPOCH FROM (j.scheduled_at - j.created_at)) / 86400.0
-            ) FILTER (WHERE j.scheduled_at IS NOT NULL)::numeric,
-            1
-          )
-        END AS avg_days_waiting
+        COUNT(DISTINCT j.id)::int AS total_jobs,
+        COUNT(DISTINCT j.id) FILTER (
+          WHERE j.status NOT IN ('completed', 'resolved', 'resolved_on_revisit', 'cancelled')
+        )::int AS active_jobs,
+        COUNT(DISTINCT j.id) FILTER (
+          WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit')
+        )::int AS completed_jobs,
+        ROUND(
+          COALESCE(
+            SUM(p.amount) FILTER (
+              WHERE p.status = 'collected'
+                AND j.source = 'via_dealer'
+            ),
+            0
+          )::numeric,
+          2
+        ) AS revenue_generated
       FROM dealers d
       LEFT JOIN jobs j
         ON j.dealer_id = d.id
-        AND j.organization_id = $1
-        AND j.is_deleted = FALSE
-        AND j.created_at >= NOW() - ($2::text || ' days')::interval
+       AND j.organization_id = $1
+       AND j.is_deleted = FALSE
+       AND j.created_at >= NOW() - ($2::text || ' days')::interval
+      LEFT JOIN payments p
+        ON p.job_id = j.id
+       AND p.organization_id = j.organization_id
+       AND p.is_deleted = FALSE
       WHERE d.organization_id = $1
         AND d.is_deleted = FALSE
       GROUP BY d.id, d.name
