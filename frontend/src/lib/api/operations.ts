@@ -80,7 +80,10 @@ function mapDealer(row: UnknownRecord): DealerDirectoryItem {
   return {
     id: asString(row.id),
     name: asString(row.name),
+    contactName: asNullableString(row.contact_name),
+    email: asNullableString(row.email),
     phone: asString(row.phone),
+    region: asNullableString(row.region),
     isActive: asBoolean(row.is_active, true),
     createdAt: asString(row.created_at),
     brandIds: Array.isArray(row.brand_ids) ? (row.brand_ids as string[]) : [],
@@ -155,7 +158,7 @@ export function updateDealer(
 
 export function updateDealerProfile(
   dealerId: string,
-  input: { name?: string; phone?: string },
+  input: { name?: string; contactName?: string; email?: string; phone?: string; region?: string },
 ): Promise<{ ok: true }> {
   return apiClient.patch<{ ok: true }>(`/dealers/${dealerId}/profile`, input);
 }
@@ -185,7 +188,9 @@ export async function fetchDealerJobs(dealerId: string): Promise<DealerJobItem[]
 
 export async function createDealer(input: {
   name: string;
+  contactName?: string;
   email: string;
+  region?: string;
   password: string;
   brandIds?: string[];
 }): Promise<{ dealerId: string }> {

@@ -20,8 +20,18 @@ export class CreateDealerDto {
   @Length(1, 120)
   name!: string;
 
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  contactName?: string;
+
   @IsEmail()
   email!: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  region?: string;
 
   @IsString()
   @Length(8, 120)
@@ -48,8 +58,23 @@ export class UpdateDealerProfileDto {
 
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
+  @Length(1, 120)
+  contactName?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
   @Length(0, 40)
   phone?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  region?: string;
 }
 
 export class UpdateDealerBrandsDto {

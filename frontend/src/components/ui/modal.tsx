@@ -31,8 +31,11 @@ export function Modal({ isOpen, onClose, title, blocking, children }: ModalProps
           borderRadius: "12px",
           width: "480px",
           maxWidth: "95vw",
+          maxHeight: "90vh",
           boxShadow: "0 10px 38px rgba(0,0,0,0.10), 0 10px 20px rgba(0,0,0,0.06)",
           overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <div
@@ -79,7 +82,7 @@ export function Modal({ isOpen, onClose, title, blocking, children }: ModalProps
             </button>
           )}
         </div>
-        <div style={{ padding: "20px" }}>{children}</div>
+        <div style={{ padding: "20px", overflowY: "auto" }}>{children}</div>
       </div>
     </div>
   );

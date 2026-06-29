@@ -20,7 +20,10 @@ export class DealersService {
       SELECT
         d.id,
         d.name,
+        d.contact_name,
+        d.email,
         d.phone,
+        d.region,
         d.is_active,
         d.created_at,
         COALESCE(
@@ -31,7 +34,7 @@ export class DealersService {
       LEFT JOIN dealer_brands db ON db.dealer_id = d.id AND db.organization_id = d.organization_id
       WHERE d.organization_id = $1
         AND d.is_deleted = FALSE
-      GROUP BY d.id, d.name, d.phone, d.is_active, d.created_at
+      GROUP BY d.id, d.name, d.contact_name, d.email, d.phone, d.region, d.is_active, d.created_at
       ORDER BY d.name ASC
       `,
       [ctx.organizationId],
@@ -51,11 +54,11 @@ export class DealersService {
     return this.db.withTransaction(async (client) => {
       const insert = await client.query<{ id: string }>(
         `
-        INSERT INTO dealers (organization_id, name, is_active, is_deleted)
-        VALUES ($1, $2, TRUE, FALSE)
+        INSERT INTO dealers (organization_id, name, contact_name, email, region, is_active, is_deleted)
+        VALUES ($1, $2, $3, $4, $5, TRUE, FALSE)
         RETURNING id
         `,
-        [ctx.organizationId, input.name.trim()],
+        [ctx.organizationId, input.name.trim(), input.contactName?.trim() ?? null, input.email.trim(), input.region?.trim() ?? null],
       );
 
       const dealerId = insert.rows[0].id;
@@ -370,9 +373,24 @@ export class DealersService {
       setClauses.push(`name = $${params.length}`);
     }
 
+    if (input.contactName !== undefined) {
+      params.push(input.contactName.trim());
+      setClauses.push(`contact_name = $${params.length}`);
+    }
+
+    if (input.email !== undefined) {
+      params.push(input.email.trim());
+      setClauses.push(`email = $${params.length}`);
+    }
+
     if (input.phone !== undefined) {
       params.push(input.phone.trim());
       setClauses.push(`phone = $${params.length}`);
+    }
+
+    if (input.region !== undefined) {
+      params.push(input.region.trim());
+      setClauses.push(`region = $${params.length}`);
     }
 
     const update = await this.db.query<{ id: string }>(

@@ -35,7 +35,10 @@ export type TechnicianStats = {
 export type DealerDirectoryItem = {
   id: string;
   name: string;
+  contactName?: string | null;
+  email?: string | null;
   phone: string;
+  region?: string | null;
   isActive: boolean;
   createdAt: string;
   brandIds: string[];
