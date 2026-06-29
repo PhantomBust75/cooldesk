@@ -148,7 +148,7 @@ function WindowSelect({
         padding: "6px 10px",
         fontSize: "12px",
         color: "#171717",
-        backgroundColor: "#FAFAFA",
+        backgroundColor: "#F9F9F9",
         cursor: "pointer",
       }}
     >
@@ -170,7 +170,7 @@ function ExportButton({ onClick }: { onClick: () => void }) {
         padding: "6px 12px",
         fontSize: "12px",
         color: "#404040",
-        backgroundColor: "#FAFAFA",
+        backgroundColor: "#F9F9F9",
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
@@ -388,7 +388,7 @@ export default function AnalyticsPage() {
                   <BarChart data={dailyData} barSize={28}>
                     <CartesianGrid
                       strokeDasharray="3 3"
-                      stroke="#F5F5F5"
+                      stroke="#E5E5E5"
                       vertical={false}
                     />
                     <XAxis
@@ -411,7 +411,7 @@ export default function AnalyticsPage() {
                   <LineChart data={dailyData}>
                     <CartesianGrid
                       strokeDasharray="3 3"
-                      stroke="#F5F5F5"
+                      stroke="#E5E5E5"
                       vertical={false}
                     />
                     <XAxis
@@ -472,7 +472,7 @@ export default function AnalyticsPage() {
             {!techniciansQuery.isLoading && !techniciansQuery.isError ? (
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                 <thead>
-                  <tr style={{ backgroundColor: "#FAFAFA", color: "#737373", textAlign: "left" }}>
+                  <tr style={{ backgroundColor: "#F9F9F9", color: "#737373", textAlign: "left" }}>
                     {["NAME", "JOBS COMPLETED", "REVENUE (SAR)", "1ST VISIT RES.", "AVG RESOLUTION", "ON-TIME RATE", "RATING"].map(
                       (h) => (
                         <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
@@ -484,7 +484,7 @@ export default function AnalyticsPage() {
                 </thead>
                 <tbody>
                   {(techniciansQuery.data ?? []).map((item) => (
-                    <tr key={item.technicianId} style={{ borderBottom: "1px solid #F5F5F5" }}>
+                    <tr key={item.technicianId} style={{ borderBottom: "1px solid #E5E5E5" }}>
                       <td style={{ padding: "10px 12px", color: "#171717" }}>{item.technicianName || "—"}</td>
                       <td style={{ padding: "10px 12px", color: "#404040" }}>{item.jobsCompleted}</td>
                       <td style={{ padding: "10px 12px", color: "#404040" }}>
@@ -536,7 +536,7 @@ export default function AnalyticsPage() {
             {!brandsQuery.isLoading && !brandsQuery.isError ? (
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                 <thead>
-                  <tr style={{ backgroundColor: "#FAFAFA", color: "#737373", textAlign: "left" }}>
+                  <tr style={{ backgroundColor: "#F9F9F9", color: "#737373", textAlign: "left" }}>
                     {["BRAND", "TOTAL JOBS", "ACTIVE JOBS", "COMPLETED JOBS", "REVENUE (SAR)", "REVISIT RATE"].map(
                       (h) => (
                         <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
@@ -548,7 +548,7 @@ export default function AnalyticsPage() {
                 </thead>
                 <tbody>
                   {(brandsQuery.data ?? []).map((item) => (
-                    <tr key={item.brandId} style={{ borderBottom: "1px solid #F5F5F5" }}>
+                    <tr key={item.brandId} style={{ borderBottom: "1px solid #E5E5E5" }}>
                       <td style={{ padding: "10px 12px", color: "#171717" }}>{item.brandName || "—"}</td>
                       <td style={{ padding: "10px 12px", color: "#404040" }}>{item.totalJobs}</td>
                       <td style={{ padding: "10px 12px", color: "#404040" }}>{item.activeJobs}</td>
@@ -593,7 +593,7 @@ export default function AnalyticsPage() {
             {!dealersQuery.isLoading && !dealersQuery.isError ? (
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                 <thead>
-                  <tr style={{ backgroundColor: "#FAFAFA", color: "#737373", textAlign: "left" }}>
+                  <tr style={{ backgroundColor: "#F9F9F9", color: "#737373", textAlign: "left" }}>
                     {["DEALER", "JOBS SUBMITTED", "ACTIVE JOBS", "COMPLETED JOBS", "REVENUE (SAR)"].map(
                       (h) => (
                         <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
@@ -605,7 +605,7 @@ export default function AnalyticsPage() {
                 </thead>
                 <tbody>
                   {(dealersQuery.data ?? []).map((item) => (
-                    <tr key={item.dealerId} style={{ borderBottom: "1px solid #F5F5F5" }}>
+                    <tr key={item.dealerId} style={{ borderBottom: "1px solid #E5E5E5" }}>
                       <td style={{ padding: "10px 12px", color: "#171717" }}>{item.dealerName || "—"}</td>
                       <td style={{ padding: "10px 12px", color: "#404040" }}>{item.totalJobs}</td>
                       <td style={{ padding: "10px 12px", color: "#404040" }}>{item.activeJobs}</td>

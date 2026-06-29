@@ -481,10 +481,7 @@ export class AnalyticsService {
           WHERE j.status IN ('completed', 'resolved', 'resolved_on_revisit')
         )::int AS jobs_completed,
         ROUND(
-          COALESCE(
-            SUM(p.amount) FILTER (WHERE p.status = 'collected'),
-            0
-          )::numeric,
+          COALESCE(SUM(p.collected_amount), 0)::numeric,
           2
         ) AS revenue_collected,
         CASE
@@ -544,10 +541,14 @@ export class AnalyticsService {
        AND j.organization_id = $1
        AND j.is_deleted = FALSE
        AND j.created_at >= NOW() - ($2::text || ' days')::interval
-      LEFT JOIN payments p
-        ON p.job_id = j.id
-       AND p.organization_id = j.organization_id
-       AND p.is_deleted = FALSE
+      LEFT JOIN (
+        SELECT job_id, organization_id,
+               SUM(amount) FILTER (WHERE status = 'collected') AS collected_amount
+        FROM payments
+        WHERE is_deleted = FALSE
+        GROUP BY job_id, organization_id
+      ) p ON p.job_id = j.id
+          AND p.organization_id = j.organization_id
       LEFT JOIN (
         SELECT job_id, MIN(assigned_at) AS first_assigned_at
         FROM job_assignments
