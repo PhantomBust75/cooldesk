@@ -135,6 +135,13 @@ export class JobsController {
     return this.jobsService.listTechniciansForOffice(req.context);
   }
 
+  @Get('office/technicians/:id/jobs')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff')
+  getTechnicianJobs(@Param('id') technicianId: string, @Req() req: UserRequest) {
+    return this.jobsService.getTechnicianJobs(technicianId, req.context);
+  }
+
   @Post('office/technicians')
   @UseGuards(TenantGuard, RolesGuard)
   @Roles('owner')

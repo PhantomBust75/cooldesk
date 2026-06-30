@@ -12,6 +12,7 @@ import type {
   QuickCreateJobResult,
   SystemConfigItem,
   TechnicianDirectoryItem,
+  TechnicianJob,
   TechnicianStats,
 } from "@/types/operations";
 
@@ -291,6 +292,19 @@ export async function fetchTechnicianStats(technicianId: string): Promise<Techni
     activeJobs: asNumber(row.active_jobs),
     completionRate: asNullableNumber(row.completion_rate),
   };
+}
+
+export async function fetchTechnicianJobs(technicianId: string): Promise<TechnicianJob[]> {
+  const data = await apiClient.get<UnknownRecord[]>(`/office/technicians/${technicianId}/jobs`);
+  return data.map((row) => ({
+    id: asString(row.id),
+    customerName: asString(row.customer_name),
+    type: asString(row.type) as "installation" | "complaint",
+    status: asString(row.status),
+    createdAt: asString(row.created_at),
+    amountCollected: Number(row.amount_collected ?? 0),
+    avgRating: row.avg_rating != null ? Number(row.avg_rating) : null,
+  }));
 }
 
 export type ReviewTokenDetail = {

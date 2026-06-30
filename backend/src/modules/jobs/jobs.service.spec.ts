@@ -2374,3 +2374,37 @@ describe('JobsService Phase 09 revisit cards and rescheduling', () => {
   });
 });
 
+describe('getTechnicianJobs', () => {
+  it('should query jobs filtered by technician_id', async () => {
+    const db = {
+      query: jest.fn(async (_sql: string, _params?: unknown[]) => ({
+        rows: [
+          {
+            id: 'job-1',
+            customer_name: 'Bob',
+            type: 'installation',
+            status: 'completed',
+            created_at: '2024-01-01',
+            amount_collected: '500.00',
+            avg_rating: '4.5',
+          },
+        ],
+        rowCount: 1,
+      })),
+      withTransaction: jest.fn(),
+    };
+
+    const config = {
+      getInt: jest.fn(async (_orgId: string, _key: string, fallback: number) => fallback),
+    };
+
+    const service = new JobsService(db as unknown as DatabaseService, config as unknown as TenantConfigService);
+
+    await service.getTechnicianJobs('tech-1', { organizationId: 'org-1' } as unknown as RequestContext);
+
+    const calledSql: string = db.query.mock.calls[0][0] as string;
+    expect(calledSql).toContain('j.technician_id = $2');
+    expect(calledSql).toContain('amount_collected');
+  });
+});
+

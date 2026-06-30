@@ -3992,4 +3992,39 @@ export class JobsService {
 
     return { ok: true, scheduled, errors };
   }
+
+  async getTechnicianJobs(
+    technicianId: string,
+    ctx: RequestContext,
+  ): Promise<Record<string, unknown>[]> {
+    const result = await this.db.query(
+      `
+      SELECT
+        j.id,
+        j.customer_name,
+        j.type,
+        j.status,
+        j.created_at,
+        COALESCE(SUM(p.amount) FILTER (WHERE p.status = 'collected'), 0) AS amount_collected,
+        ROUND(AVG(r.rating)::numeric, 1) AS avg_rating
+      FROM jobs j
+      LEFT JOIN payments p
+        ON p.job_id = j.id
+        AND p.organization_id = j.organization_id
+        AND p.is_deleted = FALSE
+      LEFT JOIN customer_reviews r
+        ON r.job_id = j.id
+        AND r.organization_id = j.organization_id
+      WHERE j.organization_id = $1
+        AND j.technician_id = $2
+        AND j.is_deleted = FALSE
+      GROUP BY j.id, j.customer_name, j.type, j.status, j.created_at
+      ORDER BY j.created_at DESC
+      LIMIT 50
+      `,
+      [ctx.organizationId, technicianId],
+    );
+
+    return result.rows as Record<string, unknown>[];
+  }
 }

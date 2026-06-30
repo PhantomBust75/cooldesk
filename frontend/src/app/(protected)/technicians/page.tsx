@@ -4,6 +4,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Modal } from "@/components/ui/modal";
 import { StatusToggle } from "@/components/ui/status-toggle";
 import { RoleGate } from "@/components/auth/role-gate";
+import { TechnicianDetailPanel } from "@/components/technicians/TechnicianDetailPanel";
 import { ApiError } from "@/lib/api/client";
 import { createOfficeTechnician, fetchTechnicianDirectory, toggleTechnicianActive } from "@/lib/api/operations";
 import { TechnicianDirectoryItem } from "@/types/operations";
@@ -17,6 +18,7 @@ export default function TechniciansPage() {
   const isMobile = useMobileBreakpoint();
   const [showCreate, setShowCreate] = useState(false);
   const [editTarget, setEditTarget] = useState<TechnicianDirectoryItem | null>(null);
+  const [selectedTechnician, setSelectedTechnician] = useState<TechnicianDirectoryItem | null>(null);
   const [search, setSearch] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -160,7 +162,8 @@ export default function TechniciansPage() {
           {filteredTechnicians.map((technician) => (
             <div
               key={technician.id}
-              style={{ backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}
+              onClick={() => setSelectedTechnician(technician)}
+              style={{ backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", cursor: "pointer" }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <Avatar name={technician.name} size={40} />
@@ -286,6 +289,13 @@ export default function TechniciansPage() {
           </Modal>
         </RoleGate>
       </section>
+
+      {selectedTechnician && (
+        <TechnicianDetailPanel
+          technician={selectedTechnician}
+          onClose={() => setSelectedTechnician(null)}
+        />
+      )}
     </RoleGate>
   );
 }

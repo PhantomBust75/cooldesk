@@ -126,3 +126,13 @@ export type ServiceItem = {
   unitLabel: string | null;
   createdAt: string;
 };
+
+export type TechnicianJob = {
+  id: string;
+  customerName: string;
+  type: "installation" | "complaint";
+  status: string;
+  createdAt: string;
+  amountCollected: number;
+  avgRating: number | null;
+};
