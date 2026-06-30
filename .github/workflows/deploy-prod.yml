@@ -52,11 +52,13 @@ jobs:
           BACKEND_IMAGE: ${{ steps.tags.outputs.backend_image }}
           PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
           HEALTHCHECK_API_URL: ${{ vars.HEALTHCHECK_API_URL }}
+          API_DOMAIN: ${{ vars.API_DOMAIN }}
+          CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: BACKEND_IMAGE,PROD_ENV_FILE,HEALTHCHECK_API_URL
+          envs: BACKEND_IMAGE,PROD_ENV_FILE,HEALTHCHECK_API_URL,API_DOMAIN,CORS_ORIGINS
           command_timeout: 10m
           script: |
             set -euo pipefail

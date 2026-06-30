@@ -16,6 +16,11 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
+# Override specific vars from CI env so PROD_ENV_FILE doesn't need to be updated
+# for domain/CORS changes — just update GitHub Actions variables instead.
+[[ -n "${API_DOMAIN:-}" ]] && sed -i "s|API_DOMAIN=.*|API_DOMAIN=${API_DOMAIN}|" .env
+[[ -n "${CORS_ORIGINS:-}" ]] && sed -i "s|CORS_ORIGINS=.*|CORS_ORIGINS=${CORS_ORIGINS}|" .env
+
 export BACKEND_IMAGE="${BACKEND_IMAGE:-}"
 
 docker compose -f "$COMPOSE_FILE" pull
