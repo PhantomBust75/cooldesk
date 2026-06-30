@@ -139,9 +139,12 @@ describe('listPendingScheduleJobs', () => {
       getInt: jest.fn(async (_orgId: string, _key: string, fallback: number) => fallback),
     };
 
-    const service = new JobsService(fakeDb as never, config as never);
+    const service = new JobsService(fakeDb as unknown as any, config as unknown as any);
 
-    await service.listPendingScheduleJobs({ limit: 10 } as any, { organizationId: 'org-1' } as any);
+    await service.listPendingScheduleJobs(
+      { limit: 10 } as { limit: number },
+      { organizationId: 'org-1' } as unknown as RequestContext
+    );
 
     const calledSql: string = fakeDb.query.mock.calls[0][0] as string;
     expect(calledSql).toContain("j.status = 'new'");

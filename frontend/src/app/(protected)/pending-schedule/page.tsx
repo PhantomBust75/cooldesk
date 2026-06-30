@@ -213,7 +213,7 @@ function BatchModal({ jobs, technicians, onClose, onSuccess }: BatchModalProps) 
                   alignItems: "center",
                   gap: "10px",
                   padding: "10px 14px",
-                  borderBottom: "1px solid #F5F5F5",
+                  borderBottom: "1px solid #F9F9F9",
                   backgroundColor: selectedIds.includes(job.id) ? "#FAFAFA" : "#FAFAFA",
                 }}
               >
@@ -701,8 +701,8 @@ export default function PendingSchedulePage() {
                     <tr
                       key={job.id}
                       style={{
-                        borderBottom: isExpanded ? "none" : "1px solid #F5F5F5",
-                        backgroundColor: isExpanded ? "#F5F5F5" : "#FAFAFA",
+                        borderBottom: isExpanded ? "none" : "1px solid #F9F9F9",
+                        backgroundColor: isExpanded ? "#F9F9F9" : "#FAFAFA",
                       }}
                     >
                       {/* JOB ID */}
@@ -743,7 +743,7 @@ export default function PendingSchedulePage() {
                             borderRadius: "9999px",
                             fontSize: "11px",
                             fontWeight: 600,
-                            backgroundColor: "#F5F5F5",
+                            backgroundColor: "#F9F9F9",
                             color: "#525252",
                             textTransform: "uppercase",
                             letterSpacing: "0.04em",
