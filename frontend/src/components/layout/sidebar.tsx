@@ -34,7 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/dealer-management", label: "Dealers", icon: Building2, roles: ["owner", "office_staff"] },
   { href: "/analytics", label: "Analytics", icon: BarChart2, roles: ["owner", "office_staff"] },
   { href: "/notifications", label: "Notifications", icon: Bell },
-  { href: "/payment-methods", label: "Payment Methods", icon: CreditCard, roles: ["owner"] },
+  { href: "/payment-methods", label: "Payments & Brands", icon: CreditCard, roles: ["owner"] },
   { href: "/admin/system-config", label: "Admin", icon: Settings, roles: ["owner"] },
 ];
 
@@ -102,13 +102,15 @@ export function Sidebar({
           flexShrink: 0,
         }}
       >
-        <Zap size={18} strokeWidth={1.5} color="#0A0A0A" />
-        <span style={{ fontSize: "15px", color: "#0A0A0A", fontWeight: 500 }}>CoolDesk</span>
+        <Zap size={18} strokeWidth={1.5} color="#0A0A0A" style={{ flexShrink: 0 }} />
+        {!collapsed && (
+          <span style={{ fontSize: "15px", color: "#0A0A0A", fontWeight: 500 }}>CoolDesk</span>
+        )}
         <button
           type="button"
           onClick={onToggle}
           style={{
-            marginLeft: "auto",
+            marginLeft: collapsed ? "0" : "auto",
             width: "32px",
             height: "32px",
             borderRadius: "8px",
@@ -121,7 +123,7 @@ export function Sidebar({
             cursor: "pointer",
             flexShrink: 0,
           }}
-          aria-label="Collapse sidebar"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <Menu size={16} strokeWidth={1.5} />
         </button>
@@ -142,7 +144,8 @@ export function Sidebar({
                 padding: "10px 12px",
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
+                justifyContent: collapsed ? "center" : "flex-start",
+                gap: collapsed ? "0" : "10px",
                 textDecoration: "none",
                 backgroundColor: active ? "#F0F0F0" : "transparent",
                 color: active ? "#0A0A0A" : "#525252",
@@ -153,7 +156,7 @@ export function Sidebar({
               }}
             >
               <span style={{ flexShrink: 0, display: "inline-flex" }}><Icon size={17} strokeWidth={1.6} /></span>
-              <span>{item.label}</span>
+              {!collapsed && <span>{item.label}</span>}
             </Link>
           );
         })}
