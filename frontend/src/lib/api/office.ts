@@ -42,6 +42,7 @@ function mapPendingScheduleJob(row: UnknownRecord): PendingScheduleJob {
     phone: asString(row.phone),
     address: asString(row.address),
     scheduledAt: asNullableString(row.scheduled_at),
+    technicianId: asNullableString(row.technician_id),
     createdAt: asString(row.created_at),
     version: asNumber(row.version),
   };

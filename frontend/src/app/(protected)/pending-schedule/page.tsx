@@ -424,7 +424,7 @@ function InlineForm({ job, technicians, onClose, onSuccess }: InlineFormProps) {
   return (
     <tr style={{ backgroundColor: "#FAFAFA" }}>
       <td
-        colSpan={8}
+        colSpan={10}
         style={{ padding: "14px 16px", borderBottom: "1px solid #E5E5E5" }}
       >
         <div
@@ -565,12 +565,14 @@ export default function PendingSchedulePage() {
   const TABLE_HEADERS = [
     "JOB ID",
     "CUSTOMER",
+    "STATUS",
     "TYPE",
     "BRAND",
     "DEALER",
     "SUBMITTED",
+    "SCHEDULED",
     "DAYS WAITING",
-    "SCHEDULE & ASSIGN",
+    "ACTIONS",
   ];
 
   const thStyle: React.CSSProperties = {
@@ -732,6 +734,25 @@ export default function PendingSchedulePage() {
                         </div>
                       </td>
 
+                      {/* STATUS */}
+                      <td style={{ padding: "14px 12px" }}>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            padding: "3px 8px",
+                            borderRadius: "9999px",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            backgroundColor: "#F5F5F5",
+                            color: "#525252",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.04em",
+                          }}
+                        >
+                          {job.status.replace(/_/g, " ")}
+                        </span>
+                      </td>
+
                       {/* TYPE */}
                       <td style={{ padding: "14px 12px" }}>
                         <JobTypeChip type={job.type} />
@@ -769,6 +790,25 @@ export default function PendingSchedulePage() {
                         }}
                       >
                         {new Date(job.createdAt).toLocaleDateString()}
+                      </td>
+
+                      {/* SCHEDULED */}
+                      <td
+                        style={{
+                          padding: "14px 12px",
+                          fontSize: "13px",
+                          color: job.scheduledAt ? "#171717" : "#737373",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {job.scheduledAt
+                          ? new Date(job.scheduledAt).toLocaleString([], {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "—"}
                       </td>
 
                       {/* DAYS WAITING */}

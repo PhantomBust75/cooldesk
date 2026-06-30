@@ -11,6 +11,7 @@ export type PendingScheduleJob = {
   phone: string;
   address: string;
   scheduledAt: string | null;
+  technicianId: string | null;
   createdAt: string;
   version: number;
 };

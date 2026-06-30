@@ -117,6 +117,38 @@ describe('JobsService VCID resolution', () => {
   });
 });
 
+describe('listPendingScheduleJobs', () => {
+  it('should include complaint jobs with status=new and not filter by via_dealer', async () => {
+    const fakeDb = {
+      query: jest.fn(async (_sql: string, _params: unknown[]) =>
+        result([
+          {
+            id: 'job-1',
+            type: 'complaint',
+            status: 'new',
+            technician_id: null as null,
+            scheduled_at: null as null,
+            customer_name: 'Alice',
+          },
+        ]),
+      ),
+      withTransaction: jest.fn(),
+    };
+
+    const config = {
+      getInt: jest.fn(async (_orgId: string, _key: string, fallback: number) => fallback),
+    };
+
+    const service = new JobsService(fakeDb as never, config as never);
+
+    await service.listPendingScheduleJobs({ limit: 10 } as any, { organizationId: 'org-1' } as any);
+
+    const calledSql: string = fakeDb.query.mock.calls[0][0] as string;
+    expect(calledSql).toContain("j.status = 'new'");
+    expect(calledSql).not.toContain("j.source = 'via_dealer'");
+  });
+});
+
 describe('JobsService dealer VCID conflict policy', () => {
   const dealerCtx: DealerRequestContext = {
     organizationId: 'org-1',

@@ -726,6 +726,7 @@ export class JobsService {
         j.phone,
         j.address,
         j.scheduled_at,
+        j.technician_id,
         j.created_at,
         j.version,
         b.name AS brand_name,
@@ -735,9 +736,11 @@ export class JobsService {
       LEFT JOIN dealers d ON d.id = j.dealer_id AND d.organization_id = j.organization_id
       WHERE j.organization_id = $1
         AND j.is_deleted = FALSE
-        AND j.type = 'installation'
-        AND j.source = 'via_dealer'
-        AND j.status = 'pending_schedule'
+        AND (
+          j.status = 'pending_schedule'
+          OR (j.status = 'new' AND j.type = 'complaint')
+          OR (j.status = 'scheduled' AND j.technician_id IS NULL)
+        )
       ORDER BY j.created_at ASC
       LIMIT $2
       `,
