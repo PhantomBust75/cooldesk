@@ -203,7 +203,7 @@ export default function LogNewJobPage() {
         <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "720px" }}>
           <div
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: "#FAFAFA",
               borderRadius: "12px",
               border: "1px solid #E5E5E5",
               padding: isMobile ? "40px 24px" : "56px 48px",
@@ -256,7 +256,7 @@ export default function LogNewJobPage() {
                   borderRadius: "8px",
                   border: "none",
                   backgroundColor: "#0A0A0A",
-                  color: "#fff",
+                  color: "#FAFAFA",
                   textDecoration: "none",
                   fontSize: "13px",
                   fontWeight: 500,
@@ -283,7 +283,7 @@ export default function LogNewJobPage() {
                   padding: "9px 20px",
                   borderRadius: "8px",
                   border: "1px solid #E5E5E5",
-                  backgroundColor: "#fff",
+                  backgroundColor: "#FAFAFA",
                   color: "#404040",
                   fontSize: "13px",
                   cursor: "pointer",
