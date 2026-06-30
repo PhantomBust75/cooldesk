@@ -92,7 +92,7 @@ describe("DealerDetailPanel", () => {
       <DealerDetailPanel dealer={mockDealer} onClose={vi.fn()} />,
       { wrapper: makeWrapper() },
     );
-    const activeTab = screen.getByRole("button", { name: /Active Jobs/i });
+    const activeTab = screen.getByRole("button", { name: /Active/i });
     expect(activeTab).toBeTruthy();
   });
 

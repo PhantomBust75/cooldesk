@@ -24,7 +24,7 @@ function StatusPill({ status }: { status: string }) {
         borderRadius: "9999px",
         fontSize: "11px",
         fontWeight: 600,
-        backgroundColor: "#F5F5F5",
+        backgroundColor: "#F9F9F9",
         color: "#525252",
         textTransform: "uppercase",
         letterSpacing: "0.04em",
@@ -106,7 +106,7 @@ export function DealerDetailPanel({ dealer, onClose }: Props) {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            backgroundColor: "#fff",
+            backgroundColor: "#FAFAFA",
             flexShrink: 0,
           }}
         >
@@ -135,7 +135,7 @@ export function DealerDetailPanel({ dealer, onClose }: Props) {
               height: "32px",
               borderRadius: "8px",
               border: "1px solid #E5E5E5",
-              backgroundColor: "#fff",
+              backgroundColor: "#FAFAFA",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
@@ -151,7 +151,7 @@ export function DealerDetailPanel({ dealer, onClose }: Props) {
         <div
           style={{
             padding: "16px 24px",
-            backgroundColor: "#fff",
+            backgroundColor: "#FAFAFA",
             borderBottom: "1px solid #E5E5E5",
             display: "flex",
             gap: "24px",
@@ -204,29 +204,6 @@ export function DealerDetailPanel({ dealer, onClose }: Props) {
               {allJobs.length}
             </div>
           </div>
-          <div>
-            <div
-              style={{
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "#737373",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-              }}
-            >
-              History
-            </div>
-            <div
-              style={{
-                fontSize: "20px",
-                fontWeight: 600,
-                color: "#0A0A0A",
-                marginTop: "4px",
-              }}
-            >
-              {historyJobs.length}
-            </div>
-          </div>
         </div>
 
         {/* Tabs */}
@@ -235,7 +212,7 @@ export function DealerDetailPanel({ dealer, onClose }: Props) {
             borderBottom: "1px solid #E5E5E5",
             padding: "0 24px",
             display: "flex",
-            backgroundColor: "#fff",
+            backgroundColor: "#FAFAFA",
             flexShrink: 0,
           }}
         >
@@ -244,7 +221,7 @@ export function DealerDetailPanel({ dealer, onClose }: Props) {
             style={tabStyle("active")}
             onClick={() => setTab("active")}
           >
-            Active Jobs ({activeJobs.length})
+            Active ({activeJobs.length})
           </button>
           <button
             type="button"
@@ -287,9 +264,9 @@ export function DealerDetailPanel({ dealer, onClose }: Props) {
                 alignItems: "center",
                 justifyContent: "space-between",
                 padding: "14px 24px",
-                borderBottom: "1px solid #F5F5F5",
+                borderBottom: "1px solid #E5E5E5",
                 textDecoration: "none",
-                backgroundColor: "#fff",
+                backgroundColor: "#FAFAFA",
               }}
             >
               <div style={{ minWidth: 0 }}>
