@@ -27,15 +27,50 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/jobs", label: "Jobs", icon: Briefcase },
-  { href: "/jobs/history", label: "History", icon: Clock, roles: ["technician"] },
-  { href: "/pending-schedule", label: "Schedule & Assign", icon: Clock, roles: ["owner", "office_staff"] },
-  { href: "/technicians", label: "Technicians", icon: Users, roles: ["owner", "office_staff"] },
-  { href: "/dealer-management", label: "Dealers", icon: Building2, roles: ["owner", "office_staff"] },
-  { href: "/analytics", label: "Analytics", icon: BarChart2, roles: ["owner", "office_staff"] },
+  { href: "/jobs", label: "All Jobs", icon: Briefcase },
+  {
+    href: "/jobs/history",
+    label: "History",
+    icon: Clock,
+    roles: ["technician"],
+  },
+  {
+    href: "/pending-schedule",
+    label: "Schedule & Assign",
+    icon: Clock,
+    roles: ["owner", "office_staff"],
+  },
+  {
+    href: "/technicians",
+    label: "Technicians",
+    icon: Users,
+    roles: ["owner", "office_staff"],
+  },
+  {
+    href: "/dealer-management",
+    label: "Dealers",
+    icon: Building2,
+    roles: ["owner", "office_staff"],
+  },
+  {
+    href: "/analytics",
+    label: "Analytics",
+    icon: BarChart2,
+    roles: ["owner", "office_staff"],
+  },
   { href: "/notifications", label: "Notifications", icon: Bell },
-  { href: "/payment-methods", label: "Payments & Brands", icon: CreditCard, roles: ["owner"] },
-  { href: "/admin/system-config", label: "Admin", icon: Settings, roles: ["owner"] },
+  {
+    href: "/payment-methods",
+    label: "Payments & Brands",
+    icon: CreditCard,
+    roles: ["owner"],
+  },
+  {
+    href: "/admin/system-config",
+    label: "Admin",
+    icon: Settings,
+    roles: ["owner"],
+  },
 ];
 
 function isActiveRoute(pathname: string, href: string): boolean {
@@ -75,16 +110,21 @@ export function Sidebar({
         left: 0,
         top: 0,
         bottom: 0,
-        width: isSmallScreen ? "280px" : (collapsed ? "56px" : "240px"),
+        width: isSmallScreen ? "280px" : collapsed ? "56px" : "240px",
         transition: isSmallScreen
           ? "transform 220ms ease-in-out"
           : "width 220ms ease-in-out",
         transform: isSmallScreen
-          ? (mobileHidden ? "translateX(-100%)" : "translateX(0)")
+          ? mobileHidden
+            ? "translateX(-100%)"
+            : "translateX(0)"
           : undefined,
         backgroundColor: "#FAFAFA",
         borderRight: "1px solid #E5E5E5",
-        boxShadow: isSmallScreen && !mobileHidden ? "4px 0 24px rgba(0,0,0,0.12)" : undefined,
+        boxShadow:
+          isSmallScreen && !mobileHidden
+            ? "4px 0 24px rgba(0,0,0,0.12)"
+            : undefined,
         overflow: "hidden",
         zIndex: 40,
         display: "flex",
@@ -102,9 +142,16 @@ export function Sidebar({
           flexShrink: 0,
         }}
       >
-        <Zap size={18} strokeWidth={1.5} color="#0A0A0A" style={{ flexShrink: 0 }} />
+        <Zap
+          size={18}
+          strokeWidth={1.5}
+          color="#0A0A0A"
+          style={{ flexShrink: 0 }}
+        />
         {!collapsed && (
-          <span style={{ fontSize: "15px", color: "#0A0A0A", fontWeight: 500 }}>CoolDesk</span>
+          <span style={{ fontSize: "15px", color: "#0A0A0A", fontWeight: 500 }}>
+            CoolDesk
+          </span>
         )}
         <button
           type="button"
@@ -129,7 +176,16 @@ export function Sidebar({
         </button>
       </div>
 
-      <nav style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "10px 8px", overflowY: "auto", flex: 1 }}>
+      <nav
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "2px",
+          padding: "10px 8px",
+          overflowY: "auto",
+          flex: 1,
+        }}
+      >
         {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const active = isActiveRoute(pathname, item.href);
@@ -155,7 +211,9 @@ export function Sidebar({
                 minHeight: "40px",
               }}
             >
-              <span style={{ flexShrink: 0, display: "inline-flex" }}><Icon size={17} strokeWidth={1.6} /></span>
+              <span style={{ flexShrink: 0, display: "inline-flex" }}>
+                <Icon size={17} strokeWidth={1.6} />
+              </span>
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );

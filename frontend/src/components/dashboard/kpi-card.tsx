@@ -5,6 +5,7 @@ type KpiCardProps = {
   title: string;
   value: string;
   accent: string;
+  hasFill?: boolean;
   trend?: number[];
   change?: string;
 };
@@ -20,9 +21,9 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function Sparkline({ color, points }: { color: string; points: number[] }) {
+function Sparkline({ color, points, hasFill }: { color: string; points: number[]; hasFill: boolean }) {
   const data = points.length > 1 ? points : [0, 0, 0, 0, 0, 0, 0];
-  const width = 206;
+  const width = 240;
   const height = 52;
   const min = Math.min(...data);
   const max = Math.max(...data);
@@ -39,7 +40,7 @@ function Sparkline({ color, points }: { color: string; points: number[] }) {
 
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-      <path d={areaPath} fill={hexToRgba(color, 0.1)} />
+      <path d={areaPath} fill={hasFill ? hexToRgba(color, 0.12) : 'none'} />
       <path d={linePath} fill="none" stroke={color} strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
@@ -49,11 +50,11 @@ const CARD_META: Record<string, { delta: string; deltaTone: string; icon: Compon
   'Total active jobs': { delta: '↑ 4%', deltaTone: '#525252', icon: BriefcaseBusiness },
   'Pending schedule': { delta: '↑ 9%', deltaTone: '#4F78A8', icon: Calendar },
   'Amber alerts': { delta: '↑ 14%', deltaTone: '#C2410C', icon: AlertTriangle },
-  'Chronic jobs': { delta: '↑ 8%', deltaTone: '#BE123C', icon: CircleAlert },
+  'Chronic jobs': { delta: '↑ 8%', deltaTone: '#9F1239', icon: CircleAlert },
   'No-shows today': { delta: '↓ 5%', deltaTone: '#525252', icon: Users },
 };
 
-export function KpiCard({ title, value, accent, trend }: KpiCardProps) {
+export function KpiCard({ title, value, accent, hasFill = false, trend }: KpiCardProps) {
   const sparklinePoints = trend && trend.length > 0 ? trend : [36, 28, 31, 22, 18, 20, 14];
   const meta = CARD_META[title] ?? { delta: '', deltaTone: '#525252', icon: BriefcaseBusiness };
   const Icon = meta.icon;
@@ -107,19 +108,19 @@ export function KpiCard({ title, value, accent, trend }: KpiCardProps) {
         <div
           style={{
             marginTop: '13px',
-            fontSize: '42px',
+            fontSize: '48px',
             fontWeight: 700,
             color: '#050505',
             lineHeight: 0.95,
             fontVariantNumeric: 'tabular-nums',
-            letterSpacing: '0',
+            letterSpacing: '-0.02em',
           }}
         >
           {value}
         </div>
       </div>
-      <div style={{ position: 'absolute', left: '16px', right: 0, bottom: '-1px', height: '58px', opacity: 0.78 }}>
-        <Sparkline color={accent} points={sparklinePoints} />
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: '-1px', height: '60px', opacity: 0.85 }}>
+        <Sparkline color={accent} points={sparklinePoints} hasFill={hasFill} />
       </div>
     </div>
   );

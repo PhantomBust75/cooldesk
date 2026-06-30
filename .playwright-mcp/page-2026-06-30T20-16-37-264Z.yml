@@ -1,0 +1,65 @@
+- generic [active] [ref=f91e1]:
+  - button "Open Next.js Dev Tools" [ref=f91e7] [cursor=pointer]:
+    - img [ref=f91e8]
+  - alert [ref=f91e11]
+  - generic [ref=f91e12]:
+    - complementary [ref=f91e13]:
+      - generic [ref=f91e14]:
+        - img [ref=f91e15]
+        - generic [ref=f91e17]: CoolDesk
+        - button "Collapse sidebar" [ref=f91e18] [cursor=pointer]:
+          - img [ref=f91e19]
+      - navigation [ref=f91e20]:
+        - link "Dashboard" [ref=f91e21] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=f91e23]
+          - generic [ref=f91e28]: Dashboard
+        - link "Jobs" [ref=f91e29] [cursor=pointer]:
+          - /url: /jobs
+          - img [ref=f91e31]
+          - generic [ref=f91e34]: Jobs
+        - link "Schedule & Assign" [ref=f91e35] [cursor=pointer]:
+          - /url: /pending-schedule
+          - img [ref=f91e37]
+          - generic [ref=f91e40]: Schedule & Assign
+        - link "Technicians" [ref=f91e41] [cursor=pointer]:
+          - /url: /technicians
+          - img [ref=f91e43]
+          - generic [ref=f91e48]: Technicians
+        - link "Dealers" [ref=f91e49] [cursor=pointer]:
+          - /url: /dealer-management
+          - img [ref=f91e51]
+          - generic [ref=f91e55]: Dealers
+        - link "Analytics" [ref=f91e56] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=f91e58]
+          - generic [ref=f91e59]: Analytics
+        - link "Notifications" [ref=f91e60] [cursor=pointer]:
+          - /url: /notifications
+          - img [ref=f91e62]
+          - generic [ref=f91e65]: Notifications
+        - link "Payments & Brands" [ref=f91e66] [cursor=pointer]:
+          - /url: /payment-methods
+          - img [ref=f91e68]
+          - generic [ref=f91e70]: Payments & Brands
+        - link "Admin" [ref=f91e71] [cursor=pointer]:
+          - /url: /admin/system-config
+          - img [ref=f91e73]
+          - generic [ref=f91e76]: Admin
+    - generic [ref=f91e77]:
+      - banner [ref=f91e78]:
+        - button "Search jobs, customers... ⌘K" [ref=f91e80] [cursor=pointer]:
+          - generic [ref=f91e81]:
+            - img [ref=f91e82]
+            - generic [ref=f91e85]: Search jobs, customers...
+          - generic [ref=f91e86]: ⌘K
+        - generic [ref=f91e87]:
+          - button "Open notifications" [ref=f91e88] [cursor=pointer]:
+            - img [ref=f91e89]
+          - link "Log new job" [ref=f91e92] [cursor=pointer]:
+            - /url: /log-new-job
+          - button "Dev Owner" [ref=f91e94] [cursor=pointer]:
+            - text: Dev Owner
+            - img [ref=f91e95]
+      - main [ref=f91e97]:
+        - generic [ref=f91e98]: Loading jobs…

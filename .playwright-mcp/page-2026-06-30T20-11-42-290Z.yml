@@ -1,0 +1,9 @@
+- generic [ref=f45e5]:
+  - toolbar "Help/zoom toolbar" [ref=f45e27]:
+    - button "Help" [ref=f45e29]:
+      - img
+  - generic:
+    - status
+    - group [ref=f45e31]:
+      - alert [ref=f45e33]
+      - alert [ref=f45e35]

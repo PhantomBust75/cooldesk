@@ -1,0 +1,127 @@
+- generic [active] [ref=f90e1]:
+  - button "Open Next.js Dev Tools" [ref=f90e7] [cursor=pointer]:
+    - img [ref=f90e8]
+  - alert [ref=f90e11]
+  - generic [ref=f90e39]:
+    - complementary [ref=f90e40]:
+      - generic [ref=f90e41]:
+        - img [ref=f90e42]
+        - generic [ref=f90e44]: CoolDesk
+        - button "Collapse sidebar" [ref=f90e45] [cursor=pointer]:
+          - img [ref=f90e46]
+      - navigation [ref=f90e47]:
+        - link "Dashboard" [ref=f90e48] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=f90e50]
+          - generic [ref=f90e55]: Dashboard
+        - link "Jobs" [ref=f90e56] [cursor=pointer]:
+          - /url: /jobs
+          - img [ref=f90e58]
+          - generic [ref=f90e61]: Jobs
+        - link "Schedule & Assign" [ref=f90e62] [cursor=pointer]:
+          - /url: /pending-schedule
+          - img [ref=f90e64]
+          - generic [ref=f90e67]: Schedule & Assign
+        - link "Technicians" [ref=f90e68] [cursor=pointer]:
+          - /url: /technicians
+          - img [ref=f90e70]
+          - generic [ref=f90e75]: Technicians
+        - link "Dealers" [ref=f90e76] [cursor=pointer]:
+          - /url: /dealer-management
+          - img [ref=f90e78]
+          - generic [ref=f90e82]: Dealers
+        - link "Analytics" [ref=f90e83] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=f90e85]
+          - generic [ref=f90e86]: Analytics
+        - link "Notifications" [ref=f90e87] [cursor=pointer]:
+          - /url: /notifications
+          - img [ref=f90e89]
+          - generic [ref=f90e92]: Notifications
+        - link "Payments & Brands" [ref=f90e93] [cursor=pointer]:
+          - /url: /payment-methods
+          - img [ref=f90e95]
+          - generic [ref=f90e97]: Payments & Brands
+        - link "Admin" [ref=f90e98] [cursor=pointer]:
+          - /url: /admin/system-config
+          - img [ref=f90e100]
+          - generic [ref=f90e103]: Admin
+    - generic [ref=f90e104]:
+      - banner [ref=f90e105]:
+        - button "Search jobs, customers... ⌘K" [ref=f90e107] [cursor=pointer]:
+          - generic [ref=f90e108]:
+            - img [ref=f90e109]
+            - generic [ref=f90e112]: Search jobs, customers...
+          - generic [ref=f90e113]: ⌘K
+        - generic [ref=f90e114]:
+          - button "Open notifications" [ref=f90e115] [cursor=pointer]:
+            - img [ref=f90e116]
+          - link "Log new job" [ref=f90e119] [cursor=pointer]:
+            - /url: /log-new-job
+          - button "Dev Owner" [ref=f90e121] [cursor=pointer]:
+            - text: Dev Owner
+            - img [ref=f90e122]
+      - main [ref=f90e124]:
+        - generic [ref=f90e125]:
+          - heading "The Control Tower" [level=1] [ref=f90e127]
+          - generic [ref=f90e128]:
+            - generic [ref=f90e129]:
+              - generic [ref=f90e130]:
+                - generic [ref=f90e131]:
+                  - generic [ref=f90e132]:
+                    - img [ref=f90e133]
+                    - generic [ref=f90e137]: Total active jobs
+                  - generic [ref=f90e138]: ↑ 4%
+                - generic [ref=f90e139]: —
+              - img [ref=f90e141]
+            - generic [ref=f90e144]:
+              - generic [ref=f90e145]:
+                - generic [ref=f90e146]:
+                  - generic [ref=f90e147]:
+                    - img [ref=f90e148]
+                    - generic [ref=f90e150]: Pending schedule
+                  - generic [ref=f90e151]: ↑ 9%
+                - generic [ref=f90e152]: —
+              - img [ref=f90e154]
+            - generic [ref=f90e157]:
+              - generic [ref=f90e158]:
+                - generic [ref=f90e159]:
+                  - generic [ref=f90e160]:
+                    - img [ref=f90e161]
+                    - generic [ref=f90e163]: Amber alerts
+                  - generic [ref=f90e164]: ↑ 14%
+                - generic [ref=f90e165]: —
+              - img [ref=f90e167]
+            - generic [ref=f90e170]:
+              - generic [ref=f90e171]:
+                - generic [ref=f90e172]:
+                  - generic [ref=f90e173]:
+                    - img [ref=f90e174]
+                    - generic [ref=f90e176]: Chronic jobs
+                  - generic [ref=f90e177]: ↑ 8%
+                - generic [ref=f90e178]: —
+              - img [ref=f90e180]
+            - generic [ref=f90e183]:
+              - generic [ref=f90e184]:
+                - generic [ref=f90e185]:
+                  - generic [ref=f90e186]:
+                    - img [ref=f90e187]
+                    - generic [ref=f90e192]: No-shows today
+                  - generic [ref=f90e193]: ↓ 5%
+                - generic [ref=f90e194]: —
+              - img [ref=f90e196]
+          - generic [ref=f90e199]:
+            - generic [ref=f90e200]:
+              - generic [ref=f90e201]:
+                - generic [ref=f90e203]: Needs revisit
+                - combobox "Needs revisit sort" [ref=f90e204]:
+                  - option "Chronic first" [selected]
+              - generic [ref=f90e205]: No jobs currently need revisiting.
+            - generic [ref=f90e206]:
+              - generic [ref=f90e207]:
+                - generic [ref=f90e209]: Active jobs
+                - link "View all" [ref=f90e210] [cursor=pointer]:
+                  - /url: /jobs
+                  - text: View all
+                  - img [ref=f90e211]
+              - generic [ref=f90e214]: No active jobs.

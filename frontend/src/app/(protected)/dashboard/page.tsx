@@ -138,11 +138,11 @@ export default function DashboardPage() {
   const activeJobs = activeJobsQuery.data?.jobs ?? [];
 
   const kpiCards = [
-    { title: 'Total active jobs', value: m ? String(m.totalActiveJobs) : '—', accent: '#0A0A0A', trendKey: 'totalActiveJobs' as const },
-    { title: 'Pending schedule', value: m ? String(m.pendingSchedule) : '—', accent: '#3B82F6', trendKey: 'pendingSchedule' as const },
-    { title: 'Amber alerts', value: m ? String(m.amberAlerts) : '—', accent: '#F59E0B', trendKey: null },
-    { title: 'Chronic jobs', value: m ? String(m.chronicJobs) : '—', accent: '#EF4444', trendKey: null },
-    { title: 'No-shows today', value: m ? String(m.noShowsToday) : '—', accent: '#8B5CF6', trendKey: null },
+    { title: 'Total active jobs', value: m ? String(m.totalActiveJobs) : '—', accent: '#0A0A0A', hasFill: false, trendKey: 'totalActiveJobs' as const },
+    { title: 'Pending schedule', value: m ? String(m.pendingSchedule) : '—', accent: '#3B82F6', hasFill: false, trendKey: 'pendingSchedule' as const },
+    { title: 'Amber alerts', value: m ? String(m.amberAlerts) : '—', accent: '#F59E0B', hasFill: true, trendKey: null },
+    { title: 'Chronic jobs', value: m ? String(m.chronicJobs) : '—', accent: '#BE123C', hasFill: true, trendKey: null },
+    { title: 'No-shows today', value: m ? String(m.noShowsToday) : '—', accent: '#737373', hasFill: false, trendKey: null },
   ];
 
   return (
@@ -159,6 +159,7 @@ export default function DashboardPage() {
               title={card.title}
               value={card.value}
               accent={card.accent}
+              hasFill={card.hasFill}
               trend={card.trendKey && m ? m.trends[card.trendKey] : undefined}
             />
           ))}

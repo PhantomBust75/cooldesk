@@ -1,0 +1,127 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8]
+  - alert [ref=e11]
+  - generic [ref=e12]:
+    - complementary [ref=e13]:
+      - generic [ref=e14]:
+        - img [ref=e15]
+        - generic [ref=e17]: CoolDesk
+        - button "Collapse sidebar" [ref=e18] [cursor=pointer]:
+          - img [ref=e19]
+      - navigation [ref=e20]:
+        - link "Dashboard" [ref=e21] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e23]
+          - generic [ref=e28]: Dashboard
+        - link "All Jobs" [ref=e29] [cursor=pointer]:
+          - /url: /jobs
+          - img [ref=e31]
+          - generic [ref=e34]: All Jobs
+        - link "Schedule & Assign" [ref=e35] [cursor=pointer]:
+          - /url: /pending-schedule
+          - img [ref=e37]
+          - generic [ref=e40]: Schedule & Assign
+        - link "Technicians" [ref=e41] [cursor=pointer]:
+          - /url: /technicians
+          - img [ref=e43]
+          - generic [ref=e48]: Technicians
+        - link "Dealers" [ref=e49] [cursor=pointer]:
+          - /url: /dealer-management
+          - img [ref=e51]
+          - generic [ref=e55]: Dealers
+        - link "Analytics" [ref=e56] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e58]
+          - generic [ref=e59]: Analytics
+        - link "Notifications" [ref=e60] [cursor=pointer]:
+          - /url: /notifications
+          - img [ref=e62]
+          - generic [ref=e65]: Notifications
+        - link "Payments & Brands" [ref=e66] [cursor=pointer]:
+          - /url: /payment-methods
+          - img [ref=e68]
+          - generic [ref=e70]: Payments & Brands
+        - link "Admin" [ref=e71] [cursor=pointer]:
+          - /url: /admin/system-config
+          - img [ref=e73]
+          - generic [ref=e76]: Admin
+    - generic [ref=e77]:
+      - banner [ref=e78]:
+        - button "Search jobs, customers... ⌘K" [ref=e80] [cursor=pointer]:
+          - generic [ref=e81]:
+            - img [ref=e82]
+            - generic [ref=e85]: Search jobs, customers...
+          - generic [ref=e86]: ⌘K
+        - generic [ref=e87]:
+          - button "Open notifications" [ref=e88] [cursor=pointer]:
+            - img [ref=e89]
+          - link "Log new job" [ref=e92] [cursor=pointer]:
+            - /url: /log-new-job
+          - button "Dev Owner" [ref=e94] [cursor=pointer]:
+            - text: Dev Owner
+            - img [ref=e95]
+      - main [ref=e97]:
+        - generic [ref=e98]:
+          - heading "The Control Tower" [level=1] [ref=e100]
+          - generic [ref=e101]:
+            - generic [ref=e102]:
+              - generic [ref=e103]:
+                - generic [ref=e104]:
+                  - generic [ref=e105]:
+                    - img [ref=e106]
+                    - generic [ref=e110]: Total active jobs
+                  - generic [ref=e111]: ↑ 4%
+                - generic [ref=e112]: —
+              - img [ref=e114]
+            - generic [ref=e117]:
+              - generic [ref=e118]:
+                - generic [ref=e119]:
+                  - generic [ref=e120]:
+                    - img [ref=e121]
+                    - generic [ref=e123]: Pending schedule
+                  - generic [ref=e124]: ↑ 9%
+                - generic [ref=e125]: —
+              - img [ref=e127]
+            - generic [ref=e130]:
+              - generic [ref=e131]:
+                - generic [ref=e132]:
+                  - generic [ref=e133]:
+                    - img [ref=e134]
+                    - generic [ref=e136]: Amber alerts
+                  - generic [ref=e137]: ↑ 14%
+                - generic [ref=e138]: —
+              - img [ref=e140]
+            - generic [ref=e143]:
+              - generic [ref=e144]:
+                - generic [ref=e145]:
+                  - generic [ref=e146]:
+                    - img [ref=e147]
+                    - generic [ref=e149]: Chronic jobs
+                  - generic [ref=e150]: ↑ 8%
+                - generic [ref=e151]: —
+              - img [ref=e153]
+            - generic [ref=e156]:
+              - generic [ref=e157]:
+                - generic [ref=e158]:
+                  - generic [ref=e159]:
+                    - img [ref=e160]
+                    - generic [ref=e165]: No-shows today
+                  - generic [ref=e166]: ↓ 5%
+                - generic [ref=e167]: —
+              - img [ref=e169]
+          - generic [ref=e172]:
+            - generic [ref=e173]:
+              - generic [ref=e174]:
+                - generic [ref=e176]: Needs revisit
+                - combobox "Needs revisit sort" [ref=e177]:
+                  - option "Chronic first" [selected]
+              - generic [ref=e178]: No jobs currently need revisiting.
+            - generic [ref=e179]:
+              - generic [ref=e180]:
+                - generic [ref=e182]: Active jobs
+                - link "View all" [ref=e183] [cursor=pointer]:
+                  - /url: /jobs
+                  - text: View all
+                  - img [ref=e184]
+              - generic [ref=e187]: No active jobs.
