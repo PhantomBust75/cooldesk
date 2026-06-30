@@ -27,7 +27,7 @@ set_env() {
   fi
 }
 set_env API_DOMAIN    "api.gruntflow.io"
-set_env CORS_ORIGINS  "https://frontend-mu-coral-29.vercel.app,http://app.100-24-156-209.sslip.io"
+set_env CORS_ORIGINS  "https://frontend-mu-coral-29.vercel.app"
 
 export BACKEND_IMAGE="${BACKEND_IMAGE:-}"
 
