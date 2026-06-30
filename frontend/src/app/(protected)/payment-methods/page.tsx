@@ -231,7 +231,7 @@ function ServiceItemsSection() {
       {itemsQuery.data && itemsQuery.data.length > 0 && (
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ borderBottom: "1px solid #F5F5F5" }}>
+            <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
               <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>ITEM</th>
               <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>PRICING</th>
               <th style={{ textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>ACTIONS</th>
@@ -239,7 +239,7 @@ function ServiceItemsSection() {
           </thead>
           <tbody>
             {itemsQuery.data.map((item) => (
-              <tr key={item.id} style={{ borderBottom: "1px solid #F5F5F5" }}>
+              <tr key={item.id} style={{ borderBottom: "1px solid #E5E5E5" }}>
                 <td style={{ padding: "12px 0", fontSize: "13px", fontWeight: 500, color: "#171717" }}>{item.name}</td>
                 <td style={{ padding: "12px 0" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -405,14 +405,14 @@ function BrandsSection() {
       {brandsQuery.data && brandsQuery.data.length > 0 && (
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ borderBottom: "1px solid #F5F5F5" }}>
+            <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
               <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>BRAND</th>
               <th style={{ textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>INSTALLATION CHARGE</th>
             </tr>
           </thead>
           <tbody>
             {brandsQuery.data.map((brand) => (
-              <tr key={brand.id} style={{ borderBottom: "1px solid #F5F5F5" }}>
+              <tr key={brand.id} style={{ borderBottom: "1px solid #E5E5E5" }}>
                 <td style={{ padding: "12px 0" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <div

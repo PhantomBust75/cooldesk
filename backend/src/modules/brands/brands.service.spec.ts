@@ -1,5 +1,7 @@
 /// <reference types="jest" />
 import { BrandsService } from './brands.service';
+import { DatabaseService } from '../../shared/database.service';
+import { RequestContext } from '../security/request-context';
 
 describe('BrandsService.listBrands', () => {
   it('should include installation_charge in SELECT', async () => {
@@ -9,8 +11,8 @@ describe('BrandsService.listBrands', () => {
         rowCount: 1,
       }),
     };
-    const service = new BrandsService(mockDb as any);
-    const result = await service.listBrands({ organizationId: 'org-1' } as any);
+    const service = new BrandsService(mockDb as unknown as DatabaseService);
+    const result = await service.listBrands({ organizationId: 'org-1' } as unknown as RequestContext);
     const calledSql: string = mockDb.query.mock.calls[0][0];
     expect(calledSql).toContain('installation_charge');
     expect(result[0]).toHaveProperty('installation_charge', 250);
