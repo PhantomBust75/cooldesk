@@ -61,6 +61,7 @@ jobs:
           script: |
             set -euo pipefail
             cd /opt/cooldesk
+            git pull origin main
 
             chmod +x scripts/deploy.sh scripts/init-ssl.sh
             STACK_DIR=/opt/cooldesk BACKEND_IMAGE="${BACKEND_IMAGE}" HEALTHCHECK_API_URL="${HEALTHCHECK_API_URL}" PROD_ENV_FILE="${PROD_ENV_FILE}" scripts/deploy.sh
