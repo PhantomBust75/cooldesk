@@ -17,8 +17,17 @@ if [[ ! -f .env ]]; then
 fi
 
 # Always enforce correct production values regardless of PROD_ENV_FILE content
-sed -i "s|API_DOMAIN=.*|API_DOMAIN=api.gruntflow.io|" .env
-sed -i "s|CORS_ORIGINS=.*|CORS_ORIGINS=https://frontend-mu-coral-29.vercel.app,http://app.100-24-156-209.sslip.io|" .env
+# Uses replace-or-append so it works even if the key is missing from the secret
+set_env() {
+  local key="$1" val="$2"
+  if grep -q "^${key}=" .env; then
+    sed -i "s|^${key}=.*|${key}=${val}|" .env
+  else
+    echo "${key}=${val}" >> .env
+  fi
+}
+set_env API_DOMAIN    "api.gruntflow.io"
+set_env CORS_ORIGINS  "https://frontend-mu-coral-29.vercel.app,http://app.100-24-156-209.sslip.io"
 
 export BACKEND_IMAGE="${BACKEND_IMAGE:-}"
 
