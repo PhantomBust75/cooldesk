@@ -19,7 +19,6 @@ import {
   Search,
   SlidersHorizontal,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -238,24 +237,6 @@ export function JobsList() {
             {total} jobs
           </p>
         </div>
-        {!isTechnician ? (
-          <Link
-            href="/log-new-job"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              border: "1px solid #E5E5E5",
-              borderRadius: "8px",
-              padding: "7px 14px",
-              backgroundColor: "#0A0A0A",
-              color: "#fff",
-              textDecoration: "none",
-              fontSize: "13px",
-            }}
-          >
-            Log new job
-          </Link>
-        ) : null}
       </div>
 
       {/* ── Technician tab bar ─────────────────────────────── */}
@@ -352,6 +333,7 @@ export function JobsList() {
           type="button"
           onClick={() => setInlineFiltersOpen((prev) => !prev)}
           style={{
+            marginLeft: "auto",
             display: "inline-flex",
             alignItems: "center",
             gap: "6px",
