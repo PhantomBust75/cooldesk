@@ -16,10 +16,9 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-# Override specific vars from CI env so PROD_ENV_FILE doesn't need to be updated
-# for domain/CORS changes — just update GitHub Actions variables instead.
-[[ -n "${API_DOMAIN:-}" ]] && sed -i "s|API_DOMAIN=.*|API_DOMAIN=${API_DOMAIN}|" .env
-[[ -n "${CORS_ORIGINS:-}" ]] && sed -i "s|CORS_ORIGINS=.*|CORS_ORIGINS=${CORS_ORIGINS}|" .env
+# Always enforce correct production values regardless of PROD_ENV_FILE content
+sed -i "s|API_DOMAIN=.*|API_DOMAIN=api.gruntflow.io|" .env
+sed -i "s|CORS_ORIGINS=.*|CORS_ORIGINS=https://frontend-mu-coral-29.vercel.app,http://app.100-24-156-209.sslip.io|" .env
 
 export BACKEND_IMAGE="${BACKEND_IMAGE:-}"
 
