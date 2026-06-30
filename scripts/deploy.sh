@@ -29,12 +29,27 @@ if docker compose -f "$COMPOSE_FILE" ps backend >/dev/null 2>&1; then
   docker compose -f "$COMPOSE_FILE" exec -T backend node -e "console.log('backend container ready')" || true
 fi
 
+wait_for_url() {
+  local url="$1" label="$2"
+  echo "Waiting for $label to be ready..."
+  for attempt in $(seq 1 20); do
+    if curl -fsS --max-time 5 "$url" >/dev/null 2>&1; then
+      echo "$label is ready."
+      return 0
+    fi
+    echo "  attempt $attempt/20 – not ready yet, retrying in 5s..."
+    sleep 5
+  done
+  echo "$label health check failed after 100s"
+  return 1
+}
+
 if [[ -n "${HEALTHCHECK_API_URL:-}" ]]; then
-  curl -fsS "$HEALTHCHECK_API_URL" >/dev/null
+  wait_for_url "$HEALTHCHECK_API_URL" "API"
 fi
 
 if [[ -n "${HEALTHCHECK_APP_URL:-}" ]]; then
-  curl -fsS "$HEALTHCHECK_APP_URL" >/dev/null
+  wait_for_url "$HEALTHCHECK_APP_URL" "App"
 fi
 
 echo "Deploy successful"
