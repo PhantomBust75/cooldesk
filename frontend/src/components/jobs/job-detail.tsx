@@ -16,6 +16,7 @@ import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import { fetchSystemConfig } from "@/lib/api/operations";
 import { ApiError } from "@/lib/api/client";
 import { getAllowedNextStatuses } from "@/lib/jobs-state-machine";
+import { canProgressInstallation } from "@/lib/job-status-groups";
 import { Modal } from "@/components/ui/modal";
 import { StatusChip } from "@/components/ui/status-chip";
 import {
@@ -233,6 +234,12 @@ export function JobDetail({ jobId }: { jobId: string }) {
   const isPaidCompletion = detail.status === "completed" || detail.status === "resolved" || detail.status === "resolved_on_revisit";
   const requiresPaymentDecision = hasPayment && isPaidCompletion;
   const revisitCount = revisitsQuery.data?.length ?? 0;
+
+  const canAdvanceStatus = canProgressInstallation({
+    type: detail.type,
+    technicianId: detail.assignedTechnicianId,
+    scheduledAt: detail.scheduledAt,
+  });
 
   // Advance Status logic
   const singleNext = nextStatuses.length === 1 ? nextStatuses[0] : null;
@@ -481,61 +488,79 @@ export function JobDetail({ jobId }: { jobId: string }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "12px", position: isMobile ? "static" : "sticky", top: "24px" }}>
 
           {/* Advance Status button */}
-          {advanceStatusOpen && nextStatuses.length > 1 ? (
-            <div style={{ border: "1px solid #E5E5E5", borderRadius: "10px", padding: "12px", backgroundColor: "#fff" }}>
-              <p style={{ margin: "0 0 8px", fontSize: "12px", color: "#737373" }}>Select next status</p>
-              <select
-                value={toStatus}
-                onChange={(e) => setToStatus(e.target.value)}
-                style={{ width: "100%", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "8px", fontSize: "13px", marginBottom: "8px" }}
-              >
-                <option value="">Choose...</option>
-                {nextStatuses.map((s) => (
-                  <option key={s} value={s}>{s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</option>
-                ))}
-              </select>
-              <div style={{ display: "flex", gap: "8px" }}>
+          {canAdvanceStatus ? (
+            <>
+              {advanceStatusOpen && nextStatuses.length > 1 ? (
+                <div style={{ border: "1px solid #E5E5E5", borderRadius: "10px", padding: "12px", backgroundColor: "#fff" }}>
+                  <p style={{ margin: "0 0 8px", fontSize: "12px", color: "#737373" }}>Select next status</p>
+                  <select
+                    value={toStatus}
+                    onChange={(e) => setToStatus(e.target.value)}
+                    style={{ width: "100%", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "8px", fontSize: "13px", marginBottom: "8px" }}
+                  >
+                    <option value="">Choose...</option>
+                    {nextStatuses.map((s) => (
+                      <option key={s} value={s}>{s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</option>
+                    ))}
+                  </select>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                      type="button"
+                      onClick={() => { transitionMutation.mutate(undefined); setAdvanceStatusOpen(false); }}
+                      disabled={!toStatus || transitionMutation.isPending}
+                      style={{ flex: 1, border: "none", borderRadius: "8px", backgroundColor: "#0A0A0A", color: "#fff", padding: "9px", fontSize: "13px", cursor: "pointer", opacity: !toStatus || transitionMutation.isPending ? 0.5 : 1 }}
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAdvanceStatusOpen(false)}
+                      style={{ flex: 1, border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", color: "#525252", padding: "9px", fontSize: "13px", cursor: "pointer" }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
                 <button
                   type="button"
-                  onClick={() => { transitionMutation.mutate(undefined); setAdvanceStatusOpen(false); }}
-                  disabled={!toStatus || transitionMutation.isPending}
-                  style={{ flex: 1, border: "none", borderRadius: "8px", backgroundColor: "#0A0A0A", color: "#fff", padding: "9px", fontSize: "13px", cursor: "pointer", opacity: !toStatus || transitionMutation.isPending ? 0.5 : 1 }}
+                  onClick={handleAdvanceStatus}
+                  disabled={nextStatuses.length === 0 || transitionMutation.isPending}
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    borderRadius: "10px",
+                    backgroundColor: "#0A0A0A",
+                    color: "#fff",
+                    padding: "14px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: nextStatuses.length === 0 ? "not-allowed" : "pointer",
+                    opacity: nextStatuses.length === 0 ? 0.4 : 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                  }}
                 >
-                  Confirm
+                  {transitionMutation.isPending ? "Updating..." : "Advance Status →"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setAdvanceStatusOpen(false)}
-                  style={{ flex: 1, border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", color: "#525252", padding: "9px", fontSize: "13px", cursor: "pointer" }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
+              )}
+            </>
           ) : (
-            <button
-              type="button"
-              onClick={handleAdvanceStatus}
-              disabled={nextStatuses.length === 0 || transitionMutation.isPending}
+            <div
               style={{
-                width: "100%",
-                border: "none",
                 borderRadius: "10px",
-                backgroundColor: "#0A0A0A",
-                color: "#fff",
+                border: "1px solid #E5E5E5",
+                backgroundColor: "#FAFAFA",
                 padding: "14px",
-                fontSize: "14px",
-                fontWeight: 600,
-                cursor: nextStatuses.length === 0 ? "not-allowed" : "pointer",
-                opacity: nextStatuses.length === 0 ? 0.4 : 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
+                fontSize: "13px",
+                color: "#737373",
+                textAlign: "center",
               }}
             >
-              {transitionMutation.isPending ? "Updating..." : "Advance Status →"}
-            </button>
+              Assign a technician and set a scheduled date to advance this installation job.
+            </div>
           )}
 
           {/* Actions dropdown */}

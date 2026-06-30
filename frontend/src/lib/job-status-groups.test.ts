@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isTerminalStatus, TERMINAL_STATUSES } from "@/lib/job-status-groups";
+import { isTerminalStatus, TERMINAL_STATUSES, canProgressInstallation } from "@/lib/job-status-groups";
 
 describe("isTerminalStatus", () => {
   it("returns true for completed", () => {
@@ -36,5 +36,23 @@ describe("isTerminalStatus", () => {
     expect(TERMINAL_STATUSES).toContain("resolved_on_revisit");
     expect(TERMINAL_STATUSES).toContain("cancelled");
     expect(TERMINAL_STATUSES).toHaveLength(4);
+  });
+});
+
+describe("canProgressInstallation", () => {
+  it("returns true for complaint jobs regardless of technician/schedule", () => {
+    expect(canProgressInstallation({ type: "complaint", technicianId: null, scheduledAt: null })).toBe(true);
+  });
+
+  it("returns false for installation with no technician", () => {
+    expect(canProgressInstallation({ type: "installation", technicianId: null, scheduledAt: "2024-01-01T10:00:00Z" })).toBe(false);
+  });
+
+  it("returns false for installation with no scheduled date", () => {
+    expect(canProgressInstallation({ type: "installation", technicianId: "tech-123", scheduledAt: null })).toBe(false);
+  });
+
+  it("returns true for installation with both technician and scheduled date", () => {
+    expect(canProgressInstallation({ type: "installation", technicianId: "tech-123", scheduledAt: "2024-01-01T10:00:00Z" })).toBe(true);
   });
 });
