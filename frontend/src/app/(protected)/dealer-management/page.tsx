@@ -3,6 +3,7 @@
 import { Avatar } from "@/components/ui/avatar";
 import { Modal } from "@/components/ui/modal";
 import { RoleGate } from "@/components/auth/role-gate";
+import { DealerDetailPanel } from "@/components/dealers/DealerDetailPanel";
 import { ApiError } from "@/lib/api/client";
 import { createDealer, fetchDealers, fetchOfficeBrands, setDealerBrands, updateDealer, updateDealerProfile } from "@/lib/api/operations";
 import type { DealerDirectoryItem } from "@/types/operations";
@@ -95,7 +96,9 @@ export default function DealerManagementPage() {
   
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  
+
+  const [panelDealer, setPanelDealer] = useState<DealerDirectoryItem | null>(null);
+
   const [selectedDealerId, setSelectedDealerId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   
@@ -314,7 +317,13 @@ export default function DealerManagementPage() {
               key={dealer.id}
               style={{ backgroundColor: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "12px", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.02)" }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setPanelDealer(dealer)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setPanelDealer(dealer); }}
+                style={{ display: "flex", alignItems: "center", gap: "16px", cursor: "pointer", flex: 1, minWidth: 0 }}
+              >
                 <Avatar name={dealer.name} size={48} />
                 <span style={{ fontSize: "16px", fontWeight: 600, color: dealer.isActive ? "#171717" : "#A3A3A3" }}>
                   {dealer.name}
@@ -472,6 +481,14 @@ export default function DealerManagementPage() {
             </form>
           </Modal>
         </RoleGate>
+
+        {/* Dealer Detail Panel */}
+        {panelDealer && (
+          <DealerDetailPanel
+            dealer={panelDealer}
+            onClose={() => setPanelDealer(null)}
+          />
+        )}
 
         {/* Edit Modal */}
         <RoleGate allowedRoles={["owner"]}>
