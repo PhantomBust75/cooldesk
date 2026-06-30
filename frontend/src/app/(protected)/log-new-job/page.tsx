@@ -10,7 +10,6 @@ import type { QuickCreateJobInput } from "@/types/operations";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, CheckCircle, Minus, Plus, Search } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 
 type Step = 1 | 2 | 3 | 4;
@@ -68,7 +67,6 @@ function StepHeader({ current, total }: { current: Step; total: number }) {
 
 export default function LogNewJobPage() {
   const isMobile = useMobileBreakpoint();
-  const router = useRouter();
   const { session } = useAuth();
   const isDealer = session?.user.role === "dealer";
   const canAssign = session?.user.role === "owner" || session?.user.role === "office_staff";
@@ -77,6 +75,7 @@ export default function LogNewJobPage() {
   const [form, setForm] = useState<QuickCreateJobInput>(INITIAL_FORM);
   const [scheduledAt, setScheduledAt] = useState("");
   const [technicianId, setTechnicianId] = useState("");
+  const [createdJobId, setCreatedJobId] = useState<string | null>(null);
 
   const techniciansQuery = useQuery({
     queryKey: ["office", "technicians", "job-create"],
@@ -101,7 +100,7 @@ export default function LogNewJobPage() {
   const createMutation = useMutation({
     mutationFn: (payload: QuickCreateJobInput) => createQuickJob(payload),
     onSuccess: (result) => {
-      router.push(`/jobs?created=${result.id}`);
+      setCreatedJobId(result.id);
     },
     onError: (error) => {
       if (error instanceof ApiError) {
@@ -196,6 +195,107 @@ export default function LogNewJobPage() {
     };
 
     createMutation.mutate(payload);
+  }
+
+  if (createdJobId) {
+    return (
+      <RoleGate allowedRoles={["owner", "office_staff", "dealer"]}>
+        <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "720px" }}>
+          <div
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: "12px",
+              border: "1px solid #E5E5E5",
+              padding: isMobile ? "40px 24px" : "56px 48px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "9999px",
+                backgroundColor: "rgba(16,185,129,0.10)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "20px",
+              }}
+            >
+              <CheckCircle size={28} strokeWidth={1.5} color="#10B981" />
+            </div>
+            <h2 style={{ margin: "0 0 8px", fontSize: "24px", fontWeight: 600, color: "#0A0A0A" }}>
+              Job created
+            </h2>
+            <p style={{ margin: "0 0 20px", fontSize: "13px", color: "#737373" }}>
+              Job has been logged successfully.
+            </p>
+            <div
+              style={{
+                backgroundColor: "#F9F9F9",
+                border: "1px solid #E5E5E5",
+                borderRadius: "8px",
+                padding: "8px 16px",
+                fontFamily: "monospace",
+                fontSize: "13px",
+                color: "#404040",
+                marginBottom: "28px",
+                letterSpacing: "0.04em",
+              }}
+            >
+              {createdJobId.slice(0, 8).toUpperCase()}
+            </div>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <Link
+                href={`/jobs/${createdJobId}`}
+                style={{
+                  padding: "9px 20px",
+                  borderRadius: "8px",
+                  border: "none",
+                  backgroundColor: "#0A0A0A",
+                  color: "#fff",
+                  textDecoration: "none",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+              >
+                View job <ArrowRight size={13} strokeWidth={1.5} />
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setCreatedJobId(null);
+                  setStep(1);
+                  setForm(INITIAL_FORM);
+                  setUnits(INITIAL_UNITS);
+                  setScheduledAt("");
+                  setTechnicianId("");
+                  setErrorMessage(null);
+                  setVcidResult(null);
+                }}
+                style={{
+                  padding: "9px 20px",
+                  borderRadius: "8px",
+                  border: "1px solid #E5E5E5",
+                  backgroundColor: "#fff",
+                  color: "#404040",
+                  fontSize: "13px",
+                  cursor: "pointer",
+                }}
+              >
+                Log another job
+              </button>
+            </div>
+          </div>
+        </section>
+      </RoleGate>
+    );
   }
 
   return (
