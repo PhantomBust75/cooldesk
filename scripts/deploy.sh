@@ -24,6 +24,9 @@ STACK_DIR="$STACK_DIR" COMPOSE_FILE="$COMPOSE_FILE" bash scripts/init-ssl.sh
 
 docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
 
+# Remove dangling images and stopped containers left over from previous deploys
+docker system prune -f --volumes=false
+
 if docker compose -f "$COMPOSE_FILE" ps backend >/dev/null 2>&1; then
   docker compose -f "$COMPOSE_FILE" exec -T backend node -e "console.log('backend container ready')" || true
 fi
