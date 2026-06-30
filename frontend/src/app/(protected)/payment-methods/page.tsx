@@ -403,34 +403,40 @@ function BrandsSection() {
         <div style={{ fontSize: "13px", color: "#737373", padding: "12px 0", textAlign: "center" }}>No brands yet. Add your first brand.</div>
       )}
       {brandsQuery.data && brandsQuery.data.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-          {brandsQuery.data.map((brand) => (
-            <div
-              key={brand.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "9px",
-                borderRadius: "10px",
-                border: "1px solid #E5E5E5",
-                padding: "9px 14px",
-                backgroundColor: "#FAFAFA",
-              }}
-            >
-              <div
-                style={{
-                  width: "18px",
-                  height: "18px",
-                  borderRadius: "50%",
-                  backgroundColor: brand.colorHex ?? "#E5E5E5",
-                  flexShrink: 0,
-                  border: "1px solid rgba(0,0,0,0.08)",
-                }}
-              />
-              <span style={{ fontSize: "13px", fontWeight: 500, color: "#171717" }}>{brand.name}</span>
-            </div>
-          ))}
-        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #F5F5F5" }}>
+              <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>BRAND</th>
+              <th style={{ textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>INSTALLATION CHARGE</th>
+            </tr>
+          </thead>
+          <tbody>
+            {brandsQuery.data.map((brand) => (
+              <tr key={brand.id} style={{ borderBottom: "1px solid #F5F5F5" }}>
+                <td style={{ padding: "12px 0" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        borderRadius: "50%",
+                        backgroundColor: brand.colorHex ?? "#E5E5E5",
+                        flexShrink: 0,
+                        border: "1px solid rgba(0,0,0,0.08)",
+                      }}
+                    />
+                    <span style={{ fontSize: "13px", fontWeight: 500, color: "#171717" }}>{brand.name}</span>
+                  </div>
+                </td>
+                <td style={{ padding: "12px 0", textAlign: "right", fontSize: "13px", color: "#404040", fontWeight: 500 }}>
+                  {brand.installationCharge > 0
+                    ? brand.installationCharge.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                    : <span style={{ color: "#737373" }}>—</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

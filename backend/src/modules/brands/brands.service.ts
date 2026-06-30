@@ -10,49 +10,29 @@ export class BrandsService {
   constructor(private readonly db: DatabaseService) {}
 
   async listBrands(ctx: RequestContext): Promise<BrandResponseDto[]> {
-    // Try to select with color_hex first; fall back to selecting without it if column doesn't exist
-    let result = await this.db.query<{
+    const result = await this.db.query<{
       id: string;
       name: string;
       color_hex: string | null;
+      installation_charge: string;
       is_active: boolean;
       created_at: string;
     }>(
       `
-      SELECT id, name, color_hex, is_active, created_at
+      SELECT id, name, color_hex, installation_charge, is_active, created_at
       FROM brands
       WHERE organization_id = $1
         AND is_deleted = FALSE
       ORDER BY created_at DESC
       `,
       [ctx.organizationId],
-    ).catch(async (error) => {
-      // If color_hex column doesn't exist, try without it
-      if (error.message && error.message.includes('color_hex')) {
-        return this.db.query<{
-          id: string;
-          name: string;
-          color_hex: string | null;
-          is_active: boolean;
-          created_at: string;
-        }>(
-          `
-          SELECT id, name, NULL AS color_hex, is_active, created_at
-          FROM brands
-          WHERE organization_id = $1
-            AND is_deleted = FALSE
-          ORDER BY created_at DESC
-          `,
-          [ctx.organizationId],
-        );
-      }
-      throw error;
-    });
+    );
 
     return result.rows.map((row) => ({
       id: row.id,
       name: row.name,
       color_hex: row.color_hex ?? undefined,
+      installation_charge: Number(row.installation_charge),
       is_active: row.is_active,
       created_at: row.created_at,
     }));
@@ -69,8 +49,7 @@ export class BrandsService {
 
     this.logger.log(`[createBrand] Validated name: "${body.name}", color_hex: "${body.color_hex || 'undefined'}"`);
 
-    // Try to insert with color_hex first; fall back to insert without it if column doesn't exist
-    let result = await this.db.query<{
+    const result = await this.db.query<{
       id: string;
       name: string;
       color_hex: string | null;
@@ -83,28 +62,7 @@ export class BrandsService {
       RETURNING id, name, color_hex, is_active, created_at
       `,
       [ctx.organizationId, body.name.trim(), body.color_hex || null],
-    ).catch(async (error) => {
-      this.logger.error(`[createBrand] Insert with color_hex failed: ${error.message}`);
-      // If color_hex column doesn't exist, try without it
-      if (error.message && error.message.includes('color_hex')) {
-        this.logger.log(`[createBrand] Retrying insert without color_hex column`);
-        return this.db.query<{
-          id: string;
-          name: string;
-          color_hex: string | null;
-          is_active: boolean;
-          created_at: string;
-        }>(
-          `
-          INSERT INTO brands (organization_id, name, is_active, is_deleted)
-          VALUES ($1, $2, TRUE, FALSE)
-          RETURNING id, name, NULL AS color_hex, is_active, created_at
-          `,
-          [ctx.organizationId, body.name.trim()],
-        );
-      }
-      throw error;
-    });
+    );
 
     if (result.rowCount === 0) {
       this.logger.error(`[createBrand] Insert returned no rows`);
@@ -117,6 +75,7 @@ export class BrandsService {
       id: row.id,
       name: row.name,
       color_hex: row.color_hex ?? undefined,
+      installation_charge: 0,
       is_active: row.is_active,
       created_at: row.created_at,
     };

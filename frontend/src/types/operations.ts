@@ -1,3 +1,10 @@
+export type OfficeBrand = {
+  id: string;
+  name: string;
+  colorHex?: string;
+  installationCharge: number;
+};
+
 export type QuickCreateJobInput = {
   type: "installation" | "complaint";
   source: "direct" | "via_dealer";

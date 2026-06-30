@@ -6,6 +6,7 @@ import type {
   AnalyticsTechnicianItem,
   DealerJobItem,
   DealerDirectoryItem,
+  OfficeBrand,
   PaymentMethodItem,
   QuickCreateJobInput,
   QuickCreateJobResult,
@@ -128,12 +129,13 @@ export function toggleTechnicianActive(technicianId: string, isActive: boolean):
   return apiClient.patch<{ ok: true }>(`/office/technicians/${technicianId}`, { isActive });
 }
 
-export async function fetchOfficeBrands(): Promise<Array<{ id: string; name: string; colorHex?: string }>> {
+export async function fetchOfficeBrands(): Promise<OfficeBrand[]> {
   const rows = await apiClient.get<UnknownRecord[]>("/office/brands");
   return rows.map((row) => ({
     id: asString(row.id),
     name: asString(row.name),
     colorHex: asNullableString(row.color_hex) ?? undefined,
+    installationCharge: Number(row.installation_charge ?? 0),
   }));
 }
 

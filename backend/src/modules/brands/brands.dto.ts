@@ -18,6 +18,7 @@ export class BrandResponseDto {
   id!: string;
   name!: string;
   color_hex?: string;
+  installation_charge!: number;
   is_active!: boolean;
   created_at!: string;
 }
