@@ -17,7 +17,6 @@ if [[ ! -f .env ]]; then
 fi
 
 export BACKEND_IMAGE="${BACKEND_IMAGE:-}"
-export FRONTEND_IMAGE="${FRONTEND_IMAGE:-}"
 
 docker compose -f "$COMPOSE_FILE" pull
 

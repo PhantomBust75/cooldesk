@@ -44,29 +44,6 @@ services:
     networks:
       - cooldesk_net
 
-  frontend:
-    image: ${FRONTEND_IMAGE:-cooldesk-frontend:local}
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
-        NEXT_PUBLIC_AUTH_LOGIN_PATH: ${NEXT_PUBLIC_AUTH_LOGIN_PATH:-/auth/login}
-    container_name: cooldesk-frontend
-    restart: unless-stopped
-    env_file:
-      - ${ENV_FILE:-.env}
-    environment:
-      PORT: ${FRONTEND_PORT}
-      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
-      NEXT_PUBLIC_AUTH_LOGIN_PATH: ${NEXT_PUBLIC_AUTH_LOGIN_PATH:-/auth/login}
-    depends_on:
-      - backend
-    ports:
-      - "${FRONTEND_PORT:-3001}:${FRONTEND_PORT:-3001}"
-    networks:
-      - cooldesk_net
-
   nginx:
     image: nginx:1.27-alpine
     container_name: cooldesk-nginx
@@ -81,7 +58,6 @@ services:
       - letsencrypt_data:/etc/letsencrypt:ro
       - certbot_webroot:/var/www/certbot:ro
     depends_on:
-      - frontend
       - backend
     networks:
       - cooldesk_net
@@ -95,7 +71,7 @@ services:
     # Run manually for first-time issuance and renewal via cron:
     #   docker compose run --rm certbot certonly --webroot \
     #     -w /var/www/certbot \
-    #     -d app.yourdomain.com -d api.yourdomain.com \
+    #     -d api.yourdomain.com \
     #     --email you@yourdomain.com --agree-tos --no-eff-email
     entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
     networks:
