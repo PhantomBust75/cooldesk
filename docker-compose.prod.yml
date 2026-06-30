@@ -35,7 +35,6 @@ services:
       JWT_USER_SECRET: ${JWT_USER_SECRET}
       JWT_DEALER_SECRET: ${JWT_DEALER_SECRET}
       JWT_PLATFORM_SECRET: ${JWT_PLATFORM_SECRET}
-      CORS_ORIGINS: ${CORS_ORIGINS}
     depends_on:
       postgres:
         condition: service_healthy
