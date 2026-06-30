@@ -3,6 +3,8 @@ import { describe, expect, it, jest } from '@jest/globals';
 import { JobsService } from './jobs.service';
 import { CreateJobDto } from './jobs.dto';
 import { DealerRequestContext, RequestContext } from '../security/request-context';
+import { DatabaseService } from '../../shared/database.service';
+import { TenantConfigService } from '../settings/tenant-config.service';
 
 type QueryResult<T> = { rows: T[]; rowCount: number };
 
@@ -139,7 +141,7 @@ describe('listPendingScheduleJobs', () => {
       getInt: jest.fn(async (_orgId: string, _key: string, fallback: number) => fallback),
     };
 
-    const service = new JobsService(fakeDb as unknown as any, config as unknown as any);
+    const service = new JobsService(fakeDb as unknown as DatabaseService, config as unknown as TenantConfigService);
 
     await service.listPendingScheduleJobs(
       { limit: 10 } as { limit: number },
