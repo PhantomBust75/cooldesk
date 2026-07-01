@@ -16,8 +16,9 @@ import type { JobListFilter, JobListQuery } from "@/types/jobs";
 import {
   Briefcase,
   ChevronRight,
+  Filter,
   Search,
-  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -123,6 +124,8 @@ export function JobsList() {
     setSearch("");
     setPage(1);
   }
+
+  const activeFilterCount = [inlineStatus, inlineType, inlineBrandId, inlineChronic ? "chronic" : ""].filter(Boolean).length;
 
   if (isLoading) {
     return (
@@ -329,126 +332,172 @@ export function JobsList() {
             }}
           />
         </div>
-        <button
-          type="button"
-          onClick={() => setInlineFiltersOpen((prev) => !prev)}
-          style={{
-            marginLeft: "auto",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "8px 14px",
-            border: "1px solid",
-            borderColor: inlineFiltersOpen ? "#0A0A0A" : "#E5E5E5",
-            borderRadius: "8px",
-            backgroundColor: inlineFiltersOpen ? "#0A0A0A" : "#fff",
-            color: inlineFiltersOpen ? "#fff" : "#404040",
-            fontSize: "13px",
-            fontWeight: 500,
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-            transition: "all 150ms ease",
-            flexShrink: 0,
-          }}
-        >
-          <SlidersHorizontal size={14} strokeWidth={1.5} />
-          Filters
-        </button>
+        {/* filter controls — pushed right */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px" }}>
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                padding: "8px 12px",
+                border: "1px solid #E5E5E5",
+                borderRadius: "8px",
+                backgroundColor: "#fff",
+                color: "#737373",
+                fontSize: "13px",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              <X size={13} strokeWidth={1.5} />
+              Clear
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setInlineFiltersOpen((prev) => !prev)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 14px",
+              border: "1px solid",
+              borderColor: inlineFiltersOpen ? "#0A0A0A" : "#E5E5E5",
+              borderRadius: "8px",
+              backgroundColor: inlineFiltersOpen ? "#0A0A0A" : "#fff",
+              color: inlineFiltersOpen ? "#fff" : "#404040",
+              fontSize: "13px",
+              fontWeight: 500,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              transition: "all 150ms ease",
+              flexShrink: 0,
+            }}
+          >
+            <Filter size={14} strokeWidth={1.5} />
+            Filters
+            {activeFilterCount > 0 && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "16px",
+                  height: "16px",
+                  borderRadius: "9999px",
+                  backgroundColor: inlineFiltersOpen ? "rgba(255,255,255,0.25)" : "#0A0A0A",
+                  color: "#fff",
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  lineHeight: 1,
+                }}
+              >
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* ── Inline filter bar (toggled by Filters button) ─── */}
-      {inlineFiltersOpen ? <div
+      {/* ── Inline filter panel (always mounted for CSS animation) ─── */}
+      <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          padding: "12px 24px",
-          flexWrap: "wrap",
-          backgroundColor: "#F9F9F9",
-          borderTop: "1px solid #F0F0F0",
-          borderBottom: "1px solid #F0F0F0",
-          marginBottom: "12px",
+          overflow: "hidden",
+          maxHeight: inlineFiltersOpen ? "300px" : "0px",
+          opacity: inlineFiltersOpen ? 1 : 0,
+          transition: "max-height 300ms cubic-bezier(0.4,0,0.2,1), opacity 200ms ease",
         }}
       >
-        <select
-          value={inlineStatus}
-          onChange={(e) => { setInlineStatus(e.target.value); setPage(1); }}
+        <div
           style={{
-            border: "1px solid #E5E5E5",
-            borderRadius: "8px",
-            padding: "6px 10px",
-            fontSize: "13px",
-            color: inlineStatus ? "#171717" : "#737373",
-            backgroundColor: "#fff",
-            outline: "none",
-            cursor: "pointer",
+            transform: inlineFiltersOpen ? "translateY(0)" : "translateY(-6px)",
+            transition: "transform 300ms cubic-bezier(0.4,0,0.2,1)",
+            padding: "0 24px 12px",
           }}
         >
-          <option value="">All statuses</option>
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>{formatStatusLabel(s)}</option>
-          ))}
-        </select>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "16px",
+              padding: "14px 16px",
+              flexWrap: "wrap",
+              backgroundColor: "#FAFAFA",
+              border: "1px solid #E5E5E5",
+              borderRadius: "8px",
+            }}
+          >
+            {/* STATUS */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                STATUS
+              </span>
+              <select
+                value={inlineStatus}
+                onChange={(e) => { setInlineStatus(e.target.value); setPage(1); }}
+                style={{ border: "1px solid #E5E5E5", borderRadius: "8px", padding: "6px 10px", fontSize: "13px", color: inlineStatus ? "#171717" : "#737373", backgroundColor: "#fff", outline: "none", cursor: "pointer" }}
+              >
+                <option value="">All statuses</option>
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s} value={s}>{formatStatusLabel(s)}</option>
+                ))}
+              </select>
+            </div>
 
-        <select
-          value={inlineType}
-          onChange={(e) => { setInlineType(e.target.value as "" | "installation" | "complaint"); setPage(1); }}
-          style={{
-            border: "1px solid #E5E5E5",
-            borderRadius: "8px",
-            padding: "6px 10px",
-            fontSize: "13px",
-            color: inlineType ? "#171717" : "#737373",
-            backgroundColor: "#fff",
-            outline: "none",
-            cursor: "pointer",
-          }}
-        >
-          <option value="">All types</option>
-          <option value="installation">Installation</option>
-          <option value="complaint">Complaint</option>
-        </select>
+            {/* TYPE */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                TYPE
+              </span>
+              <select
+                value={inlineType}
+                onChange={(e) => { setInlineType(e.target.value as "" | "installation" | "complaint"); setPage(1); }}
+                style={{ border: "1px solid #E5E5E5", borderRadius: "8px", padding: "6px 10px", fontSize: "13px", color: inlineType ? "#171717" : "#737373", backgroundColor: "#fff", outline: "none", cursor: "pointer" }}
+              >
+                <option value="">All types</option>
+                <option value="installation">Installation</option>
+                <option value="complaint">Complaint</option>
+              </select>
+            </div>
 
-        <select
-          value={inlineBrandId}
-          onChange={(e) => { setInlineBrandId(e.target.value); setPage(1); }}
-          style={{
-            border: "1px solid #E5E5E5",
-            borderRadius: "8px",
-            padding: "6px 10px",
-            fontSize: "13px",
-            color: inlineBrandId ? "#171717" : "#737373",
-            backgroundColor: "#fff",
-            outline: "none",
-            cursor: "pointer",
-          }}
-        >
-          <option value="">All brands</option>
-          {(brandsQuery.data ?? []).map((brand) => (
-            <option key={brand.id} value={brand.id}>{brand.name}</option>
-          ))}
-        </select>
+            {/* BRAND */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                BRAND
+              </span>
+              <select
+                value={inlineBrandId}
+                onChange={(e) => { setInlineBrandId(e.target.value); setPage(1); }}
+                style={{ border: "1px solid #E5E5E5", borderRadius: "8px", padding: "6px 10px", fontSize: "13px", color: inlineBrandId ? "#171717" : "#737373", backgroundColor: "#fff", outline: "none", cursor: "pointer" }}
+              >
+                <option value="">All brands</option>
+                {(brandsQuery.data ?? []).map((brand) => (
+                  <option key={brand.id} value={brand.id}>{brand.name}</option>
+                ))}
+              </select>
+            </div>
 
-        <label
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            fontSize: "13px",
-            color: "#737373",
-            cursor: "pointer",
-            userSelect: "none",
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={inlineChronic}
-            onChange={(e) => { setInlineChronic(e.target.checked); setPage(1); }}
-            style={{ width: "14px", height: "14px", cursor: "pointer" }}
-          />
-          Chronic only
-        </label>
-      </div> : null}
+            {/* Chronic */}
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px", cursor: "pointer" }}>
+              <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                FILTER
+              </span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#737373", userSelect: "none", paddingTop: "6px" }}>
+                <input
+                  type="checkbox"
+                  checked={inlineChronic}
+                  onChange={(e) => { setInlineChronic(e.target.checked); setPage(1); }}
+                  style={{ width: "14px", height: "14px", cursor: "pointer" }}
+                />
+                Chronic only
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
 
       {/* ── Jobs content ───────────────────────────────────── */}
       {displayedJobs.length === 0 ? (
@@ -615,7 +664,7 @@ export function JobsList() {
               }}
             >
               <thead>
-                <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
+                <tr style={{ borderBottom: "1px solid #E5E5E5", backgroundColor: "#FAFAFA" }}>
                   {[
                     "JOB ID",
                     "CUSTOMER",
@@ -634,7 +683,7 @@ export function JobsList() {
                         padding: "10px 16px",
                         textAlign: "left",
                         fontSize: "11px",
-                        color: "#737373",
+                        color: "#94A3B8",
                         fontWeight: 500,
                         letterSpacing: "0.04em",
                         whiteSpace: "nowrap",
@@ -650,11 +699,10 @@ export function JobsList() {
                 {displayedJobs.map((job) => (
                   <tr
                     key={job.id}
-                    style={{
-                      borderBottom: "1px solid #F5F5F5",
-                      cursor: "pointer",
-                    }}
+                    style={{ borderBottom: "1px solid #F5F5F5", cursor: "pointer" }}
                     onClick={() => window.location.assign(`/jobs/${job.id}`)}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = "#FAFAFA"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = "transparent"; }}
                   >
                     {/* JOB ID */}
                     <td
@@ -676,6 +724,7 @@ export function JobsList() {
                         fontSize: "13px",
                         fontWeight: 500,
                         whiteSpace: "nowrap",
+                        borderLeft: job.tags.includes("chronic") ? "2px solid #9F1239" : "2px solid transparent",
                       }}
                     >
                       {job.customerName}
@@ -703,15 +752,8 @@ export function JobsList() {
                       />
                     </td>
                     {/* BRAND */}
-                    <td
-                      style={{
-                        padding: "14px 16px",
-                        color: "#525252",
-                        fontSize: "13px",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {job.brandName ?? "—"}
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
+                      {job.brandName ? <BrandSwatch name={job.brandName} colorHex={null} /> : <span style={{ color: "#525252", fontSize: "13px" }}>—</span>}
                     </td>
                     {/* TECHNICIAN */}
                     <td
