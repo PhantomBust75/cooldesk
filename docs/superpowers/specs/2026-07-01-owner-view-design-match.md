@@ -30,7 +30,8 @@ All real API wiring, role-based access control, and Next.js conventions are pres
 
 **Structure:**
 - Remove the `<button>` toggle from the header section (currently sits next to the CoolDesk logo)
-- Add a footer `<div>` at the bottom of the sidebar (between `<nav>` and end of `<aside>`):
+- Mobile drawer close: handled by backdrop click + external hamburger in main header — no in-sidebar close button needed
+- Add a footer `<div>` at the bottom of the sidebar, **only rendered when `!isSmallScreen`** (between `<nav>` and end of `<aside>`):
   - `borderTop: '1px solid #E5E5E5'`, `padding: '8px'`
   - Contains a full-width button: rotating `ChevronRight` icon (180° when expanded) + "Collapse" text (hidden when `collapsed`)
   - Button style: `display: flex, alignItems: center, gap: 8px, width: 100%, padding: 8px 10px, borderRadius: 8px, background: transparent, border: none, cursor: pointer, color: #737373, fontSize: 13px, justifyContent: collapsed ? center : flex-start, minHeight: 44px`
@@ -79,8 +80,8 @@ All real API wiring, role-based access control, and Next.js conventions are pres
 - Header: "Notifications" label (`14px, fontWeight 500`) + unread count badge (`#9F1239` bg, white text)
 - Body: fetch last 4 notifications via `fetchNotifications(audience, { limit: 4 })` using the existing API. Each row:
   - Unread dot: `6×6px, backgroundColor: #2563EB` (hidden if `isRead`)
-  - Title: derived from `eventType` (e.g. `"job.status_changed"` → `"Job status changed"`)
-  - Body: `payload` stringified or a fallback — `2-line clamp` via `-webkit-line-clamp: 2`
+  - Title: format `eventType` → strip prefix up to and including first `.`, replace `_` with spaces, title-case each word. E.g. `"job.status_changed"` → `"Status changed"`
+  - Body: fixed fallback string `"Tap to view details"` (payload structure is internal — don't stringify)
   - Timestamp: `new Date(createdAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })`
   - Unread rows: `backgroundColor: #FAFAFA`
 - Footer: "View all notifications →" button navigates to `/notifications`
