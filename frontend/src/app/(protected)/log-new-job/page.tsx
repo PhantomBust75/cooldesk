@@ -52,12 +52,13 @@ function StepHeader({ current, total }: { current: Step; total: number }) {
               flexShrink: 0,
               backgroundColor: value < current ? "#065F46" : value === current ? "#0A0A0A" : "#F5F5F5",
               color: value <= current ? "#fff" : "#A3A3A3",
+              border: value > current ? "1px solid #E5E5E5" : "none",
             }}
           >
             {value < current ? <CheckCircle size={14} strokeWidth={1.5} /> : value}
           </div>
           {value < total ? (
-            <div style={{ flex: 1, height: "1px", backgroundColor: value < current ? "#10B981" : "#E5E5E5", minWidth: "40px" }} />
+            <div style={{ flex: 1, height: "2px", backgroundColor: value < current ? "#10B981" : "#E5E5E5", minWidth: "40px" }} />
           ) : null}
         </div>
       ))}
@@ -309,7 +310,7 @@ export default function LogNewJobPage() {
           <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0", fontWeight: 400 }}>Step {step} of {totalSteps}</p>
         </div>
 
-        <form onSubmit={onSubmit} style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: isMobile ? "20px" : "28px" }}>
+        <form onSubmit={onSubmit} style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: isMobile ? "20px" : "24px" }}>
           <StepHeader current={step} total={totalSteps} />
 
           {step === 1 ? (
@@ -318,12 +319,12 @@ export default function LogNewJobPage() {
                 Job type{isDealer ? "" : " & source"}
               </h2>
               <div style={{ marginBottom: "20px" }}>
-                <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 500, color: "#525252", display: "block", marginBottom: "5px" }}>
                   Job type <span style={{ color: "#EF4444" }}>*</span>
                 </label>
                 <div style={{ display: "flex", gap: "10px" }}>
                   {(["installation", "complaint"] as const).map((type) => (
-                    <label key={type} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "16px", border: `1px solid ${form.type === type ? "#0A0A0A" : "#E5E5E5"}`, borderRadius: "8px", cursor: "pointer", backgroundColor: form.type === type ? "#FAFAFA" : "#fff" }}>
+                    <label key={type} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "14px 16px", border: form.type === type ? "1.5px solid #0A0A0A" : "1px solid #E5E5E5", borderRadius: "10px", cursor: "pointer", backgroundColor: form.type === type ? "#FAFAFA" : "#fff" }}>
                       <input type="radio" name="jobType" value={type} checked={form.type === type} onChange={() => setForm((prev) => ({ ...prev, type }))} style={{ display: "none" }} />
                       <span style={{ fontSize: "13px", fontWeight: form.type === type ? 500 : 400, color: form.type === type ? "#0A0A0A" : "#525252", textTransform: "capitalize" }}>{type}</span>
                     </label>
@@ -334,12 +335,12 @@ export default function LogNewJobPage() {
               {!isDealer ? (
                 <>
                   <div style={{ marginBottom: "20px" }}>
-                    <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: 500, color: "#525252", display: "block", marginBottom: "5px" }}>
                       Source <span style={{ color: "#EF4444" }}>*</span>
                     </label>
                     <div style={{ display: "flex", gap: "10px" }}>
                       {(["direct", "via_dealer"] as const).map((source) => (
-                        <label key={source} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "16px", border: `1px solid ${form.source === source ? "#0A0A0A" : "#E5E5E5"}`, borderRadius: "8px", cursor: "pointer", backgroundColor: form.source === source ? "#FAFAFA" : "#fff" }}>
+                        <label key={source} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "14px 16px", border: form.source === source ? "1.5px solid #0A0A0A" : "1px solid #E5E5E5", borderRadius: "10px", cursor: "pointer", backgroundColor: form.source === source ? "#FAFAFA" : "#fff" }}>
                           <input type="radio" name="source" value={source} checked={form.source === source} onChange={() => setForm((prev) => ({ ...prev, source }))} style={{ display: "none" }} />
                           <span style={{ fontSize: "13px", fontWeight: form.source === source ? 500 : 400, color: form.source === source ? "#0A0A0A" : "#525252" }}>{source === "direct" ? "Direct" : "Via dealer"}</span>
                         </label>
@@ -349,7 +350,7 @@ export default function LogNewJobPage() {
 
                   {dealerRequired ? (
                     <div>
-                      <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
+                      <label style={{ fontSize: "12px", fontWeight: 500, color: "#525252", display: "block", marginBottom: "5px" }}>
                         Dealer <span style={{ color: "#EF4444" }}>*</span>
                       </label>
                       <select value={form.dealerId ?? ""} onChange={(event) => setForm((prev) => ({ ...prev, dealerId: event.target.value }))} style={{ width: "100%", padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", color: "#171717" }}>
@@ -370,7 +371,7 @@ export default function LogNewJobPage() {
               <h2 style={{ fontSize: "15px", fontWeight: 500, color: "#171717", marginBottom: "20px", marginTop: 0 }}>Customer identity</h2>
               <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                 <div>
-                  <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>Primary phone <span style={{ color: "#EF4444" }}>*</span></label>
+                  <label style={{ fontSize: "12px", fontWeight: 500, color: "#525252", display: "block", marginBottom: "5px" }}>Primary phone <span style={{ color: "#EF4444" }}>*</span></label>
                   <div style={{ position: "relative" }}>
                     <input
                       type="tel"
@@ -381,7 +382,7 @@ export default function LogNewJobPage() {
                       }}
                       onBlur={handlePhoneBlur}
                       placeholder="+966 50 000 0000"
-                      style={{ width: "100%", padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box", color: "#171717", fontFamily: "inherit" }}
+                      style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box", color: "#171717", fontFamily: "inherit" }}
                     />
                     {vcidResult === "searching" ? <Search size={14} strokeWidth={1.5} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", color: "#A3A3A3" }} /> : null}
                   </div>
@@ -397,13 +398,13 @@ export default function LogNewJobPage() {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>Customer name <span style={{ color: "#EF4444" }}>*</span></label>
-                  <input value={form.customerName} onChange={(event) => setForm((prev) => ({ ...prev, customerName: event.target.value }))} style={{ width: "100%", padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box", color: "#171717", fontFamily: "inherit" }} />
+                  <label style={{ fontSize: "12px", fontWeight: 500, color: "#525252", display: "block", marginBottom: "5px" }}>Customer name <span style={{ color: "#EF4444" }}>*</span></label>
+                  <input value={form.customerName} onChange={(event) => setForm((prev) => ({ ...prev, customerName: event.target.value }))} style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box", color: "#171717", fontFamily: "inherit" }} />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>Address <span style={{ color: "#EF4444" }}>*</span></label>
-                  <input value={form.address} onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))} style={{ width: "100%", padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box", color: "#171717", fontFamily: "inherit" }} />
+                  <label style={{ fontSize: "12px", fontWeight: 500, color: "#525252", display: "block", marginBottom: "5px" }}>Address <span style={{ color: "#EF4444" }}>*</span></label>
+                  <input value={form.address} onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))} style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box", color: "#171717", fontFamily: "inherit" }} />
                 </div>
               </div>
             </div>
@@ -414,8 +415,8 @@ export default function LogNewJobPage() {
               <h2 style={{ fontSize: "15px", fontWeight: 500, color: "#171717", marginBottom: "20px", marginTop: 0 }}>Job details</h2>
               <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                 <div>
-                  <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>Brand <span style={{ color: "#EF4444" }}>*</span></label>
-                  <select value={form.brandId} onChange={(event) => setForm((prev) => ({ ...prev, brandId: event.target.value }))} style={{ width: "100%", padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", color: "#171717" }}>
+                  <label style={{ fontSize: "12px", fontWeight: 500, color: "#525252", display: "block", marginBottom: "5px" }}>Brand <span style={{ color: "#EF4444" }}>*</span></label>
+                  <select value={form.brandId} onChange={(event) => setForm((prev) => ({ ...prev, brandId: event.target.value }))} style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", color: "#171717" }}>
                     <option value="">Select brand…</option>
                     {(brandsQuery.data ?? []).map((brand) => (
                       <option key={brand.id} value={brand.id}>{brand.name}</option>
@@ -425,22 +426,22 @@ export default function LogNewJobPage() {
 
                 {!isDealer && form.type === "installation" ? (
                   <div>
-                    <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: 500, color: "#525252", display: "block", marginBottom: "5px" }}>
                       Scheduled at <span style={{ color: "#A3A3A3", fontWeight: 400 }}>(optional)</span>
                     </label>
-                    <input type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} style={{ width: "100%", padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", color: "#171717" }} />
+                    <input type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", color: "#171717" }} />
                   </div>
                 ) : null}
 
                 {canAssign ? (
                   <div>
-                    <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: 500, color: "#525252", display: "block", marginBottom: "5px" }}>
                       Assign technician <span style={{ color: "#A3A3A3", fontWeight: 400 }}>(optional)</span>
                     </label>
                     <select
                       value={technicianId}
                       onChange={(event) => setTechnicianId(event.target.value)}
-                      style={{ width: "100%", padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", color: "#171717" }}
+                      style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", color: "#171717" }}
                     >
                       <option value="">No assignment — goes to queue</option>
                       {(techniciansQuery.data ?? []).map((tech) => (
@@ -458,7 +459,7 @@ export default function LogNewJobPage() {
                 ) : null}
 
                 <div>
-                  <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>{notesLabel}{form.type === "complaint" ? <span style={{ color: "#EF4444" }}> *</span> : null}</label>
+                  <label style={{ fontSize: "12px", fontWeight: 500, color: "#525252", display: "block", marginBottom: "5px" }}>{notesLabel}{form.type === "complaint" ? <span style={{ color: "#EF4444" }}> *</span> : null}</label>
                   <textarea
                     value={form.type === "complaint" ? form.issueDescription : form.installationNotes}
                     onChange={(event) => {
@@ -466,12 +467,12 @@ export default function LogNewJobPage() {
                       setForm((prev) => prev.type === "complaint" ? { ...prev, issueDescription: value } : { ...prev, installationNotes: value });
                     }}
                     rows={3}
-                    style={{ width: "100%", padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", color: "#171717", resize: "vertical", boxSizing: "border-box" }}
+                    style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", color: "#171717", resize: "vertical", boxSizing: "border-box" }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>Unit details <span style={{ color: "#EF4444" }}>*</span></label>
+                  <label style={{ fontSize: "12px", fontWeight: 500, color: "#525252", display: "block", marginBottom: "5px" }}>Unit details <span style={{ color: "#EF4444" }}>*</span></label>
                   {units.map((unit, index) => (
                     <div key={`${index}-${unit.model}`} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 56px 28px" : "1fr 1fr 80px 32px", gap: "8px", marginBottom: "8px", alignItems: "center" }}>
                       <input placeholder="Model" value={unit.model} onChange={(event) => updateUnit(index, "model", event.target.value)} style={{ padding: "7px 8px", border: "1px solid #E5E5E5", borderRadius: "6px", fontSize: "13px", outline: "none", color: "#171717" }} />
