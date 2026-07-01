@@ -60,6 +60,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [notifOpen]);
 
+  // Close user menu on outside click
+  useEffect(() => {
+    function onMouseDown(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    if (userMenuOpen) document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [userMenuOpen]);
+
   const audience = useMemo(() => {
     return session?.user.role === "dealer" ? "dealer" : "user";
   }, [session?.user.role]);
