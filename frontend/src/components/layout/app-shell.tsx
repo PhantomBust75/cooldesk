@@ -145,17 +145,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               router.push("/notifications");
             }}
           >
-            <span
-              style={{
-                width: "6px",
-                height: "6px",
-                borderRadius: "50%",
-                backgroundColor: notif.isRead ? "transparent" : "#2563EB",
-                marginTop: "5px",
-                flexShrink: 0,
-                display: "block",
-              }}
-            />
+            {!notif.isRead ? (
+              <span
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  backgroundColor: "#2563EB",
+                  marginTop: "5px",
+                  flexShrink: 0,
+                  display: "block",
+                }}
+              />
+            ) : (
+              <span style={{ width: "6px", flexShrink: 0 }} />
+            )}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: "13px", fontWeight: notif.isRead ? 400 : 500, color: "#171717", lineHeight: 1.4 }}>
                 {formatEventType(notif.eventType)}
@@ -205,139 +209,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   ) : null;
-
-  // ── Bell button (shared desktop + mobile) ────────────
-  const BellButton = () => (
-    <div ref={notifRef} style={{ position: "relative" }}>
-      <button
-        type="button"
-        onClick={() => setNotifOpen((prev) => !prev)}
-        style={{
-          position: "relative",
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: "40px",
-          height: "40px",
-          borderRadius: "8px",
-          backgroundColor: notifOpen ? "#F5F5F5" : "transparent",
-          color: notifOpen ? "#0A0A0A" : "#737373",
-          transition: "background-color 120ms",
-          padding: 0,
-        }}
-        aria-label="Open notifications"
-      >
-        <Bell size={18} strokeWidth={1.5} />
-        {unreadCount > 0 && (
-          <span
-            style={{
-              position: "absolute",
-              top: "8px",
-              right: "8px",
-              width: "7px",
-              height: "7px",
-              backgroundColor: "#9F1239",
-              borderRadius: "9999px",
-              border: "1.5px solid #fff",
-            }}
-          />
-        )}
-      </button>
-      {notifPopover}
-    </div>
-  );
-
-  // ── Avatar button (shared desktop + mobile) ──────────
-  const AvatarButton = () => (
-    <div style={{ position: "relative" }} ref={menuRef}>
-      <button
-        type="button"
-        onClick={() => setUserMenuOpen((prev) => !prev)}
-        style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}
-        aria-label="User menu"
-      >
-        <div
-          style={{
-            width: "32px",
-            height: "32px",
-            borderRadius: "9999px",
-            backgroundColor: userMenuOpen ? "#E5E5E5" : "#F5F5F5",
-            border: `1px solid ${userMenuOpen ? "#D4D4D4" : "#E5E5E5"}`,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#171717",
-            fontSize: "11px",
-            fontWeight: 600,
-            letterSpacing: "0.02em",
-            transition: "background-color 120ms, border-color 120ms",
-          }}
-        >
-          {userInitials(session?.user.name)}
-        </div>
-        <span
-          style={{
-            position: "absolute",
-            bottom: "0px",
-            right: "0px",
-            width: "8px",
-            height: "8px",
-            borderRadius: "50%",
-            backgroundColor: "#10B981",
-            border: "2px solid #fff",
-          }}
-        />
-      </button>
-      {userMenuOpen && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 8px)",
-            right: 0,
-            width: "200px",
-            backgroundColor: "#fff",
-            border: "1px solid #E5E5E5",
-            borderRadius: "12px",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-            zIndex: 9999,
-            overflow: "hidden",
-          }}
-        >
-          <div style={{ padding: "12px 14px", borderBottom: "1px solid #F5F5F5" }}>
-            <div style={{ fontSize: "13px", fontWeight: 500, color: "#171717" }}>
-              {session?.user.name ?? "User"}
-            </div>
-            <div style={{ fontSize: "12px", color: "#737373", marginTop: "1px", textTransform: "capitalize" }}>
-              {session?.user.role?.replace(/_/g, " ")}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => { logout(); setUserMenuOpen(false); }}
-            style={{
-              width: "100%",
-              padding: "10px 14px",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "9px",
-              fontSize: "13px",
-              color: "#991B1B",
-              textAlign: "left",
-            }}
-          >
-            <LogOut size={14} strokeWidth={1.5} color="#EF4444" />
-            Log out
-          </button>
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#FAFAFA", color: "#171717" }}>
@@ -434,8 +305,133 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <Plus size={22} strokeWidth={1.5} />
                 </Link>
               )}
-              <BellButton />
-              <AvatarButton />
+              {/* Bell button */}
+              <div ref={notifRef} style={{ position: "relative" }}>
+                <button
+                  type="button"
+                  onClick={() => setNotifOpen((prev) => !prev)}
+                  style={{
+                    position: "relative",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "8px",
+                    backgroundColor: notifOpen ? "#F5F5F5" : "transparent",
+                    color: notifOpen ? "#0A0A0A" : "#737373",
+                    transition: "background-color 120ms",
+                    padding: 0,
+                  }}
+                  aria-label="Open notifications"
+                >
+                  <Bell size={18} strokeWidth={1.5} />
+                  {unreadCount > 0 && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "8px",
+                        right: "8px",
+                        width: "7px",
+                        height: "7px",
+                        backgroundColor: "#9F1239",
+                        borderRadius: "9999px",
+                        border: "1.5px solid #fff",
+                      }}
+                    />
+                  )}
+                </button>
+                {notifPopover}
+              </div>
+              {/* Avatar button */}
+              <div style={{ position: "relative" }} ref={menuRef}>
+                <button
+                  type="button"
+                  onClick={() => setUserMenuOpen((prev) => !prev)}
+                  style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}
+                  aria-label="User menu"
+                >
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "9999px",
+                      backgroundColor: userMenuOpen ? "#E5E5E5" : "#F5F5F5",
+                      border: `1px solid ${userMenuOpen ? "#D4D4D4" : "#E5E5E5"}`,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#171717",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      letterSpacing: "0.02em",
+                      transition: "background-color 120ms, border-color 120ms",
+                    }}
+                  >
+                    {userInitials(session?.user.name)}
+                  </div>
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: "0px",
+                      right: "0px",
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      backgroundColor: "#10B981",
+                      border: "2px solid #fff",
+                    }}
+                  />
+                </button>
+                {userMenuOpen && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 8px)",
+                      right: 0,
+                      width: "200px",
+                      backgroundColor: "#fff",
+                      border: "1px solid #E5E5E5",
+                      borderRadius: "12px",
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                      zIndex: 9999,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div style={{ padding: "12px 14px", borderBottom: "1px solid #F5F5F5" }}>
+                      <div style={{ fontSize: "13px", fontWeight: 500, color: "#171717" }}>
+                        {session?.user.name ?? "User"}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#737373", marginTop: "1px", textTransform: "capitalize" }}>
+                        {session?.user.role?.replace(/_/g, " ")}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { logout(); setUserMenuOpen(false); }}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "9px",
+                        fontSize: "13px",
+                        color: "#991B1B",
+                        textAlign: "left",
+                      }}
+                    >
+                      <LogOut size={14} strokeWidth={1.5} color="#EF4444" />
+                      Log out
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </header>
         ) : (
@@ -501,29 +497,156 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {/* Right: log-new-job + divider + bell + avatar */}
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               {session?.user.role !== "technician" && (
-                <Link
-                  href="/log-new-job"
+                <>
+                  <Link
+                    href="/log-new-job"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      border: "1px solid #E5E5E5",
+                      borderRadius: "8px",
+                      padding: "7px 12px",
+                      backgroundColor: "#fff",
+                      color: "#404040",
+                      fontSize: "13px",
+                      textDecoration: "none",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <Plus size={13} strokeWidth={1.5} />
+                    Log new job
+                  </Link>
+                  <div style={{ width: "1px", height: "20px", backgroundColor: "#E5E5E5" }} />
+                </>
+              )}
+              {/* Bell button */}
+              <div ref={notifRef} style={{ position: "relative" }}>
+                <button
+                  type="button"
+                  onClick={() => setNotifOpen((prev) => !prev)}
                   style={{
+                    position: "relative",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: "5px",
-                    border: "1px solid #E5E5E5",
+                    justifyContent: "center",
+                    width: "40px",
+                    height: "40px",
                     borderRadius: "8px",
-                    padding: "7px 12px",
-                    backgroundColor: "#fff",
-                    color: "#404040",
-                    fontSize: "13px",
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
+                    backgroundColor: notifOpen ? "#F5F5F5" : "transparent",
+                    color: notifOpen ? "#0A0A0A" : "#737373",
+                    transition: "background-color 120ms",
+                    padding: 0,
                   }}
+                  aria-label="Open notifications"
                 >
-                  <Plus size={13} strokeWidth={1.5} />
-                  Log new job
-                </Link>
-              )}
-              <div style={{ width: "1px", height: "20px", backgroundColor: "#E5E5E5" }} />
-              <BellButton />
-              <AvatarButton />
+                  <Bell size={18} strokeWidth={1.5} />
+                  {unreadCount > 0 && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "8px",
+                        right: "8px",
+                        width: "7px",
+                        height: "7px",
+                        backgroundColor: "#9F1239",
+                        borderRadius: "9999px",
+                        border: "1.5px solid #fff",
+                      }}
+                    />
+                  )}
+                </button>
+                {notifPopover}
+              </div>
+              {/* Avatar button */}
+              <div style={{ position: "relative" }} ref={menuRef}>
+                <button
+                  type="button"
+                  onClick={() => setUserMenuOpen((prev) => !prev)}
+                  style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}
+                  aria-label="User menu"
+                >
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "9999px",
+                      backgroundColor: userMenuOpen ? "#E5E5E5" : "#F5F5F5",
+                      border: `1px solid ${userMenuOpen ? "#D4D4D4" : "#E5E5E5"}`,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#171717",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      letterSpacing: "0.02em",
+                      transition: "background-color 120ms, border-color 120ms",
+                    }}
+                  >
+                    {userInitials(session?.user.name)}
+                  </div>
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: "0px",
+                      right: "0px",
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      backgroundColor: "#10B981",
+                      border: "2px solid #fff",
+                    }}
+                  />
+                </button>
+                {userMenuOpen && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 8px)",
+                      right: 0,
+                      width: "200px",
+                      backgroundColor: "#fff",
+                      border: "1px solid #E5E5E5",
+                      borderRadius: "12px",
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                      zIndex: 9999,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div style={{ padding: "12px 14px", borderBottom: "1px solid #F5F5F5" }}>
+                      <div style={{ fontSize: "13px", fontWeight: 500, color: "#171717" }}>
+                        {session?.user.name ?? "User"}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#737373", marginTop: "1px", textTransform: "capitalize" }}>
+                        {session?.user.role?.replace(/_/g, " ")}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { logout(); setUserMenuOpen(false); }}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "9px",
+                        fontSize: "13px",
+                        color: "#991B1B",
+                        textAlign: "left",
+                      }}
+                    >
+                      <LogOut size={14} strokeWidth={1.5} color="#EF4444" />
+                      Log out
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </header>
         )}
