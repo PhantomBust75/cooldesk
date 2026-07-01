@@ -47,13 +47,12 @@ function JobTag({ type }: { type: keyof typeof TAG_STYLES }) {
 const tableCardStyle: CSSProperties = {
   backgroundColor: '#fff',
   border: '1px solid #E5E7EB',
-  borderRadius: '10px',
+  borderRadius: '12px',
   overflow: 'hidden',
 };
 
 const tableToolbarStyle: CSSProperties = {
-  height: '57px',
-  padding: '0 18px',
+  padding: '14px 18px',
   borderBottom: '1px solid #E5E7EB',
   display: 'flex',
   alignItems: 'center',
@@ -65,27 +64,19 @@ const headerCellStyle: CSSProperties = {
   padding: '0 18px',
   textAlign: 'left',
   fontSize: '12px',
-  color: '#8CA0BB',
-  fontWeight: 700,
+  color: '#94A3B8',
+  fontWeight: 500,
   letterSpacing: '0.04em',
-  backgroundColor: '#F8F8F8',
+  backgroundColor: '#FAFAFA',
 };
 
 const bodyCellStyle: CSSProperties = {
-  height: '59px',
-  padding: '0 18px',
+  padding: '16px 18px',
   fontSize: '14px',
   color: '#536987',
   borderBottom: '1px solid #EEF0F3',
   verticalAlign: 'middle',
 };
-
-function getJobTagType(job: { status: string; source: string; createdAt: string }, index: number): keyof typeof TAG_STYLES | null {
-  if (job.status === 'needs_revisit') return 'chronic';
-  if (job.source === 'via_dealer') return 'frequent';
-  if (index % 3 === 1) return 'repeat';
-  return null;
-}
 
 function shouldRetryDashboardQuery(failureCount: number, error: Error): boolean {
   if (error instanceof ApiError && error.status === 401) {
@@ -138,11 +129,11 @@ export default function DashboardPage() {
   const activeJobs = activeJobsQuery.data?.jobs ?? [];
 
   const kpiCards = [
-    { title: 'Total active jobs', value: m ? String(m.totalActiveJobs) : '—', accent: '#0A0A0A', hasFill: false, trendKey: 'totalActiveJobs' as const },
-    { title: 'Pending schedule', value: m ? String(m.pendingSchedule) : '—', accent: '#3B82F6', hasFill: false, trendKey: 'pendingSchedule' as const },
-    { title: 'Amber alerts', value: m ? String(m.amberAlerts) : '—', accent: '#F59E0B', hasFill: true, trendKey: null },
-    { title: 'Chronic jobs', value: m ? String(m.chronicJobs) : '—', accent: '#BE123C', hasFill: true, trendKey: null },
-    { title: 'No-shows today', value: m ? String(m.noShowsToday) : '—', accent: '#737373', hasFill: false, trendKey: null },
+    { title: 'Total active jobs', value: m ? String(m.totalActiveJobs) : '—', accent: '#737373', hasFill: false, trendKey: 'totalActiveJobs' as const },
+    { title: 'Pending schedule', value: m ? String(m.pendingSchedule) : '—', accent: '#94A3B8', hasFill: false, trendKey: 'pendingSchedule' as const },
+    { title: 'Amber alerts', value: m ? String(m.amberAlerts) : '—', accent: '#B45309', hasFill: true, trendKey: null },
+    { title: 'Chronic jobs', value: m ? String(m.chronicJobs) : '—', accent: '#9F1239', hasFill: true, trendKey: null },
+    { title: 'No-shows today', value: m ? String(m.noShowsToday) : '—', accent: '#78716C', hasFill: false, trendKey: null },
   ];
 
   return (
@@ -170,7 +161,7 @@ export default function DashboardPage() {
           <div style={tableCardStyle}>
             <div style={tableToolbarStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 600, color: '#111827' }}>Needs revisit</span>
+                <span style={{ fontSize: '16px', fontWeight: 500, color: '#111827' }}>Needs revisit</span>
                 {needsRevisitJobs.length > 0 && (
                   <span style={{ fontSize: '12px', fontWeight: 500, padding: '2px 8px', borderRadius: '9999px', border: '1px solid #FECDD3', backgroundColor: '#FFF1F2', color: '#BE123C' }}>{needsRevisitJobs.length}</span>
                 )}
@@ -208,17 +199,31 @@ export default function DashboardPage() {
                       <tr
                         key={job.id}
                         onClick={() => router.push(`/jobs/${job.id}`)}
-                        style={{ cursor: 'pointer', borderLeft: index === 0 ? '3px solid #E11D48' : '3px solid transparent' }}
+                        style={{ cursor: 'pointer' }}
                         onMouseEnter={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = '#FAFAFA'; }}
                         onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = 'transparent'; }}
                       >
-                        <td style={{ ...bodyCellStyle, color: '#111827', fontWeight: 700 }}>{job.customerName}</td>
+                        <td
+                          style={{
+                            ...bodyCellStyle,
+                            color: '#111827',
+                            fontWeight: 700,
+                            borderLeft: job.tags.includes('chronic') ? '2px solid #9F1239' : '2px solid transparent',
+                            paddingLeft: '16px',
+                          }}
+                        >
+                          {job.customerName}
+                        </td>
                         <td style={bodyCellStyle}>{job.brandName ?? '—'}</td>
                         <td style={bodyCellStyle}>{job.assignedTechnicianName ?? <em style={{ color: '#9CA3AF', fontStyle: 'italic' }}>Unassigned</em>}</td>
                         <td style={{ ...bodyCellStyle, color: '#7E93B2' }}>{new Date(job.createdAt).toLocaleDateString([], { month: 'short', day: '2-digit' })}</td>
                         <td style={{ ...bodyCellStyle, color: '#BE123C', fontWeight: 700 }}>#{index + 2}</td>
                         <td style={bodyCellStyle}>
-                          {getJobTagType(job, index) ? <JobTag type={getJobTagType(job, index)!} /> : null}
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            {job.tags.includes('chronic') && <JobTag type="chronic" />}
+                            {job.tags.includes('frequent') && <JobTag type="frequent" />}
+                            {job.tags.includes('repeat') && <JobTag type="repeat" />}
+                          </div>
                         </td>
                         <td style={{ ...bodyCellStyle, textAlign: 'right' }}><ChevronRight size={15} strokeWidth={1.5} color="#A3A3A3" /></td>
                       </tr>
@@ -233,7 +238,7 @@ export default function DashboardPage() {
           <div style={tableCardStyle}>
             <div style={tableToolbarStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 600, color: '#111827' }}>Active jobs</span>
+                <span style={{ fontSize: '16px', fontWeight: 500, color: '#111827' }}>Active jobs</span>
                 {activeJobs.length > 0 && (
                   <span style={{ fontSize: '14px', color: '#525252' }}>({activeJobs.length})</span>
                 )}
@@ -259,11 +264,21 @@ export default function DashboardPage() {
                       <tr
                         key={job.id}
                         onClick={() => router.push(`/jobs/${job.id}`)}
-                        style={{ cursor: 'pointer', borderLeft: index === 0 ? '3px solid #E11D48' : '3px solid transparent' }}
+                        style={{ cursor: 'pointer' }}
                         onMouseEnter={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = '#FAFAFA'; }}
                         onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = 'transparent'; }}
                       >
-                        <td style={{ ...bodyCellStyle, color: '#111827', fontWeight: 700 }}>{job.customerName}</td>
+                        <td
+                          style={{
+                            ...bodyCellStyle,
+                            color: '#111827',
+                            fontWeight: 700,
+                            borderLeft: job.tags.includes('chronic') ? '2px solid #9F1239' : '2px solid transparent',
+                            paddingLeft: '16px',
+                          }}
+                        >
+                          {job.customerName}
+                        </td>
                         <td style={bodyCellStyle}>{job.brandName ?? '—'}</td>
                         <td style={{ ...bodyCellStyle, color: job.assignedTechnicianName ? '#536987' : '#9CA3AF', fontStyle: job.assignedTechnicianName ? 'normal' : 'italic' }}>
                           {job.assignedTechnicianName ?? 'Unassigned'}
@@ -273,7 +288,11 @@ export default function DashboardPage() {
                         </td>
                         <td style={bodyCellStyle}><StatusChip status={job.status} /></td>
                         <td style={bodyCellStyle}>
-                          {getJobTagType(job, index) ? <JobTag type={getJobTagType(job, index)!} /> : null}
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            {job.tags.includes('chronic') && <JobTag type="chronic" />}
+                            {job.tags.includes('frequent') && <JobTag type="frequent" />}
+                            {job.tags.includes('repeat') && <JobTag type="repeat" />}
+                          </div>
                         </td>
                         <td style={{ ...bodyCellStyle, textAlign: 'right' }}><ChevronRight size={15} strokeWidth={1.5} color="#A3A3A3" /></td>
                       </tr>

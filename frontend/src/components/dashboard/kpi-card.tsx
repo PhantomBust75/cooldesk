@@ -39,7 +39,7 @@ function Sparkline({ color, points, hasFill }: { color: string; points: number[]
   const areaPath = `M 0 ${height} ${coords.map((c) => `L ${c.x} ${c.y}`).join(' ')} L ${width} ${height} Z`;
 
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
       <path d={areaPath} fill={hasFill ? hexToRgba(color, 0.12) : 'none'} />
       <path d={linePath} fill="none" stroke={color} strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round" />
     </svg>
@@ -62,16 +62,14 @@ export function KpiCard({ title, value, accent, hasFill = false, trend }: KpiCar
     <div
       style={{
         position: 'relative',
-        height: '154px',
-        backgroundColor: '#fff',
-        border: '1px solid #E5E5E5',
-        borderTop: `3px solid ${accent}`,
-        borderRadius: '8px',
+        borderRadius: '12px',
         overflow: 'hidden',
-        boxShadow: '0 12px 22px rgba(15, 23, 42, 0.08)',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.05), 0 10px 40px rgba(0,0,0,0.08)',
+        borderTop: `3px solid ${accent}`,
+        backgroundColor: '#fff',
       }}
     >
-      <div style={{ position: 'relative', zIndex: 1, padding: '16px 18px 0' }}>
+      <div style={{ position: 'relative', zIndex: 1, padding: '16px 18px 0', paddingBottom: '64px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
             <Icon size={12} strokeWidth={1.6} color="#B8B8B8" />
@@ -108,7 +106,7 @@ export function KpiCard({ title, value, accent, hasFill = false, trend }: KpiCar
         <div
           style={{
             marginTop: '13px',
-            fontSize: '48px',
+            fontSize: '40px',
             fontWeight: 700,
             color: '#050505',
             lineHeight: 0.95,
@@ -119,7 +117,7 @@ export function KpiCard({ title, value, accent, hasFill = false, trend }: KpiCar
           {value}
         </div>
       </div>
-      <div style={{ position: 'absolute', left: 0, right: 0, bottom: '-1px', height: '60px', opacity: 0.85 }}>
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px', opacity: 0.85 }}>
         <Sparkline color={accent} points={sparklinePoints} hasFill={hasFill} />
       </div>
     </div>
