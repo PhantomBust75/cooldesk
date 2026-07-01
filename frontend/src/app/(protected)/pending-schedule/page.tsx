@@ -46,6 +46,18 @@ function daysColor(days: number): string {
   return "#737373";
 }
 
+function slaTier(days: number): "ok" | "amber" | "red" {
+  if (days >= 7) return "red";
+  if (days >= 3) return "amber";
+  return "ok";
+}
+
+const SLA_COLORS = {
+  ok:    { text: "#525252", track: "#F5F5F5",  fill: "#D1D5DB" },
+  amber: { text: "#92400E", track: "#FEF3C7",  fill: "#F59E0B" },
+  red:   { text: "#991B1B", track: "#FEE2E2",  fill: "#EF4444" },
+};
+
 // ─── inline row state ────────────────────────────────────────────────────────
 
 type RowState = {
@@ -579,9 +591,9 @@ export default function PendingSchedulePage() {
     padding: "10px 12px",
     textAlign: "left" as const,
     fontSize: "11px",
-    fontWeight: 600,
-    color: "#525252",
-    letterSpacing: "0.04em",
+    fontWeight: 500,
+    color: "#A3A3A3",
+    letterSpacing: "0.06em",
     whiteSpace: "nowrap" as const,
     borderBottom: "1px solid #E5E5E5",
     backgroundColor: "#FAFAFA",
@@ -601,8 +613,8 @@ export default function PendingSchedulePage() {
         <div>
           <h1
             style={{
-              fontSize: "32px",
-              fontWeight: 700,
+              fontSize: "36px",
+              fontWeight: 600,
               color: "#0A0A0A",
               margin: 0,
               letterSpacing: "-0.02em",
@@ -693,8 +705,6 @@ export default function PendingSchedulePage() {
               <tbody>
                 {queue.map((job) => {
                   const days = daysWaiting(job.createdAt);
-                  const overdue = days >= 7;
-                  const color = daysColor(days);
                   const isExpanded = expandedJobId === job.id;
 
                   return [
@@ -704,6 +714,8 @@ export default function PendingSchedulePage() {
                         borderBottom: isExpanded ? "none" : "1px solid #F9F9F9",
                         backgroundColor: isExpanded ? "#F9F9F9" : "#FAFAFA",
                       }}
+                      onMouseEnter={(e) => { if (!isExpanded) (e.currentTarget as HTMLTableRowElement).style.backgroundColor = "#F5F5F5"; }}
+                      onMouseLeave={(e) => { if (!isExpanded) (e.currentTarget as HTMLTableRowElement).style.backgroundColor = "#FAFAFA"; }}
                     >
                       {/* JOB ID */}
                       <td
@@ -813,19 +825,20 @@ export default function PendingSchedulePage() {
 
                       {/* DAYS WAITING */}
                       <td style={{ padding: "14px 12px" }}>
-                        <span
-                          style={{
-                            fontSize: "13px",
-                            color,
-                            fontWeight: overdue ? 600 : 400,
-                            textDecoration: overdue ? "underline" : "none",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "4px",
-                          }}
-                        >
-                          {overdue ? "⊙" : ""} {days}d
-                        </span>
+                        {(() => {
+                          const tier = slaTier(days);
+                          const c = SLA_COLORS[tier];
+                          return (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "80px" }}>
+                              <span style={{ fontSize: "13px", fontWeight: tier === "ok" ? 400 : 600, color: c.text }}>
+                                {days}d
+                              </span>
+                              <div style={{ height: "4px", borderRadius: "9999px", backgroundColor: c.track, overflow: "hidden" }}>
+                                <div style={{ height: "100%", borderRadius: "9999px", backgroundColor: c.fill, width: `${Math.min(100, (days / 10) * 100)}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </td>
 
                       {/* SCHEDULE & ASSIGN */}
