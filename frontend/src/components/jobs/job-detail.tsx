@@ -263,20 +263,20 @@ export function JobDetail({ jobId }: { jobId: string }) {
             display: "inline-flex",
             alignItems: "center",
             gap: "4px",
-            fontSize: "12px",
-            color: "#737373",
+            fontSize: "13px",
+            color: "#A3A3A3",
             textDecoration: "none",
           }}
         >
           <ArrowLeft size={12} strokeWidth={1.5} /> All jobs
         </Link>
-        <span style={{ fontSize: "12px", color: "#737373" }}> / {detail.id.slice(0, 8)}</span>
+        <span style={{ fontSize: "13px", color: "#A3A3A3" }}> / {detail.id.slice(0, 8)}</span>
       </div>
 
       {/* ── Header ─────────────────────────────────────────── */}
       <div style={{ marginBottom: "20px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-          <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 700, color: "#0A0A0A", letterSpacing: "-0.02em" }}>
+          <h1 style={{ margin: 0, fontSize: "24px", fontWeight: 600, color: "#0A0A0A", letterSpacing: "-0.01em", fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace" }}>
             {detail.id.slice(0, 8).toUpperCase()}
           </h1>
           <button
@@ -304,8 +304,20 @@ export function JobDetail({ jobId }: { jobId: string }) {
           {revisitCount > 0 ? <span>·</span> : null}
           {revisitCount > 0 ? <span>Revisit #{revisitCount}</span> : null}
           {detail.tags.map((tag) => (
-            <span key={tag} style={{ color: tag === "chronic" ? "#9F1239" : tag === "frequent" ? "#737373" : "#525252", fontWeight: 500 }}>
-              · {tag.charAt(0).toUpperCase() + tag.slice(1)}
+            <span
+              key={tag}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                borderRadius: "9999px",
+                padding: "2px 8px",
+                fontSize: "11px",
+                fontWeight: 500,
+                backgroundColor: tag === "chronic" ? "#FFF1F2" : tag === "frequent" ? "#FFFBEB" : "#F1F5F9",
+                color: tag === "chronic" ? "#9F1239" : tag === "frequent" ? "#92400E" : "#1E293B",
+              }}
+            >
+              {tag.charAt(0).toUpperCase() + tag.slice(1)}
             </span>
           ))}
         </div>
@@ -329,8 +341,8 @@ export function JobDetail({ jobId }: { jobId: string }) {
                   borderBottom: activeTab === tab ? "2px solid #0A0A0A" : "2px solid transparent",
                   padding: "10px 0",
                   marginBottom: "-1px",
-                  fontSize: "14px",
-                  fontWeight: activeTab === tab ? 600 : 400,
+                  fontSize: "13px",
+                  fontWeight: activeTab === tab ? 500 : 400,
                   color: activeTab === tab ? "#171717" : "#737373",
                   cursor: "pointer",
                   textTransform: "capitalize",
@@ -347,7 +359,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "32px", marginBottom: "24px" }}>
                 {/* Customer */}
                 <div>
-                  <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: 600, color: "#737373", letterSpacing: "0.06em", textTransform: "uppercase" }}>Customer</p>
+                  <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.07em", textTransform: "uppercase" }}>Customer</p>
                   <div style={{ display: "grid", gap: "12px" }}>
                     <div>
                       <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#737373" }}>Name</p>
@@ -365,7 +377,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                 </div>
                 {/* Schedule */}
                 <div>
-                  <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: 600, color: "#737373", letterSpacing: "0.06em", textTransform: "uppercase" }}>Schedule</p>
+                  <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.07em", textTransform: "uppercase" }}>Schedule</p>
                   <div style={{ display: "grid", gap: "12px" }}>
                     <div>
                       <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#737373" }}>Technician</p>
@@ -651,7 +663,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
           {/* Payment card */}
           <div style={{ border: "1px solid #E5E5E5", borderRadius: "10px", padding: "14px", backgroundColor: "#fff" }}>
-            <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 600, color: "#737373", letterSpacing: "0.06em", textTransform: "uppercase" }}>Payment</p>
+            <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.07em", textTransform: "uppercase" }}>Payment</p>
             {!detail.payment ? (
               <p style={{ margin: 0, fontSize: "13px", color: "#737373" }}>No payment recorded</p>
             ) : (
