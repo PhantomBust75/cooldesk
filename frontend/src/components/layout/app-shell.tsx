@@ -1,25 +1,29 @@
 "use client";
 
-import { fetchUnreadNotificationCount } from "@/lib/api/notifications";
+import { fetchUnreadNotificationCount, fetchNotifications } from "@/lib/api/notifications";
+import type { NotificationItem } from "@/types/notifications";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, ChevronDown, LogOut, Menu, Search } from "lucide-react";
+import { Bell, ChevronRight, LogOut, Menu, Plus, Search, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
-import { BottomNav } from "./bottom-nav";
 import { Sidebar } from "./sidebar";
 import { SearchModal } from "./search-modal";
 
 function userInitials(name: string | undefined): string {
   if (!name) return "?";
-  return name
-    .split(" ")
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  return name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+}
+
+function formatEventType(eventType: string): string {
+  const withoutPrefix = eventType.includes(".")
+    ? eventType.slice(eventType.indexOf(".") + 1)
+    : eventType;
+  return withoutPrefix
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -28,20 +32,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement | null>(null);
   const isSmallScreen = useMobileBreakpoint();
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setSearchOpen(true);
       }
     }
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  // Close notification popover on outside click
+  useEffect(() => {
+    function onMouseDown(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
+    }
+    if (notifOpen) document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [notifOpen]);
 
   const audience = useMemo(() => {
     return session?.user.role === "dealer" ? "dealer" : "user";
@@ -56,22 +73,279 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     enabled: !isPlatformAdmin,
   });
 
+  const notifsQuery = useQuery({
+    queryKey: ["notifications", audience, "preview"],
+    queryFn: () => fetchNotifications(audience, { limit: 4 }),
+    staleTime: 30_000,
+    enabled: !isPlatformAdmin,
+  });
+
   const unreadCount = unreadCountQuery.data?.count ?? 0;
   const collapsed = isSmallScreen ? !mobileOpen : desktopCollapsed;
   const sidebarWidth = desktopCollapsed ? 56 : 240;
 
+  // ── Notification popover ─────────────────────────────
+  const notifPopover = notifOpen ? (
+    <div
+      style={{
+        position: "absolute",
+        top: "calc(100% + 8px)",
+        right: 0,
+        width: "360px",
+        backgroundColor: "#fff",
+        border: "1px solid #E5E5E5",
+        borderRadius: "12px",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
+        zIndex: 9999,
+        overflow: "hidden",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          padding: "14px 16px",
+          borderBottom: "1px solid #E5E5E5",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span style={{ fontSize: "14px", fontWeight: 500, color: "#0A0A0A" }}>Notifications</span>
+        {unreadCount > 0 && (
+          <span
+            style={{
+              backgroundColor: "#9F1239",
+              color: "#fff",
+              borderRadius: "9999px",
+              fontSize: "11px",
+              fontWeight: 600,
+              padding: "1px 7px",
+            }}
+          >
+            {unreadCount}
+          </span>
+        )}
+      </div>
+      {/* Body */}
+      <div>
+        {(notifsQuery.data ?? []).map((notif: NotificationItem, i: number) => (
+          <div
+            key={notif.id}
+            style={{
+              padding: "12px 16px",
+              borderBottom: i < (notifsQuery.data?.length ?? 0) - 1 ? "1px solid #F5F5F5" : "none",
+              display: "flex",
+              gap: "10px",
+              alignItems: "flex-start",
+              backgroundColor: notif.isRead ? "#fff" : "#FAFAFA",
+              cursor: "pointer",
+            }}
+            onClick={() => {
+              setNotifOpen(false);
+              router.push("/notifications");
+            }}
+          >
+            <span
+              style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                backgroundColor: notif.isRead ? "transparent" : "#2563EB",
+                marginTop: "5px",
+                flexShrink: 0,
+                display: "block",
+              }}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: "13px", fontWeight: notif.isRead ? 400 : 500, color: "#171717", lineHeight: 1.4 }}>
+                {formatEventType(notif.eventType)}
+              </div>
+              <div style={{ fontSize: "12px", color: "#737373", marginTop: "2px", lineHeight: 1.4 }}>
+                Tap to view details
+              </div>
+              <div style={{ fontSize: "11px", color: "#A3A3A3", marginTop: "4px" }}>
+                {new Date(notif.createdAt).toLocaleString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
+            </div>
+          </div>
+        ))}
+        {!notifsQuery.data?.length && (
+          <div style={{ padding: "20px 16px", textAlign: "center", fontSize: "13px", color: "#737373" }}>
+            No notifications
+          </div>
+        )}
+      </div>
+      {/* Footer */}
+      <div style={{ borderTop: "1px solid #E5E5E5" }}>
+        <button
+          type="button"
+          onClick={() => { setNotifOpen(false); router.push("/notifications"); }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "5px",
+            width: "100%",
+            padding: "13px 16px",
+            fontSize: "13px",
+            fontWeight: 500,
+            color: "#0A0A0A",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          View all notifications <ChevronRight size={13} strokeWidth={1.5} />
+        </button>
+      </div>
+    </div>
+  ) : null;
+
+  // ── Bell button (shared desktop + mobile) ────────────
+  const BellButton = () => (
+    <div ref={notifRef} style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => setNotifOpen((prev) => !prev)}
+        style={{
+          position: "relative",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "40px",
+          height: "40px",
+          borderRadius: "8px",
+          backgroundColor: notifOpen ? "#F5F5F5" : "transparent",
+          color: notifOpen ? "#0A0A0A" : "#737373",
+          transition: "background-color 120ms",
+          padding: 0,
+        }}
+        aria-label="Open notifications"
+      >
+        <Bell size={18} strokeWidth={1.5} />
+        {unreadCount > 0 && (
+          <span
+            style={{
+              position: "absolute",
+              top: "8px",
+              right: "8px",
+              width: "7px",
+              height: "7px",
+              backgroundColor: "#9F1239",
+              borderRadius: "9999px",
+              border: "1.5px solid #fff",
+            }}
+          />
+        )}
+      </button>
+      {notifPopover}
+    </div>
+  );
+
+  // ── Avatar button (shared desktop + mobile) ──────────
+  const AvatarButton = () => (
+    <div style={{ position: "relative" }} ref={menuRef}>
+      <button
+        type="button"
+        onClick={() => setUserMenuOpen((prev) => !prev)}
+        style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}
+        aria-label="User menu"
+      >
+        <div
+          style={{
+            width: "32px",
+            height: "32px",
+            borderRadius: "9999px",
+            backgroundColor: userMenuOpen ? "#E5E5E5" : "#F5F5F5",
+            border: `1px solid ${userMenuOpen ? "#D4D4D4" : "#E5E5E5"}`,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#171717",
+            fontSize: "11px",
+            fontWeight: 600,
+            letterSpacing: "0.02em",
+            transition: "background-color 120ms, border-color 120ms",
+          }}
+        >
+          {userInitials(session?.user.name)}
+        </div>
+        <span
+          style={{
+            position: "absolute",
+            bottom: "0px",
+            right: "0px",
+            width: "8px",
+            height: "8px",
+            borderRadius: "50%",
+            backgroundColor: "#10B981",
+            border: "2px solid #fff",
+          }}
+        />
+      </button>
+      {userMenuOpen && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            right: 0,
+            width: "200px",
+            backgroundColor: "#fff",
+            border: "1px solid #E5E5E5",
+            borderRadius: "12px",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+            zIndex: 9999,
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ padding: "12px 14px", borderBottom: "1px solid #F5F5F5" }}>
+            <div style={{ fontSize: "13px", fontWeight: 500, color: "#171717" }}>
+              {session?.user.name ?? "User"}
+            </div>
+            <div style={{ fontSize: "12px", color: "#737373", marginTop: "1px", textTransform: "capitalize" }}>
+              {session?.user.role?.replace(/_/g, " ")}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => { logout(); setUserMenuOpen(false); }}
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "9px",
+              fontSize: "13px",
+              color: "#991B1B",
+              textAlign: "left",
+            }}
+          >
+            <LogOut size={14} strokeWidth={1.5} color="#EF4444" />
+            Log out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#FAFAFA", color: "#171717" }}>
-      {/* Backdrop — mobile sidebar open */}
+      {/* Mobile sidebar backdrop */}
       {isSmallScreen && mobileOpen ? (
         <div
           onClick={() => setMobileOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 39,
-            backgroundColor: "rgba(0,0,0,0.4)",
-          }}
+          style={{ position: "fixed", inset: 0, zIndex: 39, backgroundColor: "rgba(0,0,0,0.4)" }}
         />
       ) : null}
 
@@ -79,15 +353,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         collapsed={collapsed}
         isSmallScreen={isSmallScreen}
         onToggle={() => {
-          if (isSmallScreen) {
-            setMobileOpen((prev) => !prev);
-            return;
-          }
+          if (isSmallScreen) { setMobileOpen((prev) => !prev); return; }
           setDesktopCollapsed((prev) => !prev);
         }}
-        onNavigate={() => {
-          if (isSmallScreen) setMobileOpen(false);
-        }}
+        onNavigate={() => { if (isSmallScreen) setMobileOpen(false); }}
       />
 
       <div
@@ -99,7 +368,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           flexDirection: "column",
         }}
       >
-        {/* ── Mobile header ─────────────────────────────────── */}
+        {/* ── Mobile header ─────────────────────────────── */}
         {isSmallScreen ? (
           <header
             style={{
@@ -108,7 +377,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               backgroundColor: "#fff",
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
               padding: "0 12px",
               position: "sticky",
               top: 0,
@@ -116,6 +384,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               gap: "10px",
             }}
           >
+            {/* Hamburger */}
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
@@ -137,127 +406,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Menu size={17} strokeWidth={1.5} />
             </button>
 
-            <span
-              style={{
-                fontSize: "15px",
-                fontWeight: 600,
-                color: "#0A0A0A",
-                letterSpacing: "-0.01em",
-                flex: 1,
-                textAlign: "center",
-              }}
-            >
-              CoolDesk
-            </span>
+            {/* Brand — left aligned */}
+            <div style={{ display: "flex", alignItems: "center", gap: "7px", flex: 1 }}>
+              <Zap size={18} strokeWidth={1.5} color="#0A0A0A" />
+              <span style={{ fontSize: "15px", fontWeight: 600, color: "#0A0A0A", letterSpacing: "-0.01em" }}>
+                CoolDesk
+              </span>
+            </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <button
-                type="button"
-                onClick={() => router.push("/notifications")}
-                style={{
-                  position: "relative",
-                  border: "1px solid #E5E5E5",
-                  borderRadius: "8px",
-                  width: "36px",
-                  height: "36px",
-                  backgroundColor: "#fff",
-                  color: "#404040",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                }}
-                aria-label="Open notifications"
-              >
-                <Bell size={17} strokeWidth={1.5} />
-                {unreadCount > 0 ? (
-                  <span
-                    style={{
-                      position: "absolute",
-                      right: "8px",
-                      top: "8px",
-                      width: "7px",
-                      height: "7px",
-                      borderRadius: "50%",
-                      backgroundColor: "#EF4444",
-                      border: "1.5px solid #fff",
-                    }}
-                  />
-                ) : null}
-              </button>
-
-              <div style={{ position: "relative" }} ref={menuRef}>
-                <button
-                  type="button"
-                  onClick={() => setUserMenuOpen((prev) => !prev)}
+            {/* Right: plus + bell + avatar */}
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              {session?.user.role !== "technician" && (
+                <Link
+                  href="/log-new-job"
                   style={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    border: "1px solid #E5E5E5",
-                    backgroundColor: "#0A0A0A",
-                    color: "#fff",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    cursor: "pointer",
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "8px",
+                    color: "#404040",
+                    textDecoration: "none",
                   }}
-                  aria-label="User menu"
+                  aria-label="Log new job"
                 >
-                  {userInitials(session?.user.name)}
-                </button>
-
-                {userMenuOpen ? (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 6px)",
-                      right: 0,
-                      backgroundColor: "#fff",
-                      border: "1px solid #E5E5E5",
-                      borderRadius: "10px",
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                      zIndex: 100,
-                      minWidth: "180px",
-                    }}
-                  >
-                    <div style={{ padding: "10px 14px", borderBottom: "1px solid #E5E5E5" }}>
-                      <div style={{ fontSize: "13px", fontWeight: 500, color: "#171717" }}>
-                        {session?.user.name}
-                      </div>
-                      <div style={{ fontSize: "11px", color: "#737373", marginTop: "2px", textTransform: "capitalize" }}>
-                        {session?.user.role?.replace("_", " ")}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => { logout(); setUserMenuOpen(false); }}
-                      style={{
-                        width: "100%",
-                        padding: "10px 14px",
-                        textAlign: "left",
-                        backgroundColor: "transparent",
-                        border: "none",
-                        fontSize: "13px",
-                        color: "#991B1B",
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <LogOut size={13} strokeWidth={1.5} />
-                      Sign out
-                    </button>
-                  </div>
-                ) : null}
-              </div>
+                  <Plus size={22} strokeWidth={1.5} />
+                </Link>
+              )}
+              <BellButton />
+              <AvatarButton />
             </div>
           </header>
         ) : (
-          /* ── Desktop header ─────────────────────────────── */
+          /* ── Desktop header ───────────────────────────── */
           <header
             style={{
               height: "56px",
@@ -272,6 +454,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               zIndex: 30,
             }}
           >
+            {/* Search bar */}
             <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
               <button
                 type="button"
@@ -315,45 +498,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </button>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <button
-                type="button"
-                onClick={() => router.push("/notifications")}
-                style={{
-                  position: "relative",
-                  border: "1px solid #E5E5E5",
-                  borderRadius: "8px",
-                  width: "34px",
-                  height: "34px",
-                  backgroundColor: "#fff",
-                  color: "#404040",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                }}
-                aria-label="Open notifications"
-              >
-                <Bell size={18} strokeWidth={1.5} />
-                {unreadCount > 0 ? (
-                  <span
-                    style={{
-                      position: "absolute",
-                      right: "7px",
-                      top: "7px",
-                      width: "7px",
-                      height: "7px",
-                      borderRadius: "50%",
-                      backgroundColor: "#EF4444",
-                    }}
-                  />
-                ) : null}
-              </button>
-
-              {session?.user.role !== "technician" ? (
+            {/* Right: log-new-job + divider + bell + avatar */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {session?.user.role !== "technician" && (
                 <Link
                   href="/log-new-job"
                   style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
                     border: "1px solid #E5E5E5",
                     borderRadius: "8px",
                     padding: "7px 12px",
@@ -361,91 +514,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     color: "#404040",
                     fontSize: "13px",
                     textDecoration: "none",
+                    whiteSpace: "nowrap",
                   }}
                 >
+                  <Plus size={13} strokeWidth={1.5} />
                   Log new job
                 </Link>
-              ) : null}
-
-              <div style={{ position: "relative" }} ref={menuRef}>
-                <button
-                  type="button"
-                  onClick={() => setUserMenuOpen((prev) => !prev)}
-                  style={{
-                    border: "1px solid #E5E5E5",
-                    borderRadius: "8px",
-                    padding: "7px 12px",
-                    backgroundColor: "#fff",
-                    color: "#404040",
-                    fontSize: "13px",
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                >
-                  {session?.user.name || "User"}
-                  <ChevronDown size={14} strokeWidth={1.5} />
-                </button>
-
-                {userMenuOpen ? (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 4px)",
-                      right: 0,
-                      backgroundColor: "#fff",
-                      border: "1px solid #E5E5E5",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                      zIndex: 100,
-                      minWidth: "160px",
-                    }}
-                  >
-                    <div style={{ padding: "8px 12px", borderBottom: "1px solid #E5E5E5", fontSize: "12px", color: "#737373" }}>
-                      Role: <span style={{ fontWeight: 600, color: "#171717" }}>{session?.user.role}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => { logout(); setUserMenuOpen(false); }}
-                      style={{
-                        width: "100%",
-                        padding: "10px 12px",
-                        textAlign: "left",
-                        backgroundColor: "transparent",
-                        border: "none",
-                        fontSize: "13px",
-                        color: "#991B1B",
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <LogOut size={13} strokeWidth={1.5} />
-                      Sign out
-                    </button>
-                  </div>
-                ) : null}
-              </div>
+              )}
+              <div style={{ width: "1px", height: "20px", backgroundColor: "#E5E5E5" }} />
+              <BellButton />
+              <AvatarButton />
             </div>
           </header>
         )}
 
-        <main
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            backgroundColor: "#FAFAFA",
-            padding: 0,
-            paddingBottom: isSmallScreen ? "60px" : 0,
-          }}
-        >
+        <main style={{ flex: 1, overflowY: "auto", backgroundColor: "#FAFAFA", padding: 0 }}>
           {children}
         </main>
       </div>
-
-      {isSmallScreen ? <BottomNav unreadCount={unreadCount} /> : null}
 
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
