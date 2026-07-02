@@ -82,14 +82,14 @@ function KpiCard({ title, value }: { title: string; value: string }) {
         borderRadius: "12px",
         border: "1px solid #E5E5E5",
         backgroundColor: "#fff",
-        padding: "14px",
+        padding: "20px",
       }}
     >
       <p style={{ margin: "0 0 6px", fontSize: "12px", color: "#737373" }}>{title}</p>
       <p
         style={{
           margin: 0,
-          fontSize: "26px",
+          fontSize: "24px",
           fontWeight: 600,
           color: "#171717",
           letterSpacing: "-0.02em",
@@ -116,10 +116,10 @@ function TabButton({
       onClick={onClick}
       style={{
         border: "none",
-        borderBottom: `2px solid ${active ? "#0A0A0A" : "transparent"}`,
+        boxShadow: active ? "inset 0 -2px 0 0 #0A0A0A" : "none",
         backgroundColor: "transparent",
         color: active ? "#171717" : "#737373",
-        padding: "10px 0",
+        padding: "12px 18px",
         marginBottom: "-1px",
         fontSize: "13px",
         cursor: "pointer",
@@ -259,7 +259,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <section style={{ padding: "24px", maxWidth: "1040px" }}>
+    <section style={{ padding: "24px", maxWidth: "1400px" }}>
       {/* Header */}
       <header
         style={{
@@ -267,7 +267,7 @@ export default function AnalyticsPage() {
           alignItems: "flex-start",
           justifyContent: "space-between",
           gap: "12px",
-          marginBottom: "20px",
+          marginBottom: "24px",
         }}
       >
         <div>
@@ -290,15 +290,17 @@ export default function AnalyticsPage() {
         <ExportButton onClick={handleExport} />
       </header>
 
-      {/* Tab bar */}
-      <div
-        style={{
-          display: "flex",
-          gap: "18px",
-          borderBottom: "1px solid #E5E5E5",
-          marginBottom: "16px",
-        }}
-      >
+      <div style={{ backgroundColor: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", overflow: "hidden" }}>
+        {/* Tab bar */}
+        <div
+          style={{
+            display: "flex",
+            gap: "18px",
+            borderBottom: "1px solid #E5E5E5",
+            paddingLeft: "16px",
+            paddingRight: "16px",
+          }}
+        >
         <TabButton active={tab === "business"} onClick={() => setTab("business")}>
           Business
         </TabButton>
@@ -335,7 +337,7 @@ export default function AnalyticsPage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gridTemplateColumns: "repeat(4, 1fr)",
                 gap: "12px",
                 marginBottom: "20px",
               }}
@@ -475,7 +477,7 @@ export default function AnalyticsPage() {
                   <tr style={{ backgroundColor: "#F9F9F9", color: "#737373", textAlign: "left" }}>
                     {["NAME", "JOBS COMPLETED", "REVENUE (SAR)", "1ST VISIT RES.", "AVG RESOLUTION", "ON-TIME RATE", "RATING"].map(
                       (h) => (
-                        <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                        <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5", fontSize: "13px", color: "#525252", fontWeight: 500 }}>
                           {h}
                         </th>
                       ),
@@ -621,6 +623,7 @@ export default function AnalyticsPage() {
           </section>
         </>
       ) : null}
+      </div>
     </section>
   );
 }
