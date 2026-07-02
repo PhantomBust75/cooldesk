@@ -2,6 +2,7 @@
 
 import { AuthProvider } from "@/contexts/auth-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SnackbarProvider } from "notistack";
 import { useState } from "react";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
@@ -20,7 +21,15 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>{children}</AuthProvider>
+      <AuthProvider>
+        <SnackbarProvider
+          maxSnack={3}
+          anchorOrigin={{ vertical: "top", horizontal: "right" }}
+          autoHideDuration={3000}
+        >
+          {children}
+        </SnackbarProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

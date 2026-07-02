@@ -228,7 +228,7 @@ export class JobsController {
     );
   }
 
-  @Post('jobs/:id/reassign')
+  @Post('office/jobs/:id/reassign')
   @UseGuards(TenantGuard, RolesGuard)
   @Roles('owner', 'office_staff')
   reassignTechnician(

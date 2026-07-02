@@ -32,7 +32,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 const TERMINAL_OR_CLOSED = new Set(["completed", "resolved", "resolved_on_revisit", "cancelled"]);
-const OWNER_STATUSES = [
+const INSTALLATION_STATUSES = [
   "pending_schedule",
   "scheduled",
   "assigned",
@@ -40,13 +40,21 @@ const OWNER_STATUSES = [
   "in_transit",
   "in_process",
   "completed",
+  "cancelled",
+];
+
+const COMPLAINT_STATUSES = [
   "new",
+  "assigned",
+  "acknowledged",
+  "in_transit",
+  "in_process",
+  "resolved",
   "needs_revisit",
   "revisit_scheduled",
-  "resolved",
   "resolved_on_revisit",
-  "cancelled",
   "cancellation_requested",
+  "cancelled",
 ];
 
 export function JobDetail({ jobId }: { jobId: string }) {
@@ -741,7 +749,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
               style={{ borderRadius: "8px", border: "1px solid #E5E5E5", padding: "8px 10px", fontSize: "13px", color: "#171717" }}
             >
               <option value="">Select status</option>
-              {OWNER_STATUSES.map((s) => (
+              {(detail.type === "complaint" ? COMPLAINT_STATUSES : INSTALLATION_STATUSES).map((s) => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
