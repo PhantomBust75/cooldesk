@@ -331,6 +331,12 @@ export class CreateOfficeTechnicianDto {
   password!: string;
 }
 
+export class UpdateOfficeTechnicianDto {
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
 export class MobileSyncPayloadDto {
   @IsOptional()
   @IsEnum([

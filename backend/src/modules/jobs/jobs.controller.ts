@@ -20,6 +20,7 @@ import {
   BatchScheduleDto,
   CreateJobDto,
   CreateOfficeTechnicianDto,
+  UpdateOfficeTechnicianDto,
   CustomerLookupQueryDto,
   DecideCancellationRequestDto,
   DealerCancellationRequestDto,
@@ -147,6 +148,13 @@ export class JobsController {
   @Roles('owner')
   createOfficeTechnician(@Body() body: CreateOfficeTechnicianDto, @Req() req: UserRequest) {
     return this.jobsService.createOfficeTechnician(body, req.context);
+  }
+
+  @Patch('office/technicians/:id')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff')
+  updateOfficeTechnician(@Param('id') id: string, @Body() body: UpdateOfficeTechnicianDto, @Req() req: UserRequest) {
+    return this.jobsService.updateOfficeTechnician(id, body, req.context);
   }
 
   @Get('office/revisits/pending')

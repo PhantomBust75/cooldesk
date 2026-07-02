@@ -277,7 +277,7 @@ export default function TechniciansPage() {
                 inset: 0,
                 backgroundColor: 'rgba(0,0,0,0.35)',
                 display: 'flex',
-                alignItems: 'flex-end',
+                alignItems: 'center',
                 justifyContent: 'center',
                 zIndex: 999,
               }}
@@ -286,12 +286,12 @@ export default function TechniciansPage() {
               <div
                 style={{
                   backgroundColor: '#fff',
-                  borderRadius: '16px 16px 0 0',
+                  borderRadius: '16px',
                   width: '100%',
                   maxWidth: '520px',
-                  boxShadow: '0 -4px 24px rgba(0,0,0,0.10)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
                   overflow: 'hidden',
-                  maxHeight: '95vh',
+                  maxHeight: '90vh',
                   display: 'flex',
                   flexDirection: 'column',
                 }}
@@ -346,11 +346,11 @@ export default function TechniciansPage() {
         <RoleGate allowedRoles={["owner"]}>
           {editTarget && (
             <div
-              style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 999 }}
+              style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: '24px' }}
               onClick={() => setEditTarget(null)}
             >
               <div
-                style={{ backgroundColor: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: '520px', boxShadow: '0 -4px 24px rgba(0,0,0,0.10)', overflow: 'hidden', maxHeight: '95vh', display: 'flex', flexDirection: 'column' }}
+                style={{ backgroundColor: '#fff', borderRadius: '16px', width: '100%', maxWidth: '520px', boxShadow: '0 8px 32px rgba(0,0,0,0.14)', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}

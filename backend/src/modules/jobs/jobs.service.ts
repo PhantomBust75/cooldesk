@@ -15,6 +15,7 @@ import {
   CustomerLookupQueryDto,
   CreateJobDto,
   CreateOfficeTechnicianDto,
+  UpdateOfficeTechnicianDto,
   DecideCancellationRequestDto,
   JobStatus,
   JobType,
@@ -559,6 +560,34 @@ export class JobsService {
     );
 
     return { technicianId: created.rows[0].id };
+  }
+
+  async updateOfficeTechnician(
+    technicianId: string,
+    input: UpdateOfficeTechnicianDto,
+    ctx: RequestContext,
+  ): Promise<{ ok: true }> {
+    if (ctx.role !== 'owner' && ctx.role !== 'office_staff') {
+      throw new ForbiddenException('Insufficient permissions');
+    }
+
+    const existing = await this.db.query<{ id: string }>(
+      `SELECT id FROM users WHERE id = $1 AND organization_id = $2 AND role = 'technician' AND is_deleted = FALSE LIMIT 1`,
+      [technicianId, ctx.organizationId],
+    );
+
+    if (existing.rows.length === 0) {
+      throw new NotFoundException('Technician not found');
+    }
+
+    if (input.isActive !== undefined) {
+      await this.db.query(
+        `UPDATE users SET is_active = $1, updated_at = NOW() WHERE id = $2 AND organization_id = $3`,
+        [input.isActive, technicianId, ctx.organizationId],
+      );
+    }
+
+    return { ok: true };
   }
 
   async findById(jobId: string, ctx: RequestContext): Promise<Record<string, unknown>> {
