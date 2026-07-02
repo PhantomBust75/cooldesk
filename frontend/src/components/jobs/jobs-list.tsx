@@ -683,9 +683,9 @@ export function JobsList() {
                         padding: "10px 16px",
                         textAlign: "left",
                         fontSize: "11px",
-                        color: "#94A3B8",
+                        color: "#A3A3A3",
                         fontWeight: 500,
-                        letterSpacing: "0.04em",
+                        letterSpacing: "0.06em",
                         whiteSpace: "nowrap",
                       }}
                     >
@@ -709,8 +709,8 @@ export function JobsList() {
                       style={{
                         padding: "14px 16px",
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "12px",
-                        color: "#525252",
+                        fontSize: "13px",
+                        color: "#171717",
                         whiteSpace: "nowrap",
                       }}
                     >
@@ -722,7 +722,6 @@ export function JobsList() {
                         padding: "14px 16px",
                         color: "#171717",
                         fontSize: "13px",
-                        fontWeight: 500,
                         whiteSpace: "nowrap",
                         borderLeft: job.tags.includes("chronic") ? "2px solid #9F1239" : "2px solid transparent",
                       }}
