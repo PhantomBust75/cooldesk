@@ -46,14 +46,14 @@ function JobTag({ type }: { type: keyof typeof TAG_STYLES }) {
 
 const tableCardStyle: CSSProperties = {
   backgroundColor: '#fff',
-  border: '1px solid #E5E7EB',
+  border: '1px solid #E5E5E5',
   borderRadius: '12px',
   overflow: 'hidden',
 };
 
 const tableToolbarStyle: CSSProperties = {
-  padding: '14px 18px',
-  borderBottom: '1px solid #E5E7EB',
+  padding: '14px 16px',
+  borderBottom: '1px solid #E5E5E5',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
@@ -71,10 +71,10 @@ const headerCellStyle: CSSProperties = {
 };
 
 const bodyCellStyle: CSSProperties = {
-  padding: '16px 18px',
+  padding: '16px',
   fontSize: '14px',
   color: '#536987',
-  borderBottom: '1px solid #EEF0F3',
+  borderBottom: '1px solid #F1F5F9',
   verticalAlign: 'middle',
 };
 
@@ -140,10 +140,10 @@ export default function DashboardPage() {
     <RoleGate allowedRoles={['owner', 'office_staff', 'technician', 'dealer']}>
       <section style={{ padding: isMobile ? '18px 16px' : '34px 24px 40px', maxWidth: '1400px' }}>
         <div style={{ marginBottom: isMobile ? '22px' : '36px' }}>
-          <h1 style={{ fontSize: isMobile ? '30px' : '36px', fontWeight: 700, color: '#050505', margin: 0, lineHeight: 1.1, letterSpacing: '0' }}>The Control Tower</h1>
+          <h1 style={{ fontSize: isMobile ? '30px' : '36px', fontWeight: 600, color: '#0A0A0A', margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>The Control Tower</h1>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, minmax(0, 1fr))', gap: isMobile ? '12px' : '14px', marginBottom: isMobile ? '24px' : '31px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, minmax(0, 1fr))', gap: isMobile ? '12px' : '12px', marginBottom: isMobile ? '24px' : '32px' }}>
           {kpiCards.map((card) => (
             <KpiCard
               key={card.title}
@@ -161,7 +161,7 @@ export default function DashboardPage() {
           <div style={tableCardStyle}>
             <div style={tableToolbarStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 500, color: '#111827' }}>Needs revisit</span>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: '#171717' }}>Needs revisit</span>
                 {needsRevisitJobs.length > 0 && (
                   <span style={{ fontSize: '12px', fontWeight: 500, padding: '2px 8px', borderRadius: '9999px', border: '1px solid #FECDD3', backgroundColor: '#FFF1F2', color: '#BE123C' }}>{needsRevisitJobs.length}</span>
                 )}
@@ -206,8 +206,8 @@ export default function DashboardPage() {
                         <td
                           style={{
                             ...bodyCellStyle,
-                            color: '#111827',
-                            fontWeight: 700,
+                            color: '#0F172A',
+                            fontWeight: 600,
                             borderLeft: job.tags.includes('chronic') ? '2px solid #9F1239' : '2px solid transparent',
                             paddingLeft: '16px',
                           }}
@@ -217,7 +217,7 @@ export default function DashboardPage() {
                         <td style={bodyCellStyle}>{job.brandName ?? '—'}</td>
                         <td style={bodyCellStyle}>{job.assignedTechnicianName ?? <em style={{ color: '#9CA3AF', fontStyle: 'italic' }}>Unassigned</em>}</td>
                         <td style={{ ...bodyCellStyle, color: '#7E93B2' }}>{new Date(job.createdAt).toLocaleDateString([], { month: 'short', day: '2-digit' })}</td>
-                        <td style={{ ...bodyCellStyle, color: '#BE123C', fontWeight: 700 }}>#{index + 2}</td>
+                        <td style={{ ...bodyCellStyle, color: '#9F1239', fontWeight: 500 }}>#{index + 2}</td>
                         <td style={bodyCellStyle}>
                           <div style={{ display: 'flex', gap: '4px' }}>
                             {job.tags.includes('chronic') && <JobTag type="chronic" />}
@@ -238,7 +238,7 @@ export default function DashboardPage() {
           <div style={tableCardStyle}>
             <div style={tableToolbarStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 500, color: '#111827' }}>Active jobs</span>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: '#171717' }}>Active jobs</span>
                 {activeJobs.length > 0 && (
                   <span style={{ fontSize: '14px', color: '#525252' }}>({activeJobs.length})</span>
                 )}
@@ -271,8 +271,8 @@ export default function DashboardPage() {
                         <td
                           style={{
                             ...bodyCellStyle,
-                            color: '#111827',
-                            fontWeight: 700,
+                            color: '#0F172A',
+                            fontWeight: 600,
                             borderLeft: job.tags.includes('chronic') ? '2px solid #9F1239' : '2px solid transparent',
                             paddingLeft: '16px',
                           }}
