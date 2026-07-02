@@ -177,11 +177,11 @@ export default function DealerManagementPage() {
 
   return (
     <RoleGate allowedRoles={["owner", "office_staff"]}>
-      <section style={{ padding: isMobile ? "16px" : "32px", maxWidth: "980px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px", flexWrap: "wrap", gap: "12px" }}>
+      <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "1100px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
           <div>
-            <h1 style={{ fontSize: "28px", fontWeight: 700, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em" }}>Dealers</h1>
-            <p style={{ fontSize: "14px", color: "#737373", margin: "4px 0 0", fontWeight: 400 }}>
+            <h1 style={{ fontSize: "36px", fontWeight: 600, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em" }}>Dealers</h1>
+            <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0", fontWeight: 400 }}>
               {dealersQuery.data ? `${total} dealer${total === 1 ? "" : "s"}` : "Loading..."}
             </p>
           </div>
@@ -189,7 +189,7 @@ export default function DealerManagementPage() {
             <button
               type="button"
               onClick={openCreateModal}
-              style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 16px", borderRadius: "8px", border: "1px solid #0A0A0A", backgroundColor: "#0A0A0A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: 500 }}
+              style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "8px 14px", borderRadius: "8px", border: "none", backgroundColor: "#0A0A0A", color: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: 500 }}
             >
               <Plus size={16} strokeWidth={2} /> Add dealer
             </button>
@@ -217,7 +217,7 @@ export default function DealerManagementPage() {
           </div>
         ) : null}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {dealersQuery.isLoading ? (
             <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "12px", padding: "20px", fontSize: "14px", color: "#737373" }}>
               Loading dealers...
@@ -263,9 +263,9 @@ export default function DealerManagementPage() {
                 tabIndex={0}
                 onClick={() => setPanelDealer(dealer)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPanelDealer(dealer); }}
-                style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', flex: 1, minWidth: 0 }}
+                style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', flex: 1, minWidth: 0 }}
               >
-                <Avatar name={dealer.name} size={44} />
+                <Avatar name={dealer.name} size={40} />
                 <span style={{ fontSize: '15px', fontWeight: 500, color: '#171717', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {dealer.name}
                 </span>
