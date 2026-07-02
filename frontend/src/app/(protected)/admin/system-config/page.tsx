@@ -113,8 +113,8 @@ export default function SystemConfigPage() {
   }
 
   return (
-    <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "980px" }}>
-      <div style={{ marginBottom: "20px" }}>
+    <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "900px" }}>
+      <div style={{ marginBottom: "24px" }}>
         <h1
           style={{
             fontSize: "36px",
@@ -134,17 +134,17 @@ export default function SystemConfigPage() {
 
       <div
         style={{
-          backgroundColor: "#F5F5F5",
+          backgroundColor: "#FAFAFA",
           border: "1px solid #E5E5E5",
           borderRadius: "8px",
-          padding: "12px 16px",
+          padding: "10px 14px",
           display: "flex",
           gap: "10px",
           marginBottom: "20px",
         }}
       >
-        <Info size={16} strokeWidth={1.5} color="#737373" style={{ flexShrink: 0, marginTop: "1px" }} />
-        <p style={{ margin: 0, fontSize: "12px", color: "#525252", lineHeight: 1.5 }}>
+        <Info size={14} strokeWidth={1.5} color="#525252" style={{ flexShrink: 0, marginTop: "1px" }} />
+        <p style={{ margin: 0, fontSize: "13px", color: "#525252", lineHeight: 1.5 }}>
           Configuration changes apply only to new evaluations from the save point onward. Existing flags are
           point-in-time snapshots and are not retroactively recalculated.
         </p>
@@ -187,61 +187,63 @@ export default function SystemConfigPage() {
             backgroundColor: "#fff",
             border: "1px solid #E5E5E5",
             borderRadius: "12px",
-            padding: "20px",
-            marginBottom: "16px",
+            overflow: "hidden",
+            marginBottom: "20px",
           }}
         >
-          <h2 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: "0 0 16px" }}>
-            {section.title}
-          </h2>
-
-          {section.fields.map((field) => (
-            <div key={field.key} style={{ marginBottom: "20px" }}>
-              <label
-                style={{
-                  display: "block",
-                  fontWeight: 600,
-                  fontSize: "13px",
-                  color: "#171717",
-                  marginBottom: "4px",
-                }}
-              >
-                {field.label}
-              </label>
-              <div style={{ fontSize: "12px", color: "#737373", marginBottom: "8px" }}>{field.helperText}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <input
-                  type="number"
-                  defaultValue={getValue(field.key, field.default)}
-                  onBlur={(e) => saveField(field.key, e.target.value)}
+          <div style={{ backgroundColor: "#FAFAFA", borderBottom: "1px solid #E5E5E5", padding: "12px 20px" }}>
+            <span style={{ fontSize: "13px", fontWeight: 500, color: "#171717" }}>{section.title}</span>
+          </div>
+          <div style={{ padding: "20px" }}>
+              {section.fields.map((field) => (
+              <div key={field.key} style={{ marginBottom: "20px" }}>
+                <label
                   style={{
-                    width: "120px",
-                    padding: "8px 10px",
-                    border: "1px solid #E5E5E5",
-                    borderRadius: "8px",
+                    display: "block",
+                    fontWeight: 500,
                     fontSize: "13px",
-                    color: "#171717",
+                    color: "#404040",
+                    marginBottom: "4px",
                   }}
-                />
-                {savedKey === field.key ? (
-                  <span
+                >
+                  {field.label}
+                </label>
+                <div style={{ fontSize: "12px", color: "#737373", marginBottom: "8px" }}>{field.helperText}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <input
+                    type="number"
+                    defaultValue={getValue(field.key, field.default)}
+                    onBlur={(e) => saveField(field.key, e.target.value)}
                     style={{
-                      fontSize: "12px",
-                      color: "#10B981",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "4px",
+                      width: "140px",
+                      padding: "9px 10px",
+                      border: "1px solid #E5E5E5",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      color: "#171717",
+                      minHeight: "44px",
                     }}
-                  >
-                    <Check size={12} strokeWidth={2} /> Saved
-                  </span>
-                ) : null}
-                {errorKey === field.key ? (
-                  <span style={{ fontSize: "12px", color: "#EF4444" }}>Error saving</span>
-                ) : null}
+                  />
+                  {savedKey === field.key ? (
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        color: "#10B981",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      <Check size={12} strokeWidth={2} /> Saved
+                    </span>
+                  ) : null}
+                  {errorKey === field.key ? (
+                    <span style={{ fontSize: "12px", color: "#EF4444" }}>Error saving</span>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ))}
     </section>
