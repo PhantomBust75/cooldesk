@@ -104,8 +104,8 @@ export default function NotificationsPage() {
           <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0", fontWeight: 400 }}>In-app alerts scoped to your organization and role.</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "9999px", border: "1px solid #E5E5E5", backgroundColor: "#FAFAFA", padding: "6px 10px", fontSize: "12px", color: "#404040" }}>
-            <BellRing size={13} strokeWidth={1.5} /> Unread: {unreadCountQuery.data?.count ?? "--"}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "9999px", border: "none", backgroundColor: "#2563EB", padding: "4px 10px", fontSize: "11px", fontWeight: 600, color: "#fff" }}>
+            <BellRing size={11} strokeWidth={1.5} /> {unreadCountQuery.data?.count ?? "--"}
           </div>
           <button type="button" onClick={() => notificationsQuery.refetch()} style={{ display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#FAFAFA", padding: "7px 12px", fontSize: "13px", color: "#404040", cursor: "pointer" }}>
             <RefreshCw size={13} strokeWidth={1.5} /> Refresh
@@ -128,11 +128,12 @@ export default function NotificationsPage() {
               onClick={() => setTab(item.key)}
               style={{
                 borderRadius: "9999px",
-                border: `1px solid ${tab === item.key ? "#0A0A0A" : "#E5E5E5"}`,
-                backgroundColor: tab === item.key ? "#0A0A0A" : "#FAFAFA",
-                color: tab === item.key ? "#FAFAFA" : "#404040",
-                padding: "4px 10px",
-                fontSize: "12px",
+                border: "none",
+                backgroundColor: tab === item.key ? "#0A0A0A" : "#F5F5F5",
+                color: tab === item.key ? "#fff" : "#404040",
+                padding: "6px 14px",
+                fontSize: "13px",
+                fontWeight: tab === item.key ? 500 : 400,
                 cursor: "pointer",
               }}
             >
@@ -182,7 +183,7 @@ export default function NotificationsPage() {
               display: "flex",
               alignItems: "flex-start",
               gap: "12px",
-              backgroundColor: "#FAFAFA",
+              backgroundColor: item.isRead ? "#fff" : "#FAFAFA",
             }}
           >
             {/* Unread indicator dot */}
@@ -191,7 +192,7 @@ export default function NotificationsPage() {
                 width: "8px",
                 height: "8px",
                 borderRadius: "9999px",
-                backgroundColor: item.isRead ? "transparent" : "#F59E0B",
+                backgroundColor: item.isRead ? "transparent" : "#2563EB",
                 flexShrink: 0,
                 marginTop: "5px",
                 border: item.isRead ? "1px solid #E5E5E5" : "none",
