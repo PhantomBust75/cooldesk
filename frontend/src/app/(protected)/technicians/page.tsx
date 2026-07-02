@@ -101,11 +101,11 @@ export default function TechniciansPage() {
 
   return (
     <RoleGate allowedRoles={["owner", "office_staff"]}>
-      <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "980px" }}>
+      <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "1100px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
           <div>
             <h1 style={{ fontSize: "36px", fontWeight: 600, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Technicians</h1>
-            <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0", fontWeight: 400 }}>
+            <p style={{ fontSize: "13px", color: "#737373", margin: "4px 0 0", fontWeight: 400 }}>
               {techniciansQuery.data ? `${activeTechnicians} active · ${total} total` : "Loading..."}
             </p>
           </div>
@@ -113,7 +113,7 @@ export default function TechniciansPage() {
             <button
               type="button"
               onClick={() => setShowCreate(true)}
-              style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "7px 14px", borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#0A0A0A", color: "#FAFAFA", cursor: "pointer", fontSize: "13px" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 14px", borderRadius: "8px", border: "none", backgroundColor: "#0A0A0A", color: "#fff", cursor: "pointer", fontSize: "13px" }}
             >
               <Plus size={14} strokeWidth={1.5} /> Add technician
             </button>
