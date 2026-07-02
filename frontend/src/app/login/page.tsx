@@ -114,7 +114,7 @@ export default function LoginPage() {
               fontWeight: 400,
             }}
           >
-            AC service management portal
+            AC service management platform
           </p>
         </div>
 
@@ -122,7 +122,7 @@ export default function LoginPage() {
           style={{
             backgroundColor: "#fff",
             borderRadius: "12px",
-            padding: "32px",
+            padding: "28px",
             border: "1px solid #E5E5E5",
           }}
         >
@@ -131,7 +131,7 @@ export default function LoginPage() {
               fontSize: "15px",
               fontWeight: 500,
               color: "#171717",
-              margin: "0 0 20px",
+              margin: "0 0 22px",
               textAlign: "center",
             }}
           >
@@ -144,7 +144,7 @@ export default function LoginPage() {
               data-lpignore="true"
               data-1p-ignore="true"
               onSubmit={onSubmit}
-              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+              style={{ display: "flex", flexDirection: "column", gap: "14px" }}
             >
               <div>
                 <label
@@ -166,7 +166,7 @@ export default function LoginPage() {
                   }
                   style={{
                     width: "100%",
-                    padding: "9px 12px",
+                    padding: "10px 12px",
                     border: "1px solid #E5E5E5",
                     borderRadius: "8px",
                     fontSize: "13px",
@@ -176,7 +176,7 @@ export default function LoginPage() {
                     fontFamily: "inherit",
                   }}
                   onFocus={(event) =>
-                    (event.currentTarget.style.borderColor = "#2563EB")
+                    (event.currentTarget.style.borderColor = "#A3A3A3")
                   }
                   onBlur={(event) =>
                     (event.currentTarget.style.borderColor = "#E5E5E5")
@@ -212,7 +212,7 @@ export default function LoginPage() {
                     }
                     style={{
                       width: "100%",
-                      padding: "9px 40px 9px 12px",
+                      padding: "10px 12px 10px 40px",
                       border: "1px solid #E5E5E5",
                       borderRadius: "8px",
                       fontSize: "13px",
@@ -222,7 +222,7 @@ export default function LoginPage() {
                       fontFamily: "inherit",
                     }}
                     onFocus={(event) =>
-                      (event.currentTarget.style.borderColor = "#2563EB")
+                      (event.currentTarget.style.borderColor = "#A3A3A3")
                     }
                     onBlur={(event) =>
                       (event.currentTarget.style.borderColor = "#E5E5E5")
@@ -281,7 +281,7 @@ export default function LoginPage() {
                 disabled={isSubmitting}
                 style={{
                   width: "100%",
-                  padding: "10px",
+                  padding: "11px",
                   borderRadius: "8px",
                   border: "none",
                   backgroundColor: isSubmitting ? "#A3A3A3" : "#0A0A0A",
@@ -294,6 +294,7 @@ export default function LoginPage() {
                   justifyContent: "center",
                   gap: "7px",
                   marginTop: "4px",
+                  minHeight: "44px",
                 }}
               >
                 <Lock size={14} strokeWidth={1.5} />
