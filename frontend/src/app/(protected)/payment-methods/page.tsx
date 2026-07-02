@@ -199,13 +199,13 @@ function ServiceItemsSection() {
   });
 
   return (
-    <div style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "20px", marginBottom: "20px" }}>
-      {/* Section header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+    <div style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "0", marginBottom: "24px", overflow: "hidden" }}>
+      {/* FAFAFA Header Bar */}
+      <div style={{ backgroundColor: "#FAFAFA", borderBottom: "1px solid #E5E5E5", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <Tag size={18} strokeWidth={1.5} color="#525252" />
           <div>
-            <div style={{ fontSize: "15px", fontWeight: 600, color: "#171717" }}>Service Items & Pricing</div>
+            <div style={{ fontSize: "14px", fontWeight: 500, color: "#171717" }}>Service Items & Pricing</div>
             <div style={{ fontSize: "12px", color: "#737373" }}>Standard items and pricing for job invoices</div>
           </div>
         </div>
@@ -217,6 +217,9 @@ function ServiceItemsSection() {
           <Plus size={13} strokeWidth={1.5} /> Add
         </button>
       </div>
+
+      {/* Section content */}
+      <div style={{ padding: "20px" }}>
 
       {/* Table */}
       {itemsQuery.isLoading && (
@@ -232,16 +235,16 @@ function ServiceItemsSection() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
-              <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>ITEM</th>
-              <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>PRICING</th>
-              <th style={{ textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>ACTIONS</th>
+              <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 500, color: "#737373", padding: "10px 16px" }}>ITEM</th>
+              <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 500, color: "#737373", padding: "10px 16px" }}>PRICING</th>
+              <th style={{ textAlign: "right", fontSize: "11px", fontWeight: 500, color: "#737373", padding: "10px 16px" }}>ACTIONS</th>
             </tr>
           </thead>
           <tbody>
             {itemsQuery.data.map((item) => (
               <tr key={item.id} style={{ borderBottom: "1px solid #E5E5E5" }}>
-                <td style={{ padding: "12px 0", fontSize: "13px", fontWeight: 500, color: "#171717" }}>{item.name}</td>
-                <td style={{ padding: "12px 0" }}>
+                <td style={{ padding: "13px 16px", fontSize: "13px", fontWeight: 500, color: "#171717" }}>{item.name}</td>
+                <td style={{ padding: "13px 16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span style={{
                       borderRadius: "6px",
@@ -260,7 +263,7 @@ function ServiceItemsSection() {
                     </span>
                   </div>
                 </td>
-                <td style={{ padding: "12px 0", textAlign: "right" }}>
+                <td style={{ padding: "13px 16px", textAlign: "right" }}>
                   <div style={{ display: "inline-flex", gap: "6px" }}>
                     <button
                       type="button"
@@ -294,6 +297,7 @@ function ServiceItemsSection() {
           onSaved={() => queryClient.invalidateQueries({ queryKey: ["service-items"] })}
         />
       )}
+      </div>
     </div>
   );
 }
@@ -332,13 +336,13 @@ function BrandsSection() {
   }
 
   return (
-    <div style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "20px" }}>
-      {/* Section header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+    <div style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "0", overflow: "hidden" }}>
+      {/* FAFAFA Header Bar */}
+      <div style={{ backgroundColor: "#FAFAFA", borderBottom: "1px solid #E5E5E5", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <Building2 size={18} strokeWidth={1.5} color="#525252" />
           <div>
-            <div style={{ fontSize: "15px", fontWeight: 600, color: "#171717" }}>Brands</div>
+            <div style={{ fontSize: "14px", fontWeight: 500, color: "#171717" }}>Brands</div>
             <div style={{ fontSize: "12px", color: "#737373" }}>Product brands handled by your organization</div>
           </div>
         </div>
@@ -350,6 +354,9 @@ function BrandsSection() {
           <Plus size={13} strokeWidth={1.5} /> Add brand
         </button>
       </div>
+
+      {/* Section content */}
+      <div style={{ padding: "20px" }}>
 
       {/* Add form */}
       {showAdd && (
@@ -413,7 +420,7 @@ function BrandsSection() {
           <tbody>
             {brandsQuery.data.map((brand) => (
               <tr key={brand.id} style={{ borderBottom: "1px solid #E5E5E5" }}>
-                <td style={{ padding: "12px 0" }}>
+                <td style={{ padding: "13px 16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <div
                       style={{
@@ -428,7 +435,7 @@ function BrandsSection() {
                     <span style={{ fontSize: "13px", fontWeight: 500, color: "#171717" }}>{brand.name}</span>
                   </div>
                 </td>
-                <td style={{ padding: "12px 0", textAlign: "right", fontSize: "13px", color: "#404040", fontWeight: 500 }}>
+                <td style={{ padding: "13px 16px", textAlign: "right", fontSize: "13px", color: "#404040", fontWeight: 500 }}>
                   {brand.installationCharge > 0
                     ? brand.installationCharge.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                     : <span style={{ color: "#737373" }}>—</span>}
@@ -438,6 +445,7 @@ function BrandsSection() {
           </tbody>
         </table>
       )}
+      </div>
     </div>
   );
 }
@@ -447,7 +455,7 @@ function BrandsSection() {
 export default function PaymentMethodsPage() {
   return (
     <RoleGate allowedRoles={["owner"]}>
-      <section style={{ padding: "24px", maxWidth: "880px" }}>
+      <section style={{ padding: "24px", maxWidth: "960px" }}>
         {/* Page title */}
         <div style={{ marginBottom: "28px" }}>
           <h1 style={{ fontSize: "36px", fontWeight: 600, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
