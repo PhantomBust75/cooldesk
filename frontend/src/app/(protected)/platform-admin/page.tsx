@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { apiClient } from "@/lib/api/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Building2, CheckCircle, XCircle, LogOut, Menu, Shield } from "lucide-react";
+import { useSnackbar } from "notistack";
 import { useState, useSyncExternalStore } from "react";
 
 type OrgRow = {
@@ -47,6 +48,7 @@ function getMobileSidebarServerSnapshot() {
 export default function PlatformAdminPage() {
   const { session, logout } = useAuth();
   const queryClient = useQueryClient();
+  const { enqueueSnackbar } = useSnackbar();
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const isSmallScreen = useSyncExternalStore(
@@ -63,7 +65,13 @@ export default function PlatformAdminPage() {
   const toggleMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       toggleOrgStatus(id, isActive),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["platform", "organizations"] }),
+    onSuccess: () => {
+      enqueueSnackbar("Organization status updated", { variant: "success" });
+      queryClient.invalidateQueries({ queryKey: ["platform", "organizations"] });
+    },
+    onError: () => {
+      enqueueSnackbar("Failed to update organization status.", { variant: "error" });
+    },
   });
 
   const collapsed = isSmallScreen ? !mobileOpen : desktopCollapsed;

@@ -4,6 +4,7 @@ import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/contexts/auth-context";
 import type { LoginRequest } from "@/types/auth";
 import { Eye, EyeOff, Lock, Zap } from "lucide-react";
+import { useSnackbar } from "notistack";
 import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState, useSyncExternalStore } from "react";
 
@@ -15,6 +16,7 @@ const INITIAL_FORM: LoginRequest = {
 export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated, isReady } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
 
   const [form, setForm] = useState<LoginRequest>(INITIAL_FORM);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -61,13 +63,12 @@ export default function LoginPage() {
 
     try {
       await login(form);
+      enqueueSnackbar("Logged in successfully", { variant: "success" });
       router.replace(nextPath);
     } catch (error) {
-      if (error instanceof ApiError) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Unable to login at the moment.");
-      }
+      const msg = error instanceof ApiError ? error.message : "Unable to login at the moment.";
+      setErrorMessage(msg);
+      enqueueSnackbar(msg, { variant: "error" });
     } finally {
       setIsSubmitting(false);
     }

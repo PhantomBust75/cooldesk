@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSnackbar } from "notistack";
 import {
   fetchJobDetail,
   fetchJobRevisits,
@@ -61,6 +62,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
   const { session } = useAuth();
   const isMobile = useMobileBreakpoint();
   const queryClient = useQueryClient();
+  const { enqueueSnackbar } = useSnackbar();
   const [toStatus, setToStatus] = useState("");
   const [reason, setReason] = useState("");
   const [undoSecondsLeft, setUndoSecondsLeft] = useState(0);
@@ -141,6 +143,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
       });
     },
     onSuccess: async () => {
+      enqueueSnackbar("Status updated successfully", { variant: "success" });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["jobs"] }),
         queryClient.invalidateQueries({ queryKey: ["job-detail", jobId] }),
@@ -149,6 +152,9 @@ export function JobDetail({ jobId }: { jobId: string }) {
       setUndoSecondsLeft(undoWindowSeconds);
       setReason("");
       setToStatus("");
+    },
+    onError: (err: unknown) => {
+      enqueueSnackbar(err instanceof Error ? err.message : "Failed to update status.", { variant: "error" });
     },
   });
 
@@ -163,12 +169,16 @@ export function JobDetail({ jobId }: { jobId: string }) {
       });
     },
     onSuccess: async () => {
+      enqueueSnackbar("Status rolled back", { variant: "success" });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["jobs"] }),
         queryClient.invalidateQueries({ queryKey: ["job-detail", jobId] }),
         queryClient.invalidateQueries({ queryKey: ["job-timeline", jobId] }),
       ]);
       setUndoSecondsLeft(0);
+    },
+    onError: (err: unknown) => {
+      enqueueSnackbar(err instanceof Error ? err.message : "Failed to rollback status.", { variant: "error" });
     },
   });
 
@@ -185,6 +195,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
       });
     },
     onSuccess: async () => {
+      enqueueSnackbar("Status overridden successfully", { variant: "success" });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["jobs"] }),
         queryClient.invalidateQueries({ queryKey: ["job-detail", jobId] }),
@@ -195,12 +206,16 @@ export function JobDetail({ jobId }: { jobId: string }) {
       setOverrideReason("");
       setPaymentDecision("retain");
     },
+    onError: (err: unknown) => {
+      enqueueSnackbar(err instanceof Error ? err.message : "Failed to override status.", { variant: "error" });
+    },
   });
 
   const [reassignError, setReassignError] = useState("");
   const reassignMutation = useMutation({
     mutationFn: () => reassignTechnician(jobId, reassignTechId),
     onSuccess: async () => {
+      enqueueSnackbar("Technician reassigned successfully", { variant: "success" });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["jobs"] }),
         queryClient.invalidateQueries({ queryKey: ["job-detail", jobId] }),
@@ -211,7 +226,9 @@ export function JobDetail({ jobId }: { jobId: string }) {
       setReassignError("");
     },
     onError: (err: unknown) => {
-      setReassignError(err instanceof Error ? err.message : "Reassignment failed");
+      const msg = err instanceof Error ? err.message : "Reassignment failed";
+      enqueueSnackbar(msg, { variant: "error" });
+      setReassignError(msg);
     },
   });
 

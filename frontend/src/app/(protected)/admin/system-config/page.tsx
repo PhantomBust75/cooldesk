@@ -3,6 +3,7 @@
 import { fetchSystemConfig, updateSystemConfig } from "@/lib/api/operations";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Info } from "lucide-react";
+import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
@@ -82,6 +83,7 @@ const SECTIONS: { title: string; fields: FieldDef[] }[] = [
 export default function SystemConfigPage() {
   const queryClient = useQueryClient();
   const isMobile = useMobileBreakpoint();
+  const { enqueueSnackbar } = useSnackbar();
   const [savedKey, setSavedKey] = useState<string | null>(null);
   const [errorKey, setErrorKey] = useState<string | null>(null);
 
@@ -93,12 +95,14 @@ export default function SystemConfigPage() {
   const updateMutation = useMutation({
     mutationFn: updateSystemConfig,
     onSuccess: (_data, variables) => {
+      enqueueSnackbar("Setting saved successfully", { variant: "success" });
       setSavedKey(variables.key);
       setErrorKey(null);
       queryClient.invalidateQueries({ queryKey: ["system-config"] });
       setTimeout(() => setSavedKey(null), 2000);
     },
     onError: (_error, variables) => {
+      enqueueSnackbar("Failed to save setting.", { variant: "error" });
       setErrorKey(variables.key);
     },
   });

@@ -14,6 +14,7 @@ import {
 import type { PendingScheduleJob, SchedulePendingJobInput } from "@/types/office";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Calendar, Users, X } from "lucide-react";
+import { useSnackbar } from "notistack";
 import { useState } from "react";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -80,18 +81,18 @@ function BatchModal({ jobs, technicians, onClose, onSuccess }: BatchModalProps) 
   const [scheduledAt, setScheduledAt] = useState(initialScheduleAt());
   const [technicianId, setTechnicianId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const { enqueueSnackbar } = useSnackbar();
 
   const mutation = useMutation({
     mutationFn: (input: BatchScheduleInput) => batchScheduleJobs(input),
     onSuccess: () => {
+      enqueueSnackbar("Jobs scheduled successfully", { variant: "success" });
       onSuccess();
     },
     onError: (err) => {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError("Failed to batch schedule jobs.");
-      }
+      const msg = err instanceof ApiError ? err.message : "Failed to batch schedule jobs.";
+      setError(msg);
+      enqueueSnackbar(msg, { variant: "error" });
     },
   });
 
@@ -401,22 +402,21 @@ function InlineForm({ job, technicians, onClose, onSuccess }: InlineFormProps) {
   const [scheduledAt, setScheduledAt] = useState(initialScheduleAt());
   const [technicianId, setTechnicianId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const { enqueueSnackbar } = useSnackbar();
 
   const mutation = useMutation({
     mutationFn: (payload: SchedulePendingJobInput) => schedulePendingJob(job.id, payload),
     onSuccess: () => {
+      enqueueSnackbar("Job scheduled successfully", { variant: "success" });
       onSuccess();
     },
     onError: (err) => {
+      let msg = "Unable to schedule job right now.";
       if (err instanceof ApiError) {
-        if (err.status === 409) {
-          setError("Version conflict. Refresh and retry.");
-        } else {
-          setError(err.message);
-        }
-      } else {
-        setError("Unable to schedule job right now.");
+        msg = err.status === 409 ? "Version conflict. Refresh and retry." : err.message;
       }
+      setError(msg);
+      enqueueSnackbar(msg, { variant: "error" });
     },
   });
 

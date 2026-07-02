@@ -9,12 +9,14 @@ import { createOfficeTechnician, fetchTechnicianDirectory, toggleTechnicianActiv
 import { TechnicianDirectoryItem } from "@/types/operations";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Edit, Plus, Save, Search, X } from "lucide-react";
+import { useSnackbar } from "notistack";
 import { FormEvent, useMemo, useState } from "react";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
 export default function TechniciansPage() {
   const queryClient = useQueryClient();
   const isMobile = useMobileBreakpoint();
+  const { enqueueSnackbar } = useSnackbar();
   const [showCreate, setShowCreate] = useState(false);
   const [editTarget, setEditTarget] = useState<TechnicianDirectoryItem | null>(null);
   const [selectedTechnician, setSelectedTechnician] = useState<TechnicianDirectoryItem | null>(null);
@@ -46,6 +48,7 @@ export default function TechniciansPage() {
   const createMutation = useMutation({
     mutationFn: () => createOfficeTechnician({ fullName: fullName.trim(), email: email.trim(), password }),
     onSuccess: () => {
+      enqueueSnackbar("Technician created successfully", { variant: "success" });
       setMessage("Technician created.");
       setErrorMessage(null);
       setFullName("");
@@ -55,11 +58,9 @@ export default function TechniciansPage() {
       queryClient.invalidateQueries({ queryKey: ["technicians", "directory"] });
     },
     onError: (error) => {
-      if (error instanceof ApiError) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Unable to create technician.");
-      }
+      const msg = error instanceof ApiError ? error.message : "Unable to create technician.";
+      setErrorMessage(msg);
+      enqueueSnackbar(msg, { variant: "error" });
     },
   });
 
@@ -69,20 +70,21 @@ export default function TechniciansPage() {
       queryClient.invalidateQueries({ queryKey: ["technicians", "directory"] });
     },
     onError: () => {
-      setErrorMessage("Unable to update technician status.");
+      enqueueSnackbar("Unable to update technician status.", { variant: "error" });
     },
   });
 
   const editToggleMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => toggleTechnicianActive(id, isActive),
     onSuccess: () => {
+      enqueueSnackbar("Technician updated successfully", { variant: "success" });
       setMessage("Technician updated.");
       setErrorMessage(null);
       setEditTarget(null);
       queryClient.invalidateQueries({ queryKey: ["technicians", "directory"] });
     },
     onError: () => {
-      setErrorMessage("Unable to update technician.");
+      enqueueSnackbar("Unable to update technician.", { variant: "error" });
     },
   });
 

@@ -10,6 +10,7 @@ import type { QuickCreateJobInput } from "@/types/operations";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, CheckCircle, Minus, Plus, Search } from "lucide-react";
 import Link from "next/link";
+import { useSnackbar } from "notistack";
 import { FormEvent, useMemo, useState } from "react";
 
 type Step = 1 | 2 | 3 | 4;
@@ -69,6 +70,7 @@ function StepHeader({ current, total }: { current: Step; total: number }) {
 export default function LogNewJobPage() {
   const isMobile = useMobileBreakpoint();
   const { session } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
   const isDealer = session?.user.role === "dealer";
   const canAssign = session?.user.role === "owner" || session?.user.role === "office_staff";
   const totalSteps: Step = isDealer ? 3 : 4;
@@ -101,14 +103,13 @@ export default function LogNewJobPage() {
   const createMutation = useMutation({
     mutationFn: (payload: QuickCreateJobInput) => createQuickJob(payload),
     onSuccess: (result) => {
+      enqueueSnackbar("Job created successfully", { variant: "success" });
       setCreatedJobId(result.id);
     },
     onError: (error) => {
-      if (error instanceof ApiError) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Unable to create job.");
-      }
+      const msg = error instanceof ApiError ? error.message : "Unable to create job.";
+      setErrorMessage(msg);
+      enqueueSnackbar(msg, { variant: "error" });
     },
   });
 

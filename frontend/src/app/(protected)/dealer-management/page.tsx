@@ -9,12 +9,14 @@ import { createDealer, fetchDealers, fetchOfficeBrands, setDealerBrands, updateD
 import type { DealerDirectoryItem } from "@/types/operations";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Copy, Edit, Eye, Plus, Save, Search, X } from "lucide-react";
+import { useSnackbar } from "notistack";
 import { FormEvent, useMemo, useState, useCallback } from "react";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
 export default function DealerManagementPage() {
   const queryClient = useQueryClient();
   const isMobile = useMobileBreakpoint();
+  const { enqueueSnackbar } = useSnackbar();
 
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -93,17 +95,16 @@ export default function DealerManagementPage() {
       brandIds: selectedBrandIds,
     }),
     onSuccess: () => {
+      enqueueSnackbar("Dealer created successfully", { variant: "success" });
       setMessage("Dealer created.");
       setErrorMessage(null);
       setShowCreate(false);
       queryClient.invalidateQueries({ queryKey: ["dealers", "management"] });
     },
     onError: (error) => {
-      if (error instanceof ApiError) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Unable to create dealer.");
-      }
+      const msg = error instanceof ApiError ? error.message : "Unable to create dealer.";
+      setErrorMessage(msg);
+      enqueueSnackbar(msg, { variant: "error" });
     },
   });
 
@@ -119,17 +120,16 @@ export default function DealerManagementPage() {
       await setDealerBrands(selectedDealerId, editBrandIds);
     },
     onSuccess: () => {
+      enqueueSnackbar("Dealer updated successfully", { variant: "success" });
       setMessage("Dealer updated.");
       setErrorMessage(null);
       setShowEdit(false);
       queryClient.invalidateQueries({ queryKey: ["dealers", "management"] });
     },
     onError: (error) => {
-      if (error instanceof ApiError) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Unable to update dealer.");
-      }
+      const msg = error instanceof ApiError ? error.message : "Unable to update dealer.";
+      setErrorMessage(msg);
+      enqueueSnackbar(msg, { variant: "error" });
     },
   });
 
@@ -139,7 +139,7 @@ export default function DealerManagementPage() {
       queryClient.invalidateQueries({ queryKey: ["dealers", "management"] });
     },
     onError: () => {
-      setErrorMessage("Unable to update dealer status.");
+      enqueueSnackbar("Unable to update dealer status.", { variant: "error" });
     },
   });
 

@@ -24,6 +24,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { useSnackbar } from "notistack";
 import { FormEvent, useState } from "react";
 
 // ─── Service Items Modal ─────────────────────────────────────────────────────
@@ -41,17 +42,34 @@ function ServiceItemModal({ item, onClose, onSaved }: ServiceItemModalProps) {
   const [unitPrice, setUnitPrice] = useState(item ? String(item.unitPrice) : "");
   const [unitLabel, setUnitLabel] = useState(item?.unitLabel ?? "");
   const [error, setError] = useState<string | null>(null);
+  const { enqueueSnackbar } = useSnackbar();
 
   const createMutation = useMutation({
     mutationFn: (input: CreateServiceItemInput) => createServiceItem(input),
-    onSuccess: () => { onSaved(); onClose(); },
-    onError: (e) => setError(e instanceof ApiError ? e.message : "Failed to save."),
+    onSuccess: () => {
+      enqueueSnackbar("Service item created successfully", { variant: "success" });
+      onSaved();
+      onClose();
+    },
+    onError: (e) => {
+      const msg = e instanceof ApiError ? e.message : "Failed to save.";
+      setError(msg);
+      enqueueSnackbar(msg, { variant: "error" });
+    },
   });
 
   const updateMutation = useMutation({
     mutationFn: (input: Partial<CreateServiceItemInput>) => updateServiceItem(item!.id, input),
-    onSuccess: () => { onSaved(); onClose(); },
-    onError: (e) => setError(e instanceof ApiError ? e.message : "Failed to save."),
+    onSuccess: () => {
+      enqueueSnackbar("Service item updated successfully", { variant: "success" });
+      onSaved();
+      onClose();
+    },
+    onError: (e) => {
+      const msg = e instanceof ApiError ? e.message : "Failed to save.";
+      setError(msg);
+      enqueueSnackbar(msg, { variant: "error" });
+    },
   });
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -183,6 +201,7 @@ function ServiceItemModal({ item, onClose, onSaved }: ServiceItemModalProps) {
 
 function ServiceItemsSection() {
   const queryClient = useQueryClient();
+  const { enqueueSnackbar } = useSnackbar();
   const [modalItem, setModalItem] = useState<ServiceItem | null | undefined>(undefined);
   // undefined = modal closed, null = adding new, ServiceItem = editing
 
@@ -194,7 +213,11 @@ function ServiceItemsSection() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteServiceItem(id),
     onSuccess: () => {
+      enqueueSnackbar("Service item deleted", { variant: "success" });
       queryClient.invalidateQueries({ queryKey: ["service-items"] });
+    },
+    onError: () => {
+      enqueueSnackbar("Failed to delete service item.", { variant: "error" });
     },
   });
 
@@ -306,6 +329,7 @@ function ServiceItemsSection() {
 
 function BrandsSection() {
   const queryClient = useQueryClient();
+  const { enqueueSnackbar } = useSnackbar();
   const [showAdd, setShowAdd] = useState(false);
   const [brandName, setBrandName] = useState("");
   const [brandColor, setBrandColor] = useState("#3B82F6");
@@ -319,13 +343,18 @@ function BrandsSection() {
   const createMutation = useMutation({
     mutationFn: () => createBrand({ name: brandName.trim(), colorHex: brandColor }),
     onSuccess: () => {
+      enqueueSnackbar("Brand created successfully", { variant: "success" });
       setBrandName("");
       setBrandColor("#3B82F6");
       setShowAdd(false);
       setError(null);
       queryClient.invalidateQueries({ queryKey: ["office-brands"] });
     },
-    onError: (e) => setError(e instanceof ApiError ? e.message : "Unable to create brand."),
+    onError: (e) => {
+      const msg = e instanceof ApiError ? e.message : "Unable to create brand.";
+      setError(msg);
+      enqueueSnackbar(msg, { variant: "error" });
+    },
   });
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
