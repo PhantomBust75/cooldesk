@@ -496,6 +496,7 @@ export class JobsService {
       SELECT
         u.id,
         u.full_name AS name,
+        u.is_active,
         COALESCE(COUNT(ja.id), 0) AS active_assignments
       FROM users u
       LEFT JOIN job_assignments ja
@@ -504,10 +505,9 @@ export class JobsService {
        AND ja.organization_id = $1
       WHERE u.organization_id = $1
         AND u.role = 'technician'
-        AND u.is_active = TRUE
         AND u.is_deleted = FALSE
-      GROUP BY u.id, u.full_name
-      ORDER BY u.full_name ASC
+      GROUP BY u.id, u.full_name, u.is_active
+      ORDER BY u.is_active DESC, u.full_name ASC
       `,
       [ctx.organizationId],
     );
@@ -4035,7 +4035,7 @@ export class JobsService {
         j.status,
         j.created_at,
         COALESCE(SUM(p.amount) FILTER (WHERE p.status = 'collected'), 0) AS amount_collected,
-        ROUND(AVG(r.rating)::numeric, 1) AS avg_rating
+        ROUND(AVG(r.star_rating)::numeric, 1) AS avg_rating
       FROM jobs j
       LEFT JOIN payments p
         ON p.job_id = j.id
