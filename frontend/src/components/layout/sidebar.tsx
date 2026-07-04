@@ -25,9 +25,10 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/jobs", label: "All jobs", icon: Briefcase },
-  { href: "/jobs/history", label: "History", icon: Clock, roles: ["technician"] },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["owner", "office_staff"] },
+  { href: "/jobs", label: "All jobs", icon: Briefcase, roles: ["owner", "office_staff"] },
+  { href: "/jobs", label: "Active jobs", icon: Briefcase, roles: ["technician"] },
+  { href: "/jobs/history", label: "Job history", icon: Clock, roles: ["technician"] },
   { href: "/pending-schedule", label: "Schedule and Assign", icon: Clock, roles: ["owner", "office_staff"] },
   { href: "/technicians", label: "Technicians", icon: Users, roles: ["owner", "office_staff"] },
   { href: "/dealer-management", label: "Dealers", icon: Building2, roles: ["owner", "office_staff"] },

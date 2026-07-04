@@ -5,10 +5,10 @@ import { StatusToggle } from "@/components/ui/status-toggle";
 import { RoleGate } from "@/components/auth/role-gate";
 import { TechnicianDetailPanel } from "@/components/technicians/TechnicianDetailPanel";
 import { ApiError } from "@/lib/api/client";
-import { createOfficeTechnician, fetchTechnicianDirectory, toggleTechnicianActive } from "@/lib/api/operations";
+import { createOfficeTechnician, fetchTechnicianDirectory, toggleTechnicianActive, updateOfficeTechnician } from "@/lib/api/operations";
 import { TechnicianDirectoryItem } from "@/types/operations";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Edit, Plus, Save, Search, X } from "lucide-react";
+import { AlertCircle, Copy, Edit, Eye, EyeOff, Plus, Save, Search, X } from "lucide-react";
 import { useSnackbar } from "notistack";
 import { FormEvent, useMemo, useState } from "react";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
@@ -26,6 +26,12 @@ export default function TechniciansPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Edit form state
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editRegion, setEditRegion] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [showEditPassword, setShowEditPassword] = useState(false);
 
   const techniciansQuery = useQuery({
     queryKey: ["technicians", "directory"],
@@ -74,8 +80,14 @@ export default function TechniciansPage() {
     },
   });
 
-  const editToggleMutation = useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => toggleTechnicianActive(id, isActive),
+  const editMutation = useMutation({
+    mutationFn: (id: string) =>
+      updateOfficeTechnician(id, {
+        fullName: editName.trim(),
+        email: editEmail.trim(),
+        phone: editPhone.trim(),
+        region: editRegion.trim(),
+      }),
     onSuccess: () => {
       enqueueSnackbar("Technician updated successfully", { variant: "success" });
       setMessage("Technician updated.");
@@ -208,7 +220,7 @@ export default function TechniciansPage() {
                   <RoleGate allowedRoles={["owner"]}>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); setEditTarget(technician); }}
+                      onClick={(e) => { e.stopPropagation(); setEditTarget(technician); setEditName(technician.name); setEditEmail(technician.email); setEditPhone(technician.phone ?? ""); setEditRegion(technician.region ?? ""); setShowEditPassword(false); setErrorMessage(null); }}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -245,7 +257,7 @@ export default function TechniciansPage() {
                   <RoleGate allowedRoles={["owner"]}>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); setEditTarget(technician); }}
+                      onClick={(e) => { e.stopPropagation(); setEditTarget(technician); setEditName(technician.name); setEditEmail(technician.email); setEditPhone(technician.phone ?? ""); setEditRegion(technician.region ?? ""); setShowEditPassword(false); setErrorMessage(null); }}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -354,43 +366,148 @@ export default function TechniciansPage() {
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid #E5E5E5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: '#171717' }}>Edit technician</span>
+                <div style={{ padding: '20px 24px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '16px', fontWeight: 600, color: '#171717' }}>Edit technician</span>
                   <button type="button" onClick={() => setEditTarget(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#737373', lineHeight: 0 }}>
                     <X size={18} strokeWidth={1.5} />
                   </button>
                 </div>
                 {/* Body */}
-                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', flex: 1 }}>
+                <div style={{ padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1 }}>
                   {errorMessage && (
                     <div style={{ borderRadius: '8px', border: '1px solid #FECACA', backgroundColor: '#FEF2F2', padding: '10px 12px', color: '#991B1B', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <AlertCircle size={13} strokeWidth={1.5} /> {errorMessage}
                     </div>
                   )}
+
+                  {/* Full name */}
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: 500, color: '#404040', display: 'block', marginBottom: '5px' }}>Full name</label>
-                    <input value={editTarget.name} readOnly style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '13px', backgroundColor: '#FAFAFA', color: '#737373' }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '12px', fontWeight: 500, color: '#404040', display: 'block', marginBottom: '8px' }}>Status</label>
-                    <StatusToggle
-                      active={editTarget.isActive}
-                      onToggle={() => setEditTarget({ ...editTarget, isActive: !editTarget.isActive })}
+                    <label style={{ fontSize: '13px', fontWeight: 500, color: '#171717', display: 'block', marginBottom: '6px' }}>
+                      Full name <span style={{ color: '#EF4444' }}>*</span>
+                    </label>
+                    <input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '14px', color: '#171717', outline: 'none' }}
                     />
+                  </div>
+
+                  {/* Phone + Region side by side */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '13px', fontWeight: 500, color: '#171717', display: 'block', marginBottom: '6px' }}>
+                        Phone <span style={{ color: '#EF4444' }}>*</span>
+                      </label>
+                      <input
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                        placeholder="+966 50 111 2233"
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '14px', color: '#171717', outline: 'none' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '13px', fontWeight: 500, color: '#171717', display: 'block', marginBottom: '6px' }}>
+                        Region / Area <span style={{ color: '#EF4444' }}>*</span>
+                      </label>
+                      <input
+                        value={editRegion}
+                        onChange={(e) => setEditRegion(e.target.value)}
+                        placeholder="Riyadh"
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '14px', color: '#171717', outline: 'none' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label style={{ fontSize: '13px', fontWeight: 500, color: '#171717', display: 'block', marginBottom: '6px' }}>
+                      Email <span style={{ color: '#EF4444' }}>*</span>
+                    </label>
+                    <input
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      type="email"
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '14px', color: '#171717', outline: 'none' }}
+                    />
+                  </div>
+
+                  {/* Account credentials */}
+                  <div>
+                    <p style={{ fontSize: '13px', fontWeight: 500, color: '#171717', margin: '0 0 10px' }}>Account credentials</p>
+                    <div style={{ border: '1px solid #E5E5E5', borderRadius: '10px', padding: '16px', backgroundColor: '#FAFAFA', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      {/* Username */}
+                      <div>
+                        <p style={{ fontSize: '11px', fontWeight: 600, color: '#A3A3A3', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>Username</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            value={editTarget.email}
+                            readOnly
+                            style={{ flex: 1, padding: '9px 12px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '13px', color: '#404040', backgroundColor: '#fff', outline: 'none' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => navigator.clipboard.writeText(editTarget.email)}
+                            style={{ padding: '9px', border: '1px solid #E5E5E5', borderRadius: '8px', backgroundColor: '#fff', cursor: 'pointer', lineHeight: 0, color: '#737373', flexShrink: 0 }}
+                            title="Copy username"
+                          >
+                            <Copy size={14} strokeWidth={1.5} />
+                          </button>
+                        </div>
+                      </div>
+                      {/* Password */}
+                      <div>
+                        <p style={{ fontSize: '11px', fontWeight: 600, color: '#A3A3A3', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>Password</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            value="••••••••••••••••"
+                            readOnly
+                            type={showEditPassword ? 'text' : 'password'}
+                            style={{ flex: 1, padding: '9px 12px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '13px', color: '#404040', backgroundColor: '#fff', outline: 'none' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowEditPassword((v) => !v)}
+                            style={{ padding: '9px', border: '1px solid #E5E5E5', borderRadius: '8px', backgroundColor: '#fff', cursor: 'pointer', lineHeight: 0, color: '#737373', flexShrink: 0 }}
+                            title={showEditPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showEditPassword ? <EyeOff size={14} strokeWidth={1.5} /> : <Eye size={14} strokeWidth={1.5} />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => navigator.clipboard.writeText('••••••••••••••••')}
+                            style={{ padding: '9px', border: '1px solid #E5E5E5', borderRadius: '8px', backgroundColor: '#fff', cursor: 'pointer', lineHeight: 0, color: '#737373', flexShrink: 0 }}
+                            title="Copy password"
+                          >
+                            <Copy size={14} strokeWidth={1.5} />
+                          </button>
+                        </div>
+                        <p style={{ fontSize: '12px', color: '#737373', margin: '8px 0 0' }}>
+                          To change the password, use the &quot;Reset password&quot; flow in system settings.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 {/* Footer */}
-                <div style={{ padding: '14px 20px', borderTop: '1px solid #E5E5E5', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                  <button type="button" onClick={() => setEditTarget(null)} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #E5E5E5', backgroundColor: '#fff', cursor: 'pointer', fontSize: '13px', color: '#404040' }}>Cancel</button>
+                <div style={{ padding: '14px 24px', borderTop: '1px solid #E5E5E5', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                  <button type="button" onClick={() => setEditTarget(null)} style={{ padding: '9px 18px', borderRadius: '8px', border: '1px solid #E5E5E5', backgroundColor: '#fff', cursor: 'pointer', fontSize: '13px', color: '#404040' }}>Cancel</button>
                   <button
                     type="button"
-                    disabled={editToggleMutation.isPending}
+                    disabled={editMutation.isPending}
                     onClick={() => {
+                      if (!editName.trim()) {
+                        setErrorMessage("Full name is required.");
+                        return;
+                      }
+                      if (!editEmail.trim()) {
+                        setErrorMessage("Email is required.");
+                        return;
+                      }
                       setMessage(null);
                       setErrorMessage(null);
-                      editToggleMutation.mutate({ id: editTarget.id, isActive: editTarget.isActive });
+                      editMutation.mutate(editTarget.id);
                     }}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: '#0A0A0A', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 500, opacity: editToggleMutation.isPending ? 0.6 : 1 }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '8px', border: 'none', backgroundColor: '#0A0A0A', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 500, opacity: editMutation.isPending ? 0.6 : 1 }}
                   >
                     <Save size={13} strokeWidth={1.5} /> Save changes
                   </button>

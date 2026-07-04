@@ -72,6 +72,9 @@ function mapTechnician(row: UnknownRecord): TechnicianDirectoryItem {
   return {
     id: asString(row.id),
     name: asString(row.name),
+    email: asString(row.email),
+    phone: asNullableString(row.phone),
+    region: asNullableString(row.region),
     role: "technician",
     isActive: asBoolean(row.is_active, true),
     activeAssignments: asNumber(row.active_assignments),
@@ -128,6 +131,13 @@ export async function createOfficeTechnician(input: {
 
 export function toggleTechnicianActive(technicianId: string, isActive: boolean): Promise<{ ok: true }> {
   return apiClient.patch<{ ok: true }>(`/office/technicians/${technicianId}`, { isActive });
+}
+
+export function updateOfficeTechnician(
+  technicianId: string,
+  input: { fullName?: string; email?: string; phone?: string; region?: string },
+): Promise<{ ok: true }> {
+  return apiClient.patch<{ ok: true }>(`/office/technicians/${technicianId}`, input);
 }
 
 export async function fetchOfficeBrands(): Promise<OfficeBrand[]> {
@@ -218,6 +228,23 @@ export function setPaymentMethodActive(
 
 export function togglePaymentMethod(paymentMethodId: string): Promise<{ ok: true }> {
   return apiClient.patch<{ ok: true }>(`/payment-methods/${paymentMethodId}/toggle`);
+}
+
+export type ServiceItem = {
+  id: string;
+  name: string;
+  unitPrice: number;
+  unit: string | null;
+};
+
+export async function fetchServiceItems(): Promise<ServiceItem[]> {
+  const rows = await apiClient.get<UnknownRecord[]>("/service-items");
+  return rows.map((r) => ({
+    id: String(r.id ?? ""),
+    name: String(r.name ?? ""),
+    unitPrice: typeof r.unit_price === "number" ? r.unit_price : Number(r.unit_price) || 0,
+    unit: typeof r.unit === "string" ? r.unit : null,
+  }));
 }
 
 export async function fetchSystemConfig(): Promise<SystemConfigItem[]> {

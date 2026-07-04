@@ -496,6 +496,9 @@ export class JobsService {
       SELECT
         u.id,
         u.full_name AS name,
+        u.email,
+        u.phone,
+        u.region,
         u.is_active,
         COALESCE(COUNT(ja.id), 0) AS active_assignments
       FROM users u
@@ -506,7 +509,7 @@ export class JobsService {
       WHERE u.organization_id = $1
         AND u.role = 'technician'
         AND u.is_deleted = FALSE
-      GROUP BY u.id, u.full_name, u.is_active
+      GROUP BY u.id, u.full_name, u.email, u.phone, u.region, u.is_active
       ORDER BY u.is_active DESC, u.full_name ASC
       `,
       [ctx.organizationId],
@@ -580,10 +583,37 @@ export class JobsService {
       throw new NotFoundException('Technician not found');
     }
 
+    const setClauses: string[] = [];
+    const values: unknown[] = [];
+    let idx = 1;
+
     if (input.isActive !== undefined) {
+      setClauses.push(`is_active = $${idx++}`);
+      values.push(input.isActive);
+    }
+    if (input.fullName !== undefined) {
+      setClauses.push(`full_name = $${idx++}`);
+      values.push(input.fullName.trim());
+    }
+    if (input.email !== undefined) {
+      setClauses.push(`email = $${idx++}`);
+      values.push(input.email.trim().toLowerCase());
+    }
+    if (input.phone !== undefined) {
+      setClauses.push(`phone = $${idx++}`);
+      values.push(input.phone.trim() || null);
+    }
+    if (input.region !== undefined) {
+      setClauses.push(`region = $${idx++}`);
+      values.push(input.region.trim() || null);
+    }
+
+    if (setClauses.length > 0) {
+      setClauses.push(`updated_at = NOW()`);
+      values.push(technicianId, ctx.organizationId);
       await this.db.query(
-        `UPDATE users SET is_active = $1, updated_at = NOW() WHERE id = $2 AND organization_id = $3`,
-        [input.isActive, technicianId, ctx.organizationId],
+        `UPDATE users SET ${setClauses.join(', ')} WHERE id = $${idx++} AND organization_id = $${idx++}`,
+        values,
       );
     }
 
@@ -787,9 +817,6 @@ export class JobsService {
     return this.db.withTransaction(async (client) => {
       const job = await this.getJobForUpdate(client, jobId, ctx.organizationId);
 
-      if (job.type !== 'installation' || job.source !== 'via_dealer') {
-        throw new BadRequestException('Pending schedule action is only valid for dealer installation jobs');
-      }
 
       if (job.status !== 'pending_schedule') {
         throw new ConflictException('Job must be in pending_schedule before office scheduling');
@@ -3657,6 +3684,11 @@ export class JobsService {
     const limit = Math.min(Math.max(1, query.limit ?? 10), 100);
     const offset = (page - 1) * limit;
 
+    // Technicians may only see their own jobs — override any supplied filter
+    if (ctx.role === 'technician') {
+      query = { ...query, technicianId: ctx.userId };
+    }
+
     const conditions: string[] = ['j.organization_id = $1', 'j.is_deleted = FALSE'];
     const params: unknown[] = [ctx.organizationId];
 
@@ -3711,11 +3743,16 @@ export class JobsService {
         j.version,
         j.is_repeat,
         j.is_frequent,
-        j.is_chronic
+        j.is_chronic,
+        j.updated_at,
+        p.amount AS amount_collected,
+        pm.name AS payment_method_name
       FROM jobs j
       LEFT JOIN brands b ON b.id = j.brand_id
       LEFT JOIN dealers d ON d.id = j.dealer_id
       LEFT JOIN users u ON u.id = j.technician_id
+      LEFT JOIN payments p ON p.job_id = j.id AND p.organization_id = j.organization_id AND p.is_deleted = FALSE
+      LEFT JOIN payment_methods pm ON pm.id = p.payment_method_id
       WHERE ${where}
       ORDER BY j.created_at DESC
       LIMIT $${params.length - 1} OFFSET $${params.length}

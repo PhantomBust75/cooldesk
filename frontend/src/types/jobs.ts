@@ -16,6 +16,9 @@ export type JobListItem = {
   assignedTechnicianName: string | null;
   version: number;
   tags: string[];
+  amountCollected: number | null;
+  paymentMethodName: string | null;
+  updatedAt: string;
 };
 
 export type JobListFilter = {
@@ -106,6 +109,8 @@ export type TransitionJobStatusInput = {
   toStatus: string;
   expectedVersion: number;
   reason?: string;
+  paymentAmount?: number;
+  paymentMethodId?: string;
 };
 
 export type TransitionJobStatusResult = {

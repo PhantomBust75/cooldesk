@@ -55,6 +55,9 @@ function mapJobListItem(row: UnknownRecord): JobListItem {
     assignedTechnicianName: asNullableString(row.assigned_technician_name),
     version: asNumber(row.version),
     tags,
+    amountCollected: typeof row.amount_collected === "number" ? row.amount_collected : typeof row.amount_collected === "string" ? Number(row.amount_collected) || null : null,
+    paymentMethodName: asNullableString(row.payment_method_name),
+    updatedAt: asString(row.updated_at),
   };
 }
 

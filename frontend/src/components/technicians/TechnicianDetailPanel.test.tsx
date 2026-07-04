@@ -25,6 +25,9 @@ vi.mock("next/link", () => ({
 const mockTechnician: TechnicianDirectoryItem = {
   id: "tech-1",
   name: "Alice Smith",
+  email: "alice@cooldesk.sa",
+  phone: null,
+  region: null,
   role: "technician",
   isActive: true,
   activeAssignments: 2,

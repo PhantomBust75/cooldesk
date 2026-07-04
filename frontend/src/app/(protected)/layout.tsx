@@ -11,6 +11,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
 
   const isPlatformAdmin = session?.user.role === "platform_admin";
+  const isDealer = session?.user.role === "dealer";
   const isOnPlatformAdminPage = pathname.startsWith("/platform-admin");
 
   useEffect(() => {
@@ -22,10 +23,15 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       return;
     }
 
+    if (isDealer) {
+      router.replace("/login");
+      return;
+    }
+
     if (isPlatformAdmin && !isOnPlatformAdminPage) {
       router.replace("/platform-admin");
     }
-  }, [isReady, isAuthenticated, isPlatformAdmin, isOnPlatformAdminPage, router, pathname]);
+  }, [isReady, isAuthenticated, isDealer, isPlatformAdmin, isOnPlatformAdminPage, router, pathname]);
 
   if (!isReady) {
     return (
@@ -36,6 +42,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   }
 
   if (!isAuthenticated) {
+    return null;
+  }
+
+  // Block dealers — they have no staff dashboard access
+  if (isDealer) {
     return null;
   }
 

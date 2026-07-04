@@ -92,7 +92,7 @@ function isUnauthorizedError(error: unknown): boolean {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, session } = useAuth();
   const isMobile = useMobileBreakpoint();
 
   const metricsQuery = useQuery({
@@ -119,6 +119,12 @@ export default function DashboardPage() {
     isUnauthorizedError(activeJobsQuery.error);
 
   useEffect(() => {
+    if (session?.user.role === 'technician') {
+      router.replace('/jobs');
+    }
+  }, [session, router]);
+
+  useEffect(() => {
     if (hasUnauthorizedDashboardError) {
       logout();
     }
@@ -137,7 +143,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <RoleGate allowedRoles={['owner', 'office_staff', 'technician', 'dealer']}>
+    <RoleGate allowedRoles={['owner', 'office_staff']}>
       <section style={{ padding: isMobile ? '18px 16px' : '34px 24px 40px', maxWidth: '1400px' }}>
         <div style={{ marginBottom: isMobile ? '22px' : '36px' }}>
           <h1 style={{ fontSize: isMobile ? '30px' : '36px', fontWeight: 600, color: '#0A0A0A', margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>The Control Tower</h1>

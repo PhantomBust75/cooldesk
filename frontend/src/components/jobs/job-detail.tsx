@@ -10,6 +10,7 @@ import {
   reassignTechnician,
   rollbackJobStatus,
   transitionJobStatus,
+  updateJobPayment,
 } from "@/lib/api/jobs";
 import { fetchOfficeTechnicians } from "@/lib/api/office";
 import { useAuth } from "@/contexts/auth-context";
@@ -20,14 +21,20 @@ import { getAllowedNextStatuses } from "@/lib/jobs-state-machine";
 import { canProgressInstallation } from "@/lib/job-status-groups";
 import { Modal } from "@/components/ui/modal";
 import { StatusChip } from "@/components/ui/status-chip";
+import { BrandSwatch } from "@/components/ui/job-type-chip";
+import { fetchOfficeBrands, fetchPaymentMethods, fetchServiceItems } from "@/lib/api/operations";
 import {
   ArrowLeft,
+  Check,
   ChevronDown,
   ChevronUp,
   Copy,
+  MapPin,
+  Phone,
   RotateCcw,
   ShieldAlert,
   UserRound,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -77,6 +84,10 @@ export function JobDetail({ jobId }: { jobId: string }) {
   const [reassignOpen, setReassignOpen] = useState(false);
   const [reassignTechId, setReassignTechId] = useState("");
   const [advanceStatusOpen, setAdvanceStatusOpen] = useState(false);
+  const [collectPaymentOpen, setCollectPaymentOpen] = useState(false);
+  const [paySelectedItems, setPaySelectedItems] = useState<Set<string>>(new Set());
+  const [paySelectedMethodId, setPaySelectedMethodId] = useState("");
+  const [payAdditional, setPayAdditional] = useState("");
 
   const role = session?.user.role;
   const isOwner = role === "owner";
@@ -92,19 +103,42 @@ export function JobDetail({ jobId }: { jobId: string }) {
     queryFn: () => fetchJobTimeline(jobId),
   });
 
+  const isTechnician = role === "technician";
+
   const revisitsQuery = useQuery({
     queryKey: ["job-revisits", jobId],
     queryFn: () => fetchJobRevisits(jobId),
+    enabled: !isTechnician,
   });
 
   const configQuery = useQuery({
     queryKey: ["system-config"],
     queryFn: fetchSystemConfig,
+    enabled: !isTechnician,
   });
 
   const techniciansQuery = useQuery({
     queryKey: ["office-technicians"],
     queryFn: fetchOfficeTechnicians,
+    enabled: !isTechnician,
+  });
+
+  const serviceItemsQuery = useQuery({
+    queryKey: ["service-items"],
+    queryFn: fetchServiceItems,
+    enabled: collectPaymentOpen,
+  });
+
+  const paymentMethodsQuery = useQuery({
+    queryKey: ["payment-methods"],
+    queryFn: fetchPaymentMethods,
+    enabled: collectPaymentOpen,
+  });
+
+  const brandsQuery = useQuery({
+    queryKey: ["office-brands"],
+    queryFn: fetchOfficeBrands,
+    enabled: collectPaymentOpen,
   });
 
   const undoWindowSeconds = useMemo(() => {
@@ -155,6 +189,29 @@ export function JobDetail({ jobId }: { jobId: string }) {
     },
     onError: (err: unknown) => {
       enqueueSnackbar(err instanceof Error ? err.message : "Failed to update status.", { variant: "error" });
+    },
+  });
+
+  const collectPaymentMutation = useMutation({
+    mutationFn: async (payload: { toStatus: string; paymentMethodId: string; paymentAmount: number }) => {
+      if (!detailQuery.data) return;
+      await transitionJobStatus(jobId, {
+        toStatus: payload.toStatus,
+        expectedVersion: detailQuery.data.version,
+        paymentAmount: payload.paymentAmount,
+        paymentMethodId: payload.paymentMethodId,
+      });
+    },
+    onSuccess: async () => {
+      enqueueSnackbar("Payment collected and job completed", { variant: "success" });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["jobs"] }),
+        queryClient.invalidateQueries({ queryKey: ["job-detail", jobId] }),
+        queryClient.invalidateQueries({ queryKey: ["job-timeline", jobId] }),
+      ]);
+    },
+    onError: (err: unknown) => {
+      enqueueSnackbar(err instanceof Error ? err.message : "Failed to collect payment.", { variant: "error" });
     },
   });
 
@@ -355,7 +412,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
         <div>
           {/* Tab bar */}
           <div style={{ display: "flex", gap: "24px", borderBottom: "1px solid #E5E5E5", marginBottom: "24px" }}>
-            {(["details", "timeline", "payment", "review"] as const).map((tab) => (
+            {(["details", "timeline", "payment", "review"] as const).filter((tab) => !(isTechnician && tab === "review")).map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -381,75 +438,169 @@ export function JobDetail({ jobId }: { jobId: string }) {
           {/* Details tab */}
           {activeTab === "details" ? (
             <div>
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "32px", marginBottom: "24px" }}>
-                {/* Customer */}
+              {/* Two-column: Customer | Job Details */}
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "40px", marginBottom: "28px" }}>
+
+                {/* ── CUSTOMER ── */}
                 <div>
-                  <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.07em", textTransform: "uppercase" }}>Customer</p>
-                  <div style={{ display: "grid", gap: "12px" }}>
-                    <div>
-                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#737373" }}>Name</p>
-                      <p style={{ margin: 0, fontSize: "13px", color: "#171717" }}>{detail.customerName}</p>
+                  <p style={{ margin: "0 0 16px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Customer</p>
+                  <div style={{ display: "grid", gap: "18px" }}>
+
+                    {/* Name */}
+                    <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", alignItems: "start", gap: "8px" }}>
+                      <span style={{ fontSize: "13px", color: "#737373", paddingTop: "1px" }}>Name</span>
+                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#0A0A0A" }}>{detail.customerName}</span>
                     </div>
-                    <div>
-                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#737373" }}>Phone</p>
-                      <p style={{ margin: 0, fontSize: "13px", color: "#171717" }}>{detail.phone}</p>
+
+                    {/* Phone */}
+                    <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", alignItems: "start", gap: "8px" }}>
+                      <span style={{ fontSize: "13px", color: "#737373", paddingTop: "8px" }}>Phone</span>
+                      <a
+                        href={`tel:${detail.phone}`}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "7px",
+                          padding: "6px 14px",
+                          borderRadius: "9999px",
+                          border: "1px solid #E5E5E5",
+                          fontSize: "13px",
+                          fontWeight: 500,
+                          color: "#171717",
+                          textDecoration: "none",
+                          backgroundColor: "#fff",
+                          width: "fit-content",
+                        }}
+                      >
+                        <Phone size={13} strokeWidth={1.5} color="#525252" />
+                        {detail.phone}
+                      </a>
                     </div>
-                    <div>
-                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#737373" }}>Address</p>
-                      <p style={{ margin: 0, fontSize: "13px", color: "#171717" }}>{detail.address}</p>
+
+                    {/* Address */}
+                    <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", alignItems: "start", gap: "8px" }}>
+                      <span style={{ fontSize: "13px", color: "#737373", paddingTop: "1px" }}>Address</span>
+                      <div>
+                        <p style={{ margin: "0 0 8px", fontSize: "13px", fontWeight: 600, color: "#0A0A0A", lineHeight: 1.4 }}>{detail.address}</p>
+                        <a
+                          href={`https://maps.google.com/?q=${encodeURIComponent(detail.address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            padding: "5px 12px",
+                            borderRadius: "9999px",
+                            border: "1px solid #E5E5E5",
+                            fontSize: "12px",
+                            color: "#525252",
+                            textDecoration: "none",
+                            backgroundColor: "#fff",
+                            width: "fit-content",
+                          }}
+                        >
+                          <MapPin size={12} strokeWidth={1.5} />
+                          Open in Google Maps
+                        </a>
+                      </div>
                     </div>
+
                   </div>
                 </div>
-                {/* Schedule */}
+
+                {/* ── JOB DETAILS ── */}
                 <div>
-                  <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.07em", textTransform: "uppercase" }}>Schedule</p>
-                  <div style={{ display: "grid", gap: "12px" }}>
-                    <div>
-                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#737373" }}>Technician</p>
-                      <p style={{ margin: 0, fontSize: "13px", color: detail.assignedTechnicianName ? "#171717" : "#737373", fontStyle: detail.assignedTechnicianName ? "normal" : "italic" }}>
-                        {detail.assignedTechnicianName ?? "Unassigned"}
-                      </p>
+                  <p style={{ margin: "0 0 16px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Job Details</p>
+                  <div style={{ display: "grid", gap: "18px" }}>
+
+                    {/* Brand */}
+                    <div style={{ display: "grid", gridTemplateColumns: "90px 1fr", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "13px", color: "#737373" }}>Brand</span>
+                      {detail.brandName
+                        ? <BrandSwatch name={detail.brandName} />
+                        : <span style={{ fontSize: "13px", color: "#737373" }}>—</span>
+                      }
                     </div>
-                    <div>
-                      <p style={{ margin: "0 0 2px", fontSize: "12px", color: "#737373" }}>Scheduled</p>
-                      <p style={{ margin: 0, fontSize: "13px", color: "#171717" }}>
-                        {detail.scheduledAt ? new Date(detail.scheduledAt).toLocaleString([], { weekday: "short", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
-                      </p>
+
+                    {/* Unit */}
+                    <div style={{ display: "grid", gridTemplateColumns: "90px 1fr", alignItems: "start", gap: "8px" }}>
+                      <span style={{ fontSize: "13px", color: "#737373", paddingTop: "1px" }}>Unit</span>
+                      <span style={{ fontSize: "13px", color: "#0A0A0A", lineHeight: 1.4 }}>
+                        {detail.installationNotes ?? detail.issueDescription ?? "—"}
+                      </span>
                     </div>
+
+                    {/* Scheduled */}
+                    <div style={{ display: "grid", gridTemplateColumns: "90px 1fr", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "13px", color: "#737373" }}>Scheduled</span>
+                      <span style={{ fontSize: "13px", color: "#0A0A0A" }}>
+                        {detail.scheduledAt
+                          ? new Date(detail.scheduledAt).toLocaleString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })
+                          : "—"}
+                      </span>
+                    </div>
+
                   </div>
                 </div>
               </div>
 
-              {/* Show technical details */}
+              {/* ── Show more details accordion ── */}
               <button
                 type="button"
                 onClick={() => setShowTechnicalDetails((v) => !v)}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "13px", color: "#737373", padding: 0, display: "inline-flex", alignItems: "center", gap: "4px" }}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "13px", color: "#737373", padding: 0, display: "inline-flex", alignItems: "center", gap: "5px" }}
               >
                 {showTechnicalDetails ? <ChevronUp size={13} strokeWidth={1.5} /> : <ChevronDown size={13} strokeWidth={1.5} />}
-                {showTechnicalDetails ? "Hide" : "Show"} technical details
+                Show more details
               </button>
 
               {showTechnicalDetails ? (
-                <div style={{ marginTop: "12px", display: "grid", gap: "10px", padding: "16px", borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#F9F9F9" }}>
-                  <div>
-                    <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em" }}>Source</p>
-                    <p style={{ margin: 0, fontSize: "13px", color: "#525252" }}>{detail.source === "via_dealer" ? `Via dealer${detail.dealerName ? ` — ${detail.dealerName}` : ""}` : "Direct"}</p>
+                <div style={{ marginTop: "16px", display: "grid", gap: "14px", padding: "16px 20px", borderRadius: "10px", border: "1px solid #E5E5E5", backgroundColor: "#FAFAFA" }}>
+                  {/* Technician */}
+                  <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: "8px", alignItems: "center" }}>
+                    <span style={{ fontSize: "12px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 500 }}>Technician</span>
+                    <span style={{ fontSize: "13px", color: detail.assignedTechnicianName ? "#171717" : "#737373", fontStyle: detail.assignedTechnicianName ? "normal" : "italic" }}>
+                      {detail.assignedTechnicianName ?? "Unassigned"}
+                    </span>
                   </div>
-                  <div>
-                    <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em" }}>Version</p>
-                    <p style={{ margin: 0, fontSize: "13px", fontFamily: '"JetBrains Mono", monospace', color: "#525252" }}>{detail.version}</p>
+                  {/* Source */}
+                  <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: "8px", alignItems: "center" }}>
+                    <span style={{ fontSize: "12px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 500 }}>Source</span>
+                    <span style={{ fontSize: "13px", color: "#525252" }}>
+                      {detail.source === "via_dealer" ? `Via dealer${detail.dealerName ? ` — ${detail.dealerName}` : ""}` : "Direct"}
+                    </span>
                   </div>
+                  {/* Version */}
+                  <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: "8px", alignItems: "center" }}>
+                    <span style={{ fontSize: "12px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 500 }}>Version</span>
+                    <span style={{ fontSize: "13px", fontFamily: '"JetBrains Mono", monospace', color: "#525252" }}>{detail.version}</span>
+                  </div>
+                  {/* Tags */}
+                  {detail.tags.length > 0 && (
+                    <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: "8px", alignItems: "center" }}>
+                      <span style={{ fontSize: "12px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 500 }}>Tags</span>
+                      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                        {detail.tags.map((tag) => (
+                          <span key={tag} style={{ padding: "2px 8px", borderRadius: "9999px", fontSize: "11px", fontWeight: 500, backgroundColor: tag === "chronic" ? "#FFF1F2" : tag === "frequent" ? "#FFFBEB" : "#F1F5F9", color: tag === "chronic" ? "#9F1239" : tag === "frequent" ? "#92400E" : "#1E293B" }}>
+                            {tag.charAt(0).toUpperCase() + tag.slice(1)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* Issue description */}
                   {detail.type === "complaint" && detail.issueDescription ? (
-                    <div>
-                      <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em" }}>Issue description</p>
-                      <p style={{ margin: 0, fontSize: "13px", color: "#525252", lineHeight: 1.6 }}>{detail.issueDescription}</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: "8px", alignItems: "start" }}>
+                      <span style={{ fontSize: "12px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 500, paddingTop: "2px" }}>Issue</span>
+                      <span style={{ fontSize: "13px", color: "#525252", lineHeight: 1.6 }}>{detail.issueDescription}</span>
                     </div>
                   ) : null}
+                  {/* Installation notes */}
                   {detail.type === "installation" && detail.installationNotes ? (
-                    <div>
-                      <p style={{ margin: "0 0 2px", fontSize: "11px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em" }}>Installation notes</p>
-                      <p style={{ margin: 0, fontSize: "13px", color: "#525252", lineHeight: 1.6 }}>{detail.installationNotes}</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: "8px", alignItems: "start" }}>
+                      <span style={{ fontSize: "12px", color: "#737373", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 500, paddingTop: "2px" }}>Notes</span>
+                      <span style={{ fontSize: "13px", color: "#525252", lineHeight: 1.6 }}>{detail.installationNotes}</span>
                     </div>
                   ) : null}
                 </div>
@@ -458,53 +609,114 @@ export function JobDetail({ jobId }: { jobId: string }) {
           ) : null}
 
           {/* Timeline tab */}
-          {activeTab === "timeline" ? (
-            <div>
-              {timelineQuery.isLoading ? <p style={{ fontSize: "13px", color: "#737373" }}>Loading timeline...</p> : null}
-              {timelineQuery.error ? <p style={{ fontSize: "13px", color: "#991B1B" }}>Unable to load timeline.</p> : null}
-              {!timelineQuery.isLoading && !timelineQuery.error && timelineQuery.data?.length === 0 ? (
-                <p style={{ fontSize: "13px", color: "#737373" }}>No timeline events yet.</p>
-              ) : null}
-              <div style={{ display: "grid", gap: "12px" }}>
-                {timelineQuery.data?.map((event) => {
-                  const prevStatus = typeof event.previousValue === "string" ? event.previousValue : null;
-                  const nextStatus = typeof event.newValue === "string" ? event.newValue : null;
-                  const isStatusChange = event.eventType.toLowerCase().includes("status");
+          {activeTab === "timeline" ? (() => {
+            const STEPS: Record<string, string[]> = {
+              installation: ["assigned", "acknowledged", "in_transit", "in_process", "completed"],
+              complaint: ["assigned", "acknowledged", "in_transit", "in_process", "resolved"],
+            };
+            const STEP_LABELS: Record<string, string> = {
+              assigned: "Assigned",
+              acknowledged: "Acknowledged",
+              in_transit: "In Transit",
+              in_process: "In Process",
+              completed: "Completed",
+              resolved: "Resolved",
+            };
 
-                  return (
-                    <div key={event.id} style={{ display: "grid", gridTemplateColumns: "16px 1fr", gap: "12px", alignItems: "start" }}>
-                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: event.eventType === "system_event" ? "#737373" : "#0A0A0A", marginTop: "4px", justifySelf: "center" }} />
-                      <div>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "4px" }}>
-                          <span style={{ fontSize: "13px", fontWeight: 600, color: "#171717" }}>
-                            {event.eventType.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                          </span>
-                          <span style={{ fontSize: "11px", color: "#737373", whiteSpace: "nowrap" }}>
-                            {new Date(event.occurredAt).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                          </span>
+            // Build map: status → timestamp from timeline events
+            // newValue comes from the API as { status: "assigned", ... }
+            const doneAt: Record<string, string> = {};
+            for (const event of timelineQuery.data ?? []) {
+              const nv = event.newValue;
+              const newStatus =
+                nv && typeof nv === "object" && "status" in nv
+                  ? String((nv as Record<string, unknown>).status)
+                  : typeof nv === "string"
+                    ? nv
+                    : null;
+              if (newStatus && event.occurredAt) {
+                doneAt[newStatus] = event.occurredAt;
+              }
+            }
+
+            const steps = STEPS[detail.type] ?? STEPS.installation;
+
+            return (
+              <div>
+                {timelineQuery.isLoading && (
+                  <p style={{ fontSize: "13px", color: "#737373" }}>Loading timeline…</p>
+                )}
+                {timelineQuery.error && (
+                  <p style={{ fontSize: "13px", color: "#991B1B" }}>Unable to load timeline.</p>
+                )}
+                {!timelineQuery.isLoading && !timelineQuery.error && (
+                  <div style={{ paddingTop: "4px" }}>
+                    {steps.map((status, idx) => {
+                      const isDone = Boolean(doneAt[status]);
+                      const isLast = idx === steps.length - 1;
+                      const ts = doneAt[status];
+                      const formatted = ts
+                        ? new Date(ts).toLocaleString("en-US", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })
+                        : null;
+
+                      // Determine state: past (green ✓), current (black #), future (gray)
+                      const isCurrent = status === detail.status;
+                      const isPast = isDone && !isCurrent;
+
+                      let circleBg = "#F5F5F5";
+                      let circleBorder = "1px solid #E5E5E5";
+                      let circleColor = "#A3A3A3";
+                      if (isPast) { circleBg = "#16A34A"; circleBorder = "none"; circleColor = "#fff"; }
+                      else if (isCurrent) { circleBg = "#0A0A0A"; circleBorder = "none"; circleColor = "#fff"; }
+
+                      const lineColor = isPast ? "#16A34A" : isDone ? "#0A0A0A" : "#E5E5E5";
+
+                      return (
+                        <div key={status} style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
+                          {/* Left: circle + connector */}
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                            <div
+                              style={{
+                                width: "36px",
+                                height: "36px",
+                                borderRadius: "50%",
+                                backgroundColor: circleBg,
+                                border: circleBorder,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "13px",
+                                fontWeight: 600,
+                                color: circleColor,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {isPast ? <Check size={16} strokeWidth={2.5} /> : idx + 1}
+                            </div>
+                            {!isLast && (
+                              <div style={{ width: "2px", height: "32px", backgroundColor: lineColor, marginTop: "4px", borderRadius: "1px" }} />
+                            )}
+                          </div>
+
+                          {/* Right: label + timestamp */}
+                          <div style={{ paddingTop: "8px", paddingBottom: isLast ? 0 : "8px" }}>
+                            <p style={{ margin: 0, fontSize: "15px", fontWeight: isDone ? 600 : 400, color: isDone ? "#0A0A0A" : "#A3A3A3", lineHeight: 1.3 }}>
+                              {STEP_LABELS[status] ?? status}
+                            </p>
+                            {formatted && (
+                              <p style={{ margin: "3px 0 0", fontSize: "13px", color: "#737373" }}>
+                                {formatted}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        {event.actorName ? (
-                          <p style={{ margin: "0 0 6px", fontSize: "12px", color: "#737373" }}>{event.actorName}</p>
-                        ) : null}
-                        {event.reason ? (
-                          <div style={{ margin: "6px 0", padding: "8px 10px", borderRadius: "6px", backgroundColor: "#F9F9F9", border: "1px solid #F1F1F1" }}>
-                            <p style={{ margin: 0, fontSize: "13px", color: "#525252", fontStyle: "italic" }}>"{event.reason}"</p>
-                          </div>
-                        ) : null}
-                        {isStatusChange && prevStatus && nextStatus ? (
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" }}>
-                            <StatusChip status={prevStatus} />
-                            <span style={{ fontSize: "12px", color: "#737373" }}>→</span>
-                            <StatusChip status={nextStatus} />
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          ) : null}
+            );
+          })() : null}
 
           {/* Payment tab */}
           {activeTab === "payment" ? (
@@ -524,8 +736,70 @@ export function JobDetail({ jobId }: { jobId: string }) {
         {/* ── Right sidebar ───────────────────────────────── */}
         <div style={{ display: "flex", flexDirection: "column", gap: "12px", position: isMobile ? "static" : "sticky", top: "24px" }}>
 
-          {/* Advance Status button */}
-          {canAdvanceStatus ? (
+          {/* ── Technician sidebar ── */}
+          {isTechnician ? (() => {
+            const TECH_ACTIONS: Record<string, { label: string; next: string }> = {
+              assigned:     { label: "Acknowledge Job →",       next: "acknowledged" },
+              acknowledged: { label: "I'm On My Way →",         next: "in_transit" },
+              in_transit:   { label: "Start Job →",             next: "in_process" },
+              in_process:   {
+                label: detail.type === "installation" ? "Complete Installation →" : "Resolve Job →",
+                next: detail.type === "installation" ? "completed" : "resolved",
+              },
+            };
+            const action = TECH_ACTIONS[detail.status];
+            const isTerminal = TERMINAL_OR_CLOSED.has(detail.status);
+
+            return (
+              <>
+                <div>
+                  <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Current Status</p>
+                  <StatusChip status={detail.status} />
+                </div>
+
+                {action && (
+                  <button
+                    type="button"
+                    disabled={transitionMutation.isPending}
+                    onClick={() => {
+                      if (detail.status === "in_process") {
+                        setCollectPaymentOpen(true);
+                      } else {
+                        transitionMutation.mutate(action.next);
+                      }
+                    }}
+                    style={{
+                      width: "100%",
+                      border: "none",
+                      borderRadius: "10px",
+                      backgroundColor: "#0A0A0A",
+                      color: "#fff",
+                      padding: "16px",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      cursor: transitionMutation.isPending ? "not-allowed" : "pointer",
+                      opacity: transitionMutation.isPending ? 0.6 : 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    {transitionMutation.isPending ? "Updating…" : action.label}
+                  </button>
+                )}
+
+                {isTerminal && (
+                  <div style={{ padding: "14px", borderRadius: "10px", backgroundColor: "#F0FDF4", border: "1px solid #BBF7D0", fontSize: "13px", color: "#16A34A", textAlign: "center", fontWeight: 500 }}>
+                    Job complete
+                  </div>
+                )}
+              </>
+            );
+          })() : null}
+
+          {/* ── Owner / staff sidebar ── */}
+          {!isTechnician && (canAdvanceStatus ? (
             <>
               {advanceStatusOpen && nextStatuses.length > 1 ? (
                 <div style={{ border: "1px solid #E5E5E5", borderRadius: "10px", padding: "12px", backgroundColor: "#fff" }}>
@@ -598,10 +872,10 @@ export function JobDetail({ jobId }: { jobId: string }) {
             >
               Assign a technician and set a scheduled date to advance this installation job.
             </div>
-          )}
+          ))}
 
-          {/* Actions dropdown */}
-          <div style={{ position: "relative" }}>
+          {/* Actions dropdown — owner/staff only */}
+          {!isTechnician && <div style={{ position: "relative" }}>
             <button
               type="button"
               onClick={() => setActionsOpen((v) => !v)}
@@ -684,23 +958,23 @@ export function JobDetail({ jobId }: { jobId: string }) {
                 ) : null}
               </div>
             ) : null}
-          </div>
+          </div>}
 
-          {/* Payment card */}
-          <div style={{ border: "1px solid #E5E5E5", borderRadius: "10px", padding: "14px", backgroundColor: "#fff" }}>
+          {/* Payment card — owner/staff only */}
+          {!isTechnician && <div style={{ border: "1px solid #E5E5E5", borderRadius: "10px", padding: "14px", backgroundColor: "#fff" }}>
             <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.07em", textTransform: "uppercase" }}>Payment</p>
             {!detail.payment ? (
               <p style={{ margin: 0, fontSize: "13px", color: "#737373" }}>No payment recorded</p>
             ) : (
               <div style={{ display: "grid", gap: "4px" }}>
-                <p style={{ margin: 0, fontSize: "13px", color: "#171717", fontWeight: 500 }}>₹{detail.payment.amount.toFixed(2)}</p>
+                <p style={{ margin: 0, fontSize: "13px", color: "#171717", fontWeight: 500 }}>SAR {detail.payment.amount.toFixed(2)}</p>
                 <p style={{ margin: 0, fontSize: "12px", color: "#737373" }}>{detail.payment.paymentMethodName ?? "—"}</p>
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Undo banner */}
-          {undoSecondsLeft > 0 ? (
+          {undoSecondsLeft > 0 && !isTechnician ? (
             <div style={{ borderRadius: "8px", border: "1px solid #DCFCE7", backgroundColor: "#F0FDF4", padding: "10px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
                 <span style={{ fontSize: "12px", color: "#166534" }}>Undo available for {undoSecondsLeft}s</span>
@@ -724,6 +998,199 @@ export function JobDetail({ jobId }: { jobId: string }) {
           ) : null}
         </div>
       </div>
+
+      {/* ── Collect Payment modal ──────────────────────────── */}
+      {collectPaymentOpen && (() => {
+        const brands = brandsQuery.data ?? [];
+        const serviceItems = serviceItemsQuery.data ?? [];
+        const paymentMethods = paymentMethodsQuery.data ?? [];
+        const selectedItemsTotal = serviceItems
+          .filter((si) => paySelectedItems.has(si.id))
+          .reduce((sum, si) => sum + si.unitPrice, 0);
+        const additionalNum = parseFloat(payAdditional) || 0;
+        const totalAmount = selectedItemsTotal + additionalNum;
+        const canConfirm = paySelectedMethodId && totalAmount >= 0;
+        const terminalStatus = detail.type === "installation" ? "completed" : "resolved";
+
+        return (
+          <div
+            style={{
+              position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.45)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              zIndex: 1000, padding: "16px",
+            }}
+            onClick={() => setCollectPaymentOpen(false)}
+          >
+            <div
+              style={{
+                backgroundColor: "#fff", borderRadius: "16px",
+                width: "100%", maxWidth: "480px", maxHeight: "90vh",
+                overflow: "hidden", display: "flex", flexDirection: "column",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 20px 16px", borderBottom: "1px solid #F5F5F5" }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "#0A0A0A" }}>Collect Payment</h2>
+                  <p style={{ margin: "3px 0 0", fontSize: "13px", color: "#737373" }}>{detail.customerName}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCollectPaymentOpen(false)}
+                  style={{ border: "none", background: "none", cursor: "pointer", padding: "4px", color: "#737373", display: "flex", alignItems: "center", justifyContent: "center" }}
+                >
+                  <X size={18} strokeWidth={1.5} />
+                </button>
+              </div>
+
+              {/* Scrollable body */}
+              <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "20px" }}>
+
+                {/* Brand */}
+                <div>
+                  <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Brand Installed</p>
+                  <select
+                    style={{ width: "100%", border: "1px solid #E5E5E5", borderRadius: "10px", padding: "10px 12px", fontSize: "14px", color: "#171717", backgroundColor: "#fff", boxSizing: "border-box" }}
+                  >
+                    <option value="">Select brand…</option>
+                    {brands.map((b) => (
+                      <option key={b.id} value={b.id} selected={b.id === detail.brandId}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Service items */}
+                <div>
+                  <p style={{ margin: "0 0 10px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Service Items Used</p>
+                  {serviceItems.length === 0 ? (
+                    <p style={{ fontSize: "13px", color: "#A3A3A3", margin: 0 }}>No service items configured.</p>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                      {serviceItems.map((si) => {
+                        const checked = paySelectedItems.has(si.id);
+                        return (
+                          <label
+                            key={si.id}
+                            style={{
+                              display: "flex", alignItems: "center", justifyContent: "space-between",
+                              padding: "10px 12px", borderRadius: "8px", cursor: "pointer",
+                              backgroundColor: checked ? "#F0FDF4" : "transparent",
+                              border: checked ? "1px solid #BBF7D0" : "1px solid transparent",
+                              transition: "all 0.1s",
+                            }}
+                          >
+                            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => {
+                                  const next = new Set(paySelectedItems);
+                                  if (checked) next.delete(si.id); else next.add(si.id);
+                                  setPaySelectedItems(next);
+                                }}
+                                style={{ width: "16px", height: "16px", accentColor: "#16A34A", cursor: "pointer" }}
+                              />
+                              <span style={{ fontSize: "14px", color: "#171717" }}>{si.name}</span>
+                            </span>
+                            <span style={{ fontSize: "13px", color: "#525252", fontWeight: 500 }}>
+                              SAR {si.unitPrice.toFixed(2)}{si.unit ? `/${si.unit}` : ""}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Additional charges */}
+                <div>
+                  <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Additional Charges (SAR)</p>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={payAdditional}
+                    onChange={(e) => setPayAdditional(e.target.value)}
+                    placeholder="0.00"
+                    style={{ width: "100%", border: "1px solid #E5E5E5", borderRadius: "10px", padding: "10px 12px", fontSize: "14px", color: "#171717", boxSizing: "border-box", outline: "none" }}
+                  />
+                </div>
+
+                {/* Payment method */}
+                <div>
+                  <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Payment Method</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                    {paymentMethods.filter((m) => m.isActive).map((m) => {
+                      const sel = paySelectedMethodId === m.id;
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setPaySelectedMethodId(m.id)}
+                          style={{
+                            padding: "8px 16px", borderRadius: "9999px", fontSize: "13px", fontWeight: 500, cursor: "pointer",
+                            border: sel ? "none" : "1px solid #E5E5E5",
+                            backgroundColor: sel ? "#0A0A0A" : "#fff",
+                            color: sel ? "#fff" : "#525252",
+                          }}
+                        >
+                          {m.name}
+                        </button>
+                      );
+                    })}
+                    {paymentMethods.filter((m) => m.isActive).length === 0 && (
+                      <p style={{ fontSize: "13px", color: "#A3A3A3", margin: 0 }}>No payment methods configured.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div style={{ padding: "16px 20px", borderTop: "1px solid #F5F5F5", backgroundColor: "#FAFAFA" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+                  <span style={{ fontSize: "13px", color: "#737373" }}>Total</span>
+                  <span style={{ fontSize: "20px", fontWeight: 700, color: "#0A0A0A" }}>
+                    SAR {totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    type="button"
+                    onClick={() => setCollectPaymentOpen(false)}
+                    style={{ flex: 1, border: "1px solid #E5E5E5", borderRadius: "10px", backgroundColor: "#fff", color: "#525252", padding: "12px", fontSize: "14px", fontWeight: 500, cursor: "pointer" }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!canConfirm || collectPaymentMutation.isPending}
+                    onClick={() => {
+                      if (!paySelectedMethodId) return;
+                      collectPaymentMutation.mutate({
+                        toStatus: terminalStatus,
+                        paymentMethodId: paySelectedMethodId,
+                        paymentAmount: totalAmount,
+                      });
+                      setCollectPaymentOpen(false);
+                    }}
+                    style={{
+                      flex: 2, border: "none", borderRadius: "10px",
+                      backgroundColor: canConfirm ? "#0A0A0A" : "#E5E5E5",
+                      color: canConfirm ? "#fff" : "#A3A3A3",
+                      padding: "12px", fontSize: "14px", fontWeight: 600,
+                      cursor: canConfirm ? "pointer" : "not-allowed",
+                    }}
+                  >
+                    {collectPaymentMutation.isPending ? "Processing…" : paySelectedMethodId ? `Confirm — ${paymentMethods.find((m) => m.id === paySelectedMethodId)?.name ?? ""}` : "Select method to confirm"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Reassign modal ─────────────────────────────────── */}
       <Modal isOpen={reassignOpen} onClose={() => setReassignOpen(false)} title="Reassign technician">

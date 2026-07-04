@@ -335,6 +335,24 @@ export class UpdateOfficeTechnicianDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  fullName?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(5, 255)
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  region?: string;
 }
 
 export class MobileSyncPayloadDto {

@@ -29,6 +29,9 @@ export type QuickCreateJobResult = {
 export type TechnicianDirectoryItem = {
   id: string;
   name: string;
+  email: string;
+  phone: string | null;
+  region: string | null;
   role: "technician";
   isActive: boolean;
   activeAssignments: number;

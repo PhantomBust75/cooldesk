@@ -319,7 +319,7 @@ export class JobsController {
   // Office dashboard routes — frontend-facing with pagination, joins, and search
   @Get('office/jobs')
   @UseGuards(TenantGuard, RolesGuard)
-  @Roles('owner', 'office_staff')
+  @Roles('owner', 'office_staff', 'technician')
   listOfficeJobs(@Query() query: OfficeJobsQueryDto, @Req() req: UserRequest) {
     return this.jobsService.listOfficeJobs(query, req.context);
   }

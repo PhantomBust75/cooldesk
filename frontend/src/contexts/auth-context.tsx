@@ -73,6 +73,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const response = await apiClient.post<LoginResponse>(path, credentials, { auth: false });
     const mappedSession = mapLoginResponseToSession(response);
 
+    if (mappedSession.user.role === "dealer") {
+      throw new ApiError("Dealer accounts cannot access the staff dashboard.", 403, response);
+    }
+
     setSession(mappedSession);
     if (typeof window !== "undefined") {
       window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(mappedSession));

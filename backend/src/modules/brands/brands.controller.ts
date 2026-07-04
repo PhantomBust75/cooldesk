@@ -18,7 +18,7 @@ export class BrandsController {
 
   @Get()
   @UseGuards(TenantGuard, RolesGuard)
-  @Roles('owner', 'office_staff')
+  @Roles('owner', 'office_staff', 'technician')
   listBrands(@Req() req: UserRequest) {
     this.logger.log(`[GET /office/brands] org=${req.context.organizationId}`);
     return this.brandsService.listBrands(req.context);

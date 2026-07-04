@@ -28,7 +28,7 @@ export class AuthService {
     user: {
       id: string;
       organization_id: string | null;
-      role: UserRole | 'platform_admin';
+      role: UserRole | 'platform_admin' | 'dealer';
       name: string;
       email: string;
     };
@@ -91,23 +91,70 @@ export class AuthService {
     );
 
     const admin = adminResult.rows[0];
-    if (!admin || !this.verifyPassword(input.password, admin.password_hash)) {
+    if (admin) {
+      if (!this.verifyPassword(input.password, admin.password_hash)) {
+        throw new UnauthorizedException('Invalid email or password');
+      }
+
+      const accessToken = await this.jwtService.signAsync(
+        { sub: admin.id, type: 'platform_admin' },
+        { secret: this.appConfig.jwtPlatformSecret, expiresIn: '8h' },
+      );
+
+      return {
+        accessToken,
+        user: {
+          id: admin.id,
+          organization_id: null,
+          role: 'platform_admin',
+          name: admin.full_name,
+          email: admin.email,
+        },
+      };
+    }
+
+    // Fall through: check dealers
+    const dealerResult = await this.db.query<{
+      id: string;
+      organization_id: string;
+      name: string;
+      email: string;
+      password_hash: string;
+      is_active: boolean;
+    }>(
+      `
+      SELECT d.id, d.organization_id, d.name, d.email, dc.password_hash, d.is_active
+      FROM dealers d
+      INNER JOIN dealer_credentials dc ON dc.dealer_id = d.id
+      INNER JOIN organizations o ON o.id = d.organization_id
+      WHERE LOWER(d.email) = $1
+        AND d.is_active = TRUE
+        AND d.is_deleted = FALSE
+        AND o.is_active = TRUE
+        AND o.is_deleted = FALSE
+      LIMIT 1
+      `,
+      [email],
+    );
+
+    const dealer = dealerResult.rows[0];
+    if (!dealer || !this.verifyPassword(input.password, dealer.password_hash)) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
     const accessToken = await this.jwtService.signAsync(
-      { sub: admin.id, type: 'platform_admin' },
-      { secret: this.appConfig.jwtPlatformSecret, expiresIn: '8h' },
+      { sub: dealer.id, organization_id: dealer.organization_id, type: 'dealer' },
+      { secret: this.appConfig.jwtDealerSecret, expiresIn: '8h' },
     );
 
     return {
       accessToken,
       user: {
-        id: admin.id,
-        organization_id: null,
-        role: 'platform_admin',
-        name: admin.full_name,
-        email: admin.email,
+        id: dealer.id,
+        organization_id: dealer.organization_id,
+        role: 'dealer' as UserRole,
+        name: dealer.name,
+        email: dealer.email,
       },
     };
   }

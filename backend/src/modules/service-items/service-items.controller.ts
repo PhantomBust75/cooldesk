@@ -24,7 +24,7 @@ export class ServiceItemsController {
   constructor(private readonly serviceItemsService: ServiceItemsService) {}
 
   @Get()
-  @Roles('owner', 'office_staff')
+  @Roles('owner', 'office_staff', 'technician')
   findAll(@Req() req: UserRequest) {
     return this.serviceItemsService.findAll(req.context);
   }

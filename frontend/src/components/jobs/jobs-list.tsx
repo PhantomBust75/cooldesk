@@ -234,7 +234,7 @@ export function JobsList() {
               lineHeight: 1.1,
             }}
           >
-            All jobs
+            {isTechnician ? "Active Jobs" : "All jobs"}
           </h1>
           <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0" }}>
             {total} jobs
@@ -242,262 +242,122 @@ export function JobsList() {
         </div>
       </div>
 
-      {/* ── Technician tab bar ─────────────────────────────── */}
-      {isTechnician ? (
-        <div
-          style={{
-            display: "flex",
-            gap: "4px",
-            borderBottom: "1px solid #E5E5E5",
-            paddingBottom: "0",
-            padding: "0 24px",
-            marginBottom: "16px",
-          }}
-        >
-          <button
-            type="button"
-            style={{
-              padding: "8px 16px",
-              fontSize: "13px",
-              fontWeight: 500,
-              color: "#171717",
-              backgroundColor: "transparent",
-              border: "none",
-              borderBottom: "2px solid #0A0A0A",
-              cursor: "pointer",
-              marginBottom: "-1px",
-            }}
-          >
-            Active jobs
-          </button>
-          <button
-            type="button"
-            onClick={() => router.push("/jobs/history")}
-            style={{
-              padding: "8px 16px",
-              fontSize: "13px",
-              fontWeight: 400,
-              color: "#737373",
-              backgroundColor: "transparent",
-              border: "none",
-              borderBottom: "2px solid transparent",
-              cursor: "pointer",
-              marginBottom: "-1px",
-            }}
-          >
-            History
-          </button>
-        </div>
-      ) : null}
-
-      {/* ── Search + Filters toggle row ────────────────────── */}
-      <div
-        style={{
-          padding: "0 24px 16px",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-        }}
-      >
-        <div style={{ position: "relative", flex: "0 1 480px" }}>
+      {/* ── Search row ─────────────────────────────────────── */}
+      <div style={{ padding: "0 24px 16px" }}>
+        <div style={{ position: "relative", maxWidth: "380px" }}>
           <Search
             size={14}
             strokeWidth={1.5}
-            style={{
-              position: "absolute",
-              left: "10px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "#A3A3A3",
-              pointerEvents: "none",
-            }}
+            style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#A3A3A3", pointerEvents: "none" }}
           />
           <input
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search by name, job ID, brand…"
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              padding: "8px 12px 8px 32px",
-              border: "1px solid #E5E5E5",
-              borderRadius: "8px",
-              fontSize: "13px",
-              color: "#171717",
-              outline: "none",
-              backgroundColor: "#fff",
-            }}
+            style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px 8px 32px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#171717", outline: "none", backgroundColor: "#fff" }}
           />
         </div>
-        {/* filter controls — pushed right */}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px" }}>
-          {activeFilterCount > 0 && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                padding: "8px 12px",
-                border: "1px solid #E5E5E5",
-                borderRadius: "8px",
-                backgroundColor: "#fff",
-                color: "#737373",
-                fontSize: "13px",
-                cursor: "pointer",
-                flexShrink: 0,
-              }}
-            >
-              <X size={13} strokeWidth={1.5} />
-              Clear
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setInlineFiltersOpen((prev) => !prev)}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "8px 14px",
-              border: "1px solid",
-              borderColor: inlineFiltersOpen ? "#0A0A0A" : "#E5E5E5",
-              borderRadius: "8px",
-              backgroundColor: inlineFiltersOpen ? "#0A0A0A" : "#fff",
-              color: inlineFiltersOpen ? "#fff" : "#404040",
-              fontSize: "13px",
-              fontWeight: 500,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              transition: "all 150ms ease",
-              flexShrink: 0,
-            }}
-          >
-            <Filter size={14} strokeWidth={1.5} />
-            Filters
-            {activeFilterCount > 0 && (
-              <span
+      </div>
+
+      {/* ── Technician: status pill tabs ───────────────────── */}
+      {isTechnician ? (
+        <div style={{ padding: "0 24px 16px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          {[
+            { label: "All", value: "" },
+            { label: "Assigned", value: "assigned" },
+            { label: "Acknowledged", value: "acknowledged" },
+            { label: "In Transit", value: "in_transit" },
+            { label: "In Process", value: "in_process" },
+          ].map(({ label, value }) => {
+            const active = inlineStatus === value;
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => { setInlineStatus(value); setPage(1); }}
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "16px",
-                  height: "16px",
+                  padding: "6px 16px",
                   borderRadius: "9999px",
-                  backgroundColor: inlineFiltersOpen ? "rgba(255,255,255,0.9)" : "#0A0A0A",
-                  color: inlineFiltersOpen ? "#0A0A0A" : "#fff",
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  lineHeight: 1,
+                  border: active ? "none" : "1px solid #E5E5E5",
+                  backgroundColor: active ? "#0A0A0A" : "#fff",
+                  color: active ? "#fff" : "#525252",
+                  fontSize: "13px",
+                  fontWeight: active ? 500 : 400,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
                 }}
               >
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
+                {label}
+              </button>
+            );
+          })}
         </div>
-      </div>
-
-      {/* ── Inline filter panel (always mounted for CSS animation) ─── */}
-      <div
-        style={{
-          overflow: "hidden",
-          maxHeight: inlineFiltersOpen ? "300px" : "0px",
-          opacity: inlineFiltersOpen ? 1 : 0,
-          transition: "max-height 300ms cubic-bezier(0.4,0,0.2,1), opacity 200ms ease",
-        }}
-      >
-        <div
-          style={{
-            transform: inlineFiltersOpen ? "translateY(0)" : "translateY(-6px)",
-            transition: "transform 300ms cubic-bezier(0.4,0,0.2,1)",
-            padding: "0 24px 12px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "16px",
-              padding: "14px 16px",
-              flexWrap: "wrap",
-              backgroundColor: "#FAFAFA",
-              border: "1px solid #E5E5E5",
-              borderRadius: "8px",
-            }}
-          >
-            {/* STATUS */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                STATUS
-              </span>
-              <select
-                value={inlineStatus}
-                onChange={(e) => { setInlineStatus(e.target.value); setPage(1); }}
-                style={{ border: "1px solid #E5E5E5", borderRadius: "8px", padding: "6px 10px", fontSize: "13px", color: inlineStatus ? "#171717" : "#737373", backgroundColor: "#fff", outline: "none", cursor: "pointer" }}
+      ) : (
+        /* ── Owner/staff: full filter panel ───────────────── */
+        <>
+          <div style={{ padding: "0 24px 16px", display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px" }}>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "8px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", color: "#737373", fontSize: "13px", cursor: "pointer" }}
+                >
+                  <X size={13} strokeWidth={1.5} /> Clear
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setInlineFiltersOpen((prev) => !prev)}
+                style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 14px", border: "1px solid", borderColor: inlineFiltersOpen ? "#0A0A0A" : "#E5E5E5", borderRadius: "8px", backgroundColor: inlineFiltersOpen ? "#0A0A0A" : "#fff", color: inlineFiltersOpen ? "#fff" : "#404040", fontSize: "13px", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap", transition: "all 150ms ease" }}
               >
-                <option value="">All statuses</option>
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>{formatStatusLabel(s)}</option>
-                ))}
-              </select>
+                <Filter size={14} strokeWidth={1.5} />
+                Filters
+                {activeFilterCount > 0 && (
+                  <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "16px", height: "16px", borderRadius: "9999px", backgroundColor: inlineFiltersOpen ? "rgba(255,255,255,0.9)" : "#0A0A0A", color: inlineFiltersOpen ? "#0A0A0A" : "#fff", fontSize: "10px", fontWeight: 600 }}>
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
             </div>
-
-            {/* TYPE */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                TYPE
-              </span>
-              <select
-                value={inlineType}
-                onChange={(e) => { setInlineType(e.target.value as "" | "installation" | "complaint"); setPage(1); }}
-                style={{ border: "1px solid #E5E5E5", borderRadius: "8px", padding: "6px 10px", fontSize: "13px", color: inlineType ? "#171717" : "#737373", backgroundColor: "#fff", outline: "none", cursor: "pointer" }}
-              >
-                <option value="">All types</option>
-                <option value="installation">Installation</option>
-                <option value="complaint">Complaint</option>
-              </select>
-            </div>
-
-            {/* BRAND */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                BRAND
-              </span>
-              <select
-                value={inlineBrandId}
-                onChange={(e) => { setInlineBrandId(e.target.value); setPage(1); }}
-                style={{ border: "1px solid #E5E5E5", borderRadius: "8px", padding: "6px 10px", fontSize: "13px", color: inlineBrandId ? "#171717" : "#737373", backgroundColor: "#fff", outline: "none", cursor: "pointer" }}
-              >
-                <option value="">All brands</option>
-                {(brandsQuery.data ?? []).map((brand) => (
-                  <option key={brand.id} value={brand.id}>{brand.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Chronic */}
-            <label style={{ display: "flex", flexDirection: "column", gap: "4px", cursor: "pointer" }}>
-              <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                FILTER
-              </span>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#737373", userSelect: "none", paddingTop: "6px" }}>
-                <input
-                  type="checkbox"
-                  checked={inlineChronic}
-                  onChange={(e) => { setInlineChronic(e.target.checked); setPage(1); }}
-                  style={{ width: "14px", height: "14px", cursor: "pointer" }}
-                />
-                Chronic only
-              </span>
-            </label>
           </div>
-        </div>
-      </div>
+          <div style={{ overflow: "hidden", maxHeight: inlineFiltersOpen ? "300px" : "0px", opacity: inlineFiltersOpen ? 1 : 0, transition: "max-height 300ms cubic-bezier(0.4,0,0.2,1), opacity 200ms ease" }}>
+            <div style={{ transform: inlineFiltersOpen ? "translateY(0)" : "translateY(-6px)", transition: "transform 300ms cubic-bezier(0.4,0,0.2,1)", padding: "0 24px 12px" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", padding: "14px 16px", flexWrap: "wrap", backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "8px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>STATUS</span>
+                  <select value={inlineStatus} onChange={(e) => { setInlineStatus(e.target.value); setPage(1); }} style={{ border: "1px solid #E5E5E5", borderRadius: "8px", padding: "6px 10px", fontSize: "13px", color: inlineStatus ? "#171717" : "#737373", backgroundColor: "#fff", outline: "none", cursor: "pointer" }}>
+                    <option value="">All statuses</option>
+                    {STATUS_OPTIONS.map((s) => (<option key={s} value={s}>{formatStatusLabel(s)}</option>))}
+                  </select>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>TYPE</span>
+                  <select value={inlineType} onChange={(e) => { setInlineType(e.target.value as "" | "installation" | "complaint"); setPage(1); }} style={{ border: "1px solid #E5E5E5", borderRadius: "8px", padding: "6px 10px", fontSize: "13px", color: inlineType ? "#171717" : "#737373", backgroundColor: "#fff", outline: "none", cursor: "pointer" }}>
+                    <option value="">All types</option>
+                    <option value="installation">Installation</option>
+                    <option value="complaint">Complaint</option>
+                  </select>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>BRAND</span>
+                  <select value={inlineBrandId} onChange={(e) => { setInlineBrandId(e.target.value); setPage(1); }} style={{ border: "1px solid #E5E5E5", borderRadius: "8px", padding: "6px 10px", fontSize: "13px", color: inlineBrandId ? "#171717" : "#737373", backgroundColor: "#fff", outline: "none", cursor: "pointer" }}>
+                    <option value="">All brands</option>
+                    {(brandsQuery.data ?? []).map((brand) => (<option key={brand.id} value={brand.id}>{brand.name}</option>))}
+                  </select>
+                </div>
+                <label style={{ display: "flex", flexDirection: "column", gap: "4px", cursor: "pointer" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>FILTER</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#737373", userSelect: "none", paddingTop: "6px" }}>
+                    <input type="checkbox" checked={inlineChronic} onChange={(e) => { setInlineChronic(e.target.checked); setPage(1); }} style={{ width: "14px", height: "14px", cursor: "pointer" }} />
+                    Chronic only
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ── Jobs content ───────────────────────────────────── */}
       {displayedJobs.length === 0 ? (
@@ -665,18 +525,10 @@ export function JobsList() {
             >
               <thead>
                 <tr style={{ borderBottom: "1px solid #E5E5E5", backgroundColor: "#FAFAFA" }}>
-                  {[
-                    "JOB ID",
-                    "CUSTOMER",
-                    "PHONE",
-                    "TYPE",
-                    "SOURCE",
-                    "BRAND",
-                    "TECHNICIAN",
-                    "SCHEDULED",
-                    "STATUS",
-                    "TAGS",
-                  ].map((heading) => (
+                  {(isTechnician
+                    ? ["JOB ID", "CUSTOMER", "TYPE", "BRAND", "SCHEDULED", "STATUS", "TAGS"]
+                    : ["JOB ID", "CUSTOMER", "PHONE", "TYPE", "SOURCE", "BRAND", "TECHNICIAN", "SCHEDULED", "STATUS", "TAGS"]
+                  ).map((heading) => (
                     <th
                       key={heading}
                       style={{
@@ -705,87 +557,44 @@ export function JobsList() {
                     onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = "transparent"; }}
                   >
                     {/* JOB ID */}
-                    <td
-                      style={{
-                        padding: "14px 16px",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "13px",
-                        color: "#171717",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
+                    <td style={{ padding: "14px 16px", fontFamily: '"JetBrains Mono", monospace', fontSize: "13px", color: "#171717", whiteSpace: "nowrap" }}>
                       {job.id.slice(0, 8)}
                     </td>
                     {/* CUSTOMER */}
-                    <td
-                      style={{
-                        padding: "14px 16px",
-                        color: "#171717",
-                        fontSize: "13px",
-                        whiteSpace: "nowrap",
-                        borderLeft: job.tags.includes("chronic") ? "2px solid #9F1239" : "2px solid transparent",
-                      }}
-                    >
+                    <td style={{ padding: "14px 16px", color: "#171717", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap", borderLeft: job.tags.includes("chronic") ? "2px solid #9F1239" : "2px solid transparent" }}>
                       {job.customerName}
                     </td>
-                    {/* PHONE */}
-                    <td
-                      style={{
-                        padding: "14px 16px",
-                        color: "#525252",
-                        fontSize: "13px",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {job.phone || "—"}
-                    </td>
+                    {/* PHONE — owner/staff only */}
+                    {!isTechnician && (
+                      <td style={{ padding: "14px 16px", color: "#525252", fontSize: "13px", whiteSpace: "nowrap" }}>
+                        {job.phone || "—"}
+                      </td>
+                    )}
                     {/* TYPE */}
                     <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       <JobTypeChip type={job.type} />
                     </td>
-                    {/* SOURCE */}
-                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
-                      <SourceChip
-                        source={job.source}
-                        dealerName={job.dealerName ?? undefined}
-                      />
-                    </td>
+                    {/* SOURCE — owner/staff only */}
+                    {!isTechnician && (
+                      <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
+                        <SourceChip source={job.source} dealerName={job.dealerName ?? undefined} />
+                      </td>
+                    )}
                     {/* BRAND */}
                     <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       {job.brandName ? <BrandSwatch name={job.brandName} colorHex={null} /> : <span style={{ color: "#525252", fontSize: "13px" }}>—</span>}
                     </td>
-                    {/* TECHNICIAN */}
-                    <td
-                      style={{
-                        padding: "14px 16px",
-                        fontSize: "13px",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {job.assignedTechnicianName ? (
-                        <span style={{ color: "#404040" }}>
-                          {job.assignedTechnicianName}
-                        </span>
-                      ) : (
-                        <span
-                          style={{
-                            color: "#737373",
-                            fontStyle: "italic",
-                          }}
-                        >
-                          Unassigned
-                        </span>
-                      )}
-                    </td>
+                    {/* TECHNICIAN — owner/staff only */}
+                    {!isTechnician && (
+                      <td style={{ padding: "14px 16px", fontSize: "13px", whiteSpace: "nowrap" }}>
+                        {job.assignedTechnicianName
+                          ? <span style={{ color: "#404040" }}>{job.assignedTechnicianName}</span>
+                          : <span style={{ color: "#737373", fontStyle: "italic" }}>Unassigned</span>
+                        }
+                      </td>
+                    )}
                     {/* SCHEDULED */}
-                    <td
-                      style={{
-                        padding: "14px 16px",
-                        color: "#525252",
-                        fontSize: "13px",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
+                    <td style={{ padding: "14px 16px", color: "#525252", fontSize: "13px", whiteSpace: "nowrap" }}>
                       {formatScheduled(job.scheduledAt)}
                     </td>
                     {/* STATUS */}

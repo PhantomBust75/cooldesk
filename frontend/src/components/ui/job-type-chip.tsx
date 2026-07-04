@@ -1,9 +1,4 @@
-import {
-  ArrowRight,
-  Building2,
-  MessageCircleWarning,
-  Wrench,
-} from "lucide-react";
+import { ArrowRight, Building2 } from "lucide-react";
 
 type JobType = "installation" | "complaint";
 type JobSource = "direct" | "via_dealer";
@@ -25,15 +20,16 @@ export function JobTypeChip({ type }: TypeChipProps) {
         display: "inline-flex",
         alignItems: "center",
         gap: "5px",
+        padding: "3px 10px",
+        borderRadius: "9999px",
+        border: `1px solid ${isInstall ? "#BBF7D0" : "#FED7AA"}`,
+        backgroundColor: isInstall ? "#F0FDF4" : "#FFF7ED",
         fontSize: "13px",
-        color: "#404040",
+        fontWeight: 500,
+        color: isInstall ? "#16A34A" : "#EA580C",
+        whiteSpace: "nowrap",
       }}
     >
-      {isInstall ? (
-        <Wrench size={14} color="#525252" strokeWidth={1.5} />
-      ) : (
-        <MessageCircleWarning size={14} color="#525252" strokeWidth={1.5} />
-      )}
       {isInstall ? "Installation" : "Complaint"}
     </span>
   );
@@ -114,21 +110,28 @@ export function TagChip({
   );
 }
 
+const BRAND_COLORS = [
+  "#2563EB", "#7C3AED", "#DB2777", "#DC2626",
+  "#D97706", "#059669", "#0891B2", "#4F46E5",
+];
+
+function brandColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) & 0xffffffff;
+  return BRAND_COLORS[Math.abs(hash) % BRAND_COLORS.length];
+}
+
 export function BrandSwatch({
   name,
+  colorHex,
 }: {
   name: string;
   colorHex?: string | null;
 }) {
+  const dot = colorHex ?? brandColor(name);
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        fontSize: "13px",
-        color: "#64748B",
-      }}
-    >
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "7px", fontSize: "13px", color: "#171717" }}>
+      <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: dot, flexShrink: 0 }} />
       {name}
     </span>
   );
