@@ -5,6 +5,8 @@ import { ApiError } from "@/lib/api/client";
 import {
   fetchOfficeBrands,
   createBrand,
+  updateBrand,
+  deleteBrand,
 } from "@/lib/api/operations";
 import {
   fetchServiceItems,
@@ -13,11 +15,11 @@ import {
   deleteServiceItem,
   type CreateServiceItemInput,
 } from "@/lib/api/service-items";
-import type { ServiceItem } from "@/types/operations";
+import type { OfficeBrand, ServiceItem } from "@/types/operations";
 import { PaymentMethodsSection } from "@/components/payment-methods/PaymentMethodsSection";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Building2,
+  Layers,
   Pencil,
   Plus,
   Tag,
@@ -325,33 +327,67 @@ function ServiceItemsSection() {
   );
 }
 
-// ─── Brands Section ──────────────────────────────────────────────────────────
+// ─── Brand Modal ─────────────────────────────────────────────────────────────
 
-function BrandsSection() {
-  const queryClient = useQueryClient();
-  const { enqueueSnackbar } = useSnackbar();
-  const [showAdd, setShowAdd] = useState(false);
-  const [brandName, setBrandName] = useState("");
-  const [brandColor, setBrandColor] = useState("#3B82F6");
+const COLOR_PALETTE: { name: string; hex: string }[] = [
+  { name: "Ocean Blue",    hex: "#0066CC" },
+  { name: "Sunset Orange", hex: "#E85A1B" },
+  { name: "Crimson Red",   hex: "#C8131B" },
+  { name: "Magenta",       hex: "#A50034" },
+  { name: "Royal Blue",    hex: "#1428A0" },
+  { name: "Forest Green",  hex: "#009B48" },
+  { name: "Navy",          hex: "#003087" },
+  { name: "Amber",         hex: "#F59E0B" },
+  { name: "Violet",        hex: "#7C3AED" },
+  { name: "Sky Blue",      hex: "#0EA5E9" },
+  { name: "Emerald",       hex: "#10B981" },
+  { name: "Coral Red",     hex: "#EF4444" },
+  { name: "Slate",         hex: "#475569" },
+  { name: "Charcoal",      hex: "#0A0A0A" },
+];
+
+type BrandModalProps = {
+  brand?: OfficeBrand | null;
+  onClose: () => void;
+  onSaved: () => void;
+};
+
+function BrandModal({ brand, onClose, onSaved }: BrandModalProps) {
+  const isEdit = !!brand;
+  const [name, setName] = useState(brand?.name ?? "");
+  const [colorHex, setColorHex] = useState(brand?.colorHex ?? COLOR_PALETTE[0].hex);
+  const [charge, setCharge] = useState(brand ? String(brand.installationCharge) : "");
   const [error, setError] = useState<string | null>(null);
+  const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
 
-  const brandsQuery = useQuery({
-    queryKey: ["office-brands"],
-    queryFn: fetchOfficeBrands,
-  });
+  const selectedColor = COLOR_PALETTE.find((c) => c.hex === colorHex);
 
   const createMutation = useMutation({
-    mutationFn: () => createBrand({ name: brandName.trim(), colorHex: brandColor }),
+    mutationFn: () => createBrand({ name: name.trim(), colorHex, installationCharge: Number(charge) }),
     onSuccess: () => {
-      enqueueSnackbar("Brand created successfully", { variant: "success" });
-      setBrandName("");
-      setBrandColor("#3B82F6");
-      setShowAdd(false);
-      setError(null);
+      enqueueSnackbar("Brand created", { variant: "success" });
       queryClient.invalidateQueries({ queryKey: ["office-brands"] });
+      onSaved();
+      onClose();
     },
     onError: (e) => {
-      const msg = e instanceof ApiError ? e.message : "Unable to create brand.";
+      const msg = e instanceof ApiError ? e.message : "Failed to create brand.";
+      setError(msg);
+      enqueueSnackbar(msg, { variant: "error" });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: () => updateBrand(brand!.id, { name: name.trim(), colorHex, installationCharge: Number(charge) }),
+    onSuccess: () => {
+      enqueueSnackbar("Brand updated", { variant: "success" });
+      queryClient.invalidateQueries({ queryKey: ["office-brands"] });
+      onSaved();
+      onClose();
+    },
+    onError: (e) => {
+      const msg = e instanceof ApiError ? e.message : "Failed to update brand.";
       setError(msg);
       enqueueSnackbar(msg, { variant: "error" });
     },
@@ -360,121 +396,280 @@ function BrandsSection() {
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    if (!brandName.trim()) { setError("Brand name is required."); return; }
-    createMutation.mutate();
+    if (!name.trim()) { setError("Brand name is required."); return; }
+    const chargeVal = Number(charge);
+    if (Number.isNaN(chargeVal) || chargeVal < 0) { setError("Installation charge must be a valid number."); return; }
+    if (isEdit) updateMutation.mutate();
+    else createMutation.mutate();
   }
 
+  const isPending = createMutation.isPending || updateMutation.isPending;
+  const isValid = name.trim() && Number(charge) >= 0;
+
   return (
-    <div style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", padding: "0", overflow: "hidden" }}>
-      {/* FAFAFA Header Bar */}
-      <div style={{ backgroundColor: "#FAFAFA", borderBottom: "1px solid #E5E5E5", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <Building2 size={18} strokeWidth={1.5} color="#525252" />
+    <div
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.35)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center" }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ backgroundColor: "#fff", borderRadius: "12px", width: "100%", maxWidth: "480px", boxShadow: "0 10px 38px rgba(0,0,0,0.10)", overflow: "hidden" }}
+      >
+        {/* Header */}
+        <div style={{ padding: "12px 20px", borderBottom: "1px solid #E5E5E5", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: "14px", fontWeight: 500, color: "#171717" }}>{isEdit ? "Edit brand" : "Add brand"}</span>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#737373", lineHeight: 0, padding: "4px" }}>
+            <X size={18} strokeWidth={1.5} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <form onSubmit={onSubmit}>
+          <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+            {/* Name */}
+            <div>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
+                Brand name <span style={{ color: "#EF4444" }}>*</span>
+              </label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Mitsubishi"
+                autoFocus
+                style={{ width: "100%", padding: "11px 10px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box", color: "#171717", minHeight: "44px" }}
+                onFocus={(e) => (e.target.style.borderColor = "#A3A3A3")}
+                onBlur={(e) => (e.target.style.borderColor = "#E5E5E5")}
+              />
+            </div>
+
+            {/* Color */}
+            <div>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>Colour</label>
+              <div style={{ position: "relative" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px", border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", minHeight: "44px" }}>
+                  <div style={{ width: "18px", height: "18px", borderRadius: "4px", backgroundColor: colorHex, border: "1px solid rgba(0,0,0,0.1)", flexShrink: 0 }} />
+                  <select
+                    value={colorHex}
+                    onChange={(e) => setColorHex(e.target.value)}
+                    style={{ position: "absolute", inset: 0, opacity: 0, width: "100%", height: "100%", cursor: "pointer", border: "none" }}
+                  >
+                    {COLOR_PALETTE.map((c) => <option key={c.hex} value={c.hex}>{c.name}</option>)}
+                  </select>
+                  <span style={{ fontSize: "13px", color: "#404040", flex: 1 }}>{selectedColor?.name ?? "Select colour"}</span>
+                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ flexShrink: 0, color: "#A3A3A3" }}>
+                    <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Installation charge */}
+            <div>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
+                Installation charge (SAR) <span style={{ color: "#EF4444" }}>*</span>
+              </label>
+              <div style={{ position: "relative" }}>
+                <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "13px", color: "#737373", pointerEvents: "none" }}>SAR</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={5}
+                  value={charge}
+                  onChange={(e) => setCharge(e.target.value)}
+                  placeholder="0.00"
+                  style={{ width: "100%", padding: "11px 10px", paddingLeft: "42px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box", color: "#171717", minHeight: "44px" }}
+                  onFocus={(e) => (e.target.style.borderColor = "#A3A3A3")}
+                  onBlur={(e) => (e.target.style.borderColor = "#E5E5E5")}
+                />
+              </div>
+            </div>
+
+            {error && <div style={{ fontSize: "12px", color: "#EF4444" }}>{error}</div>}
+
+            {/* Buttons */}
+            <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", marginTop: "4px" }}>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{ padding: "10px 16px", borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#fff", cursor: "pointer", fontSize: "13px", color: "#404040", minHeight: "44px" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isPending || !isValid}
+                style={{ display: "flex", alignItems: "center", gap: "5px", padding: "10px 16px", borderRadius: "8px", border: "none", backgroundColor: isValid && !isPending ? "#0A0A0A" : "#E5E5E5", color: isValid && !isPending ? "#fff" : "#A3A3A3", cursor: isValid && !isPending ? "pointer" : "not-allowed", fontSize: "13px", fontWeight: 500, minHeight: "44px" }}
+              >
+                {isPending ? "Saving…" : isEdit ? "Save changes" : "Add brand"}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Brands Section ──────────────────────────────────────────────────────────
+
+function BrandsSection() {
+  const queryClient = useQueryClient();
+  const { enqueueSnackbar } = useSnackbar();
+  // undefined = closed, null = adding, OfficeBrand = editing
+  const [modalBrand, setModalBrand] = useState<OfficeBrand | null | undefined>(undefined);
+
+  const brandsQuery = useQuery({
+    queryKey: ["office-brands"],
+    queryFn: fetchOfficeBrands,
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => updateBrand(id, { isActive }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["office-brands"] });
+    },
+    onError: () => {
+      enqueueSnackbar("Failed to update brand status.", { variant: "error" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteBrand(id),
+    onSuccess: () => {
+      enqueueSnackbar("Brand deleted", { variant: "success" });
+      queryClient.invalidateQueries({ queryKey: ["office-brands"] });
+    },
+    onError: () => {
+      enqueueSnackbar("Failed to delete brand.", { variant: "error" });
+    },
+  });
+
+  return (
+    <div style={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5E5", overflow: "hidden", marginBottom: "24px" }}>
+      {/* Header */}
+      <div style={{ padding: "14px 16px", backgroundColor: "#FAFAFA", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", flex: 1, minWidth: 0 }}>
+          <div style={{ color: "#525252", lineHeight: 0, marginTop: "2px", flexShrink: 0 }}>
+            <Layers size={16} strokeWidth={1.5} />
+          </div>
           <div>
             <div style={{ fontSize: "14px", fontWeight: 500, color: "#171717" }}>Brands</div>
-            <div style={{ fontSize: "12px", color: "#737373" }}>Product brands handled by your organization</div>
+            <div style={{ fontSize: "12px", color: "#737373", marginTop: "1px" }}>
+              Colour coding for the owner portal and installation charges for the technician payment flow
+            </div>
           </div>
         </div>
         <button
           type="button"
-          onClick={() => { setShowAdd(true); setBrandName(""); setError(null); }}
-          style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "7px 14px", border: "none", borderRadius: "8px", backgroundColor: "#0A0A0A", color: "#fff", fontSize: "13px", cursor: "pointer" }}
+          onClick={() => setModalBrand(null)}
+          style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", borderRadius: "8px", backgroundColor: "#0A0A0A", color: "#fff", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0 }}
         >
-          <Plus size={13} strokeWidth={1.5} /> Add brand
+          <Plus size={13} strokeWidth={1.5} /> Add
         </button>
       </div>
 
-      {/* Section content */}
-      <div style={{ padding: "20px" }}>
-
-      {/* Add form */}
-      {showAdd && (
-        <div style={{ marginBottom: "16px", padding: "14px", backgroundColor: "#F5F5F5", borderRadius: "10px" }}>
-          <form onSubmit={onSubmit} style={{ display: "flex", gap: "8px", alignItems: "flex-start", flexWrap: "wrap" }}>
-            <input
-              value={brandName}
-              onChange={(e) => setBrandName(e.target.value)}
-              placeholder="Brand name"
-              autoFocus
-              style={{ flex: "1 1 200px", borderRadius: "8px", border: "1px solid #E5E5E5", padding: "9px 12px", fontSize: "13px", backgroundColor: "#fff" }}
-            />
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <label style={{ fontSize: "12px", color: "#525252", fontWeight: 500 }}>Color</label>
-              <input
-                type="color"
-                value={brandColor}
-                onChange={(e) => setBrandColor(e.target.value)}
-                style={{ width: "36px", height: "36px", borderRadius: "6px", border: "1px solid #E5E5E5", cursor: "pointer", padding: "2px", backgroundColor: "#fff" }}
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={createMutation.isPending}
-              style={{ borderRadius: "8px", border: "none", backgroundColor: "#0A0A0A", color: "#fff", padding: "9px 14px", fontSize: "13px", cursor: "pointer", opacity: createMutation.isPending ? 0.6 : 1 }}
-            >
-              Save
-            </button>
-            <button
-              type="button"
-              onClick={() => { setShowAdd(false); setError(null); }}
-              style={{ borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#525252", padding: "9px 12px", fontSize: "13px", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
-            >
-              <X size={14} strokeWidth={1.5} />
-            </button>
-          </form>
-          {error && (
-            <div style={{ marginTop: "8px", fontSize: "12px", color: "#EF4444" }}>{error}</div>
-          )}
-        </div>
-      )}
-
-      {/* Brands list */}
+      {/* Table */}
       {brandsQuery.isLoading && (
-        <div style={{ fontSize: "13px", color: "#737373", padding: "12px 0" }}>Loading…</div>
+        <div style={{ padding: "20px", fontSize: "13px", color: "#737373" }}>Loading…</div>
       )}
       {brandsQuery.isError && (
-        <div style={{ fontSize: "13px", color: "#EF4444", padding: "12px 0" }}>Failed to load brands.</div>
+        <div style={{ padding: "20px", fontSize: "13px", color: "#EF4444" }}>Failed to load brands.</div>
       )}
       {brandsQuery.data && brandsQuery.data.length === 0 && (
-        <div style={{ fontSize: "13px", color: "#737373", padding: "12px 0", textAlign: "center" }}>No brands yet. Add your first brand.</div>
+        <div style={{ padding: "20px", fontSize: "13px", color: "#737373", textAlign: "center" }}>No brands yet. Add your first brand.</div>
       )}
       {brandsQuery.data && brandsQuery.data.length > 0 && (
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
-              <th style={{ textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>BRAND</th>
-              <th style={{ textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#737373", padding: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>INSTALLATION CHARGE</th>
+              {["Brand", "Installation Charge (SAR)", "Status", "Actions"].map((h) => (
+                <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>{h}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {brandsQuery.data.map((brand) => (
-              <tr key={brand.id} style={{ borderBottom: "1px solid #E5E5E5" }}>
+              <tr
+                key={brand.id}
+                style={{ borderBottom: "1px solid #F5F5F5", opacity: brand.isActive ? 1 : 0.55 }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#FAFAFA")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+              >
+                {/* Brand (swatch + name) */}
                 <td style={{ padding: "13px 16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <div
-                      style={{
-                        width: "16px",
-                        height: "16px",
-                        borderRadius: "50%",
-                        backgroundColor: brand.colorHex ?? "#E5E5E5",
-                        flexShrink: 0,
-                        border: "1px solid rgba(0,0,0,0.08)",
-                      }}
-                    />
-                    <span style={{ fontSize: "13px", fontWeight: 500, color: "#171717" }}>{brand.name}</span>
+                    <div style={{ width: "22px", height: "22px", borderRadius: "5px", backgroundColor: brand.colorHex ?? "#E5E5E5", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }} />
+                    <span style={{ fontSize: "14px", fontWeight: 500, color: "#171717" }}>{brand.name}</span>
                   </div>
                 </td>
-                <td style={{ padding: "13px 16px", textAlign: "right", fontSize: "13px", color: "#404040", fontWeight: 500 }}>
-                  {brand.installationCharge > 0
-                    ? brand.installationCharge.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                    : <span style={{ color: "#737373" }}>—</span>}
+                {/* Charge */}
+                <td style={{ padding: "13px 16px", fontSize: "14px", fontWeight: 500, color: "#065F46", fontVariantNumeric: "tabular-nums" }}>
+                  SAR {brand.installationCharge.toLocaleString()}
+                </td>
+                {/* Status chip */}
+                <td style={{ padding: "13px 16px" }}>
+                  <button
+                    type="button"
+                    onClick={() => toggleMutation.mutate({ id: brand.id, isActive: !brand.isActive })}
+                    title={brand.isActive ? "Click to deactivate" : "Click to activate"}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: "5px",
+                      padding: "4px 10px", borderRadius: "9999px", border: "none",
+                      fontSize: "12px", fontWeight: 500, cursor: "pointer",
+                      backgroundColor: brand.isActive ? "#D1FAE5" : "#F5F5F5",
+                      color: brand.isActive ? "#065F46" : "#525252",
+                    }}
+                  >
+                    <span style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: brand.isActive ? "#10B981" : "#A3A3A3", flexShrink: 0 }} />
+                    {brand.isActive ? "Active" : "Inactive"}
+                  </button>
+                </td>
+                {/* Actions */}
+                <td style={{ padding: "13px 16px" }}>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <button
+                      type="button"
+                      onClick={() => setModalBrand(brand)}
+                      title="Edit"
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", borderRadius: "7px", border: "none", cursor: "pointer", backgroundColor: "#FAFAFA", color: "#525252" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F0F0F0")}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#FAFAFA")}
+                    >
+                      <Pencil size={13} strokeWidth={1.5} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { if (confirm("Delete this brand?")) deleteMutation.mutate(brand.id); }}
+                      title="Delete"
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", borderRadius: "7px", border: "none", cursor: "pointer", backgroundColor: "#FFF5F5", color: "#EF4444" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#FEE2E2")}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#FFF5F5")}
+                    >
+                      <Trash2 size={13} strokeWidth={1.5} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
+
+      {/* Footer note */}
+      <div style={{ padding: "10px 16px", backgroundColor: "#FAFAFA", borderTop: "1px solid #F5F5F5" }}>
+        <p style={{ fontSize: "12px", color: "#737373", margin: 0 }}>
+          Inactive brands are hidden from new job forms and the technician payment flow but retained in historical records.
+        </p>
       </div>
+
+      {/* Modal */}
+      {modalBrand !== undefined && (
+        <BrandModal
+          brand={modalBrand}
+          onClose={() => setModalBrand(undefined)}
+          onSaved={() => queryClient.invalidateQueries({ queryKey: ["office-brands"] })}
+        />
+      )}
     </div>
   );
 }

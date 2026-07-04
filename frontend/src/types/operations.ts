@@ -3,6 +3,7 @@ export type OfficeBrand = {
   name: string;
   colorHex?: string;
   installationCharge: number;
+  isActive: boolean;
 };
 
 export type QuickCreateJobInput = {

@@ -147,14 +147,41 @@ export async function fetchOfficeBrands(): Promise<OfficeBrand[]> {
     name: asString(row.name),
     colorHex: asNullableString(row.color_hex) ?? undefined,
     installationCharge: Number(row.installation_charge ?? 0),
+    isActive: asBoolean(row.is_active, true),
   }));
 }
 
-export function createBrand(input: { name: string; colorHex: string }): Promise<{ id: string }> {
-  return apiClient.post<{ id: string }>("/office/brands", {
+export function createBrand(input: { name: string; colorHex: string; installationCharge: number }): Promise<OfficeBrand> {
+  return apiClient.post<UnknownRecord>("/office/brands", {
     name: input.name,
     color_hex: input.colorHex,
-  });
+    installation_charge: input.installationCharge,
+  }).then((row) => ({
+    id: asString(row.id),
+    name: asString(row.name),
+    colorHex: asNullableString(row.color_hex) ?? undefined,
+    installationCharge: Number(row.installation_charge ?? 0),
+    isActive: asBoolean(row.is_active, true),
+  }));
+}
+
+export function updateBrand(id: string, input: { name?: string; colorHex?: string; installationCharge?: number; isActive?: boolean }): Promise<OfficeBrand> {
+  return apiClient.patch<UnknownRecord>(`/office/brands/${id}`, {
+    name: input.name,
+    color_hex: input.colorHex,
+    installation_charge: input.installationCharge,
+    is_active: input.isActive,
+  }).then((row) => ({
+    id: asString(row.id),
+    name: asString(row.name),
+    colorHex: asNullableString(row.color_hex) ?? undefined,
+    installationCharge: Number(row.installation_charge ?? 0),
+    isActive: asBoolean(row.is_active, true),
+  }));
+}
+
+export function deleteBrand(id: string): Promise<void> {
+  return apiClient.delete<void>(`/office/brands/${id}`);
 }
 
 export async function fetchDealers(): Promise<DealerDirectoryItem[]> {

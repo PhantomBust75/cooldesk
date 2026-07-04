@@ -1,10 +1,10 @@
-import { Body, Controller, Get, Post, Req, UseGuards, Logger } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Req, UseGuards, Logger } from '@nestjs/common';
 import { TenantGuard } from '../security/tenant.guard';
 import { RolesGuard } from '../security/roles.guard';
 import { Roles } from '../security/roles.decorator';
 import { RequestContext } from '../security/request-context';
 import { BrandsService } from './brands.service';
-import { CreateBrandDto } from './brands.dto';
+import { CreateBrandDto, UpdateBrandDto } from './brands.dto';
 
 type UserRequest = {
   context: RequestContext;
@@ -27,10 +27,25 @@ export class BrandsController {
   @Post()
   @UseGuards(TenantGuard, RolesGuard)
   @Roles('owner')
-  createBrand(@Body() body: CreateBrandDto, @Req() req: UserRequest & { body: unknown }) {
+  createBrand(@Body() body: CreateBrandDto, @Req() req: UserRequest) {
     this.logger.log(`[POST /office/brands] org=${req.context.organizationId}`);
-    this.logger.debug(`[POST] Raw request body: ${JSON.stringify(req.body)}`);
-    this.logger.debug(`[POST] Transformed DTO: ${JSON.stringify(body)}`);
     return this.brandsService.createBrand(body, req.context);
+  }
+
+  @Patch(':id')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner')
+  updateBrand(@Param('id') id: string, @Body() body: UpdateBrandDto, @Req() req: UserRequest) {
+    this.logger.log(`[PATCH /office/brands/${id}] org=${req.context.organizationId}`);
+    return this.brandsService.updateBrand(id, body, req.context);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner')
+  deleteBrand(@Param('id') id: string, @Req() req: UserRequest) {
+    this.logger.log(`[DELETE /office/brands/${id}] org=${req.context.organizationId}`);
+    return this.brandsService.deleteBrand(id, req.context);
   }
 }
