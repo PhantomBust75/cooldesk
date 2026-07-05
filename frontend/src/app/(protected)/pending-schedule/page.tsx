@@ -252,7 +252,7 @@ export default function PendingSchedulePage() {
   };
 
   return (
-    <section style={{ padding: "24px", maxWidth: "1200px" }}>
+    <section style={{ padding: "24px 24px 320px", maxWidth: "1200px" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
         <div>

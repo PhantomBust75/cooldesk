@@ -78,6 +78,7 @@ function mapTechnician(row: UnknownRecord): TechnicianDirectoryItem {
     role: "technician",
     isActive: asBoolean(row.is_active, true),
     activeAssignments: asNumber(row.active_assignments),
+    createdAt: asNullableString(row.created_at),
   };
 }
 
@@ -356,6 +357,8 @@ export async function fetchTechnicianJobs(technicianId: string): Promise<Technic
     type: asString(row.type) as "installation" | "complaint",
     status: asString(row.status),
     createdAt: asString(row.created_at),
+    address: asNullableString(row.address),
+    scheduledAt: asNullableString(row.scheduled_at),
     amountCollected: Number(row.amount_collected ?? 0),
     avgRating: row.avg_rating != null ? Number(row.avg_rating) : null,
   }));

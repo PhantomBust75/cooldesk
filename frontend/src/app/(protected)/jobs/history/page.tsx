@@ -40,7 +40,7 @@ function formatDate(iso: string | null | undefined): string {
 
 function formatAmount(amount: number | null | undefined): string {
   if (amount == null) return "—";
-  return `SAR ${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `RS ${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export default function JobsHistoryPage() {

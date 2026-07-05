@@ -31,6 +31,7 @@ const mockTechnician: TechnicianDirectoryItem = {
   role: "technician",
   isActive: true,
   activeAssignments: 2,
+  createdAt: null,
 };
 
 const mockJobs: TechnicianJob[] = [
@@ -42,6 +43,8 @@ const mockJobs: TechnicianJob[] = [
     createdAt: "2024-01-15T10:00:00Z",
     amountCollected: 0,
     avgRating: null,
+    address: null,
+    scheduledAt: null,
   },
   {
     id: "job-done-1",
@@ -51,6 +54,8 @@ const mockJobs: TechnicianJob[] = [
     createdAt: "2024-01-10T09:00:00Z",
     amountCollected: 500,
     avgRating: 4.5,
+    address: null,
+    scheduledAt: null,
   },
   {
     id: "job-done-2",
@@ -60,6 +65,8 @@ const mockJobs: TechnicianJob[] = [
     createdAt: "2024-01-05T08:00:00Z",
     amountCollected: 0,
     avgRating: null,
+    address: null,
+    scheduledAt: null,
   },
 ];
 

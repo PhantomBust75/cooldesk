@@ -967,7 +967,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
               <p style={{ margin: 0, fontSize: "13px", color: "#737373" }}>No payment recorded</p>
             ) : (
               <div style={{ display: "grid", gap: "4px" }}>
-                <p style={{ margin: 0, fontSize: "13px", color: "#171717", fontWeight: 500 }}>SAR {detail.payment.amount.toFixed(2)}</p>
+                <p style={{ margin: 0, fontSize: "13px", color: "#171717", fontWeight: 500 }}>RS {detail.payment.amount.toFixed(2)}</p>
                 <p style={{ margin: 0, fontSize: "12px", color: "#737373" }}>{detail.payment.paymentMethodName ?? "—"}</p>
               </div>
             )}
@@ -1095,7 +1095,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                               <span style={{ fontSize: "14px", color: "#171717" }}>{si.name}</span>
                             </span>
                             <span style={{ fontSize: "13px", color: "#525252", fontWeight: 500 }}>
-                              SAR {si.unitPrice.toFixed(2)}{si.unit ? `/${si.unit}` : ""}
+                              RS {si.unitPrice.toFixed(2)}{si.unit ? `/${si.unit}` : ""}
                             </span>
                           </label>
                         );
@@ -1106,7 +1106,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
                 {/* Additional charges */}
                 <div>
-                  <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Additional Charges (SAR)</p>
+                  <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Additional Charges (RS)</p>
                   <input
                     type="number"
                     min="0"
@@ -1152,7 +1152,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
                   <span style={{ fontSize: "13px", color: "#737373" }}>Total</span>
                   <span style={{ fontSize: "20px", fontWeight: 700, color: "#0A0A0A" }}>
-                    SAR {totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    RS {totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: "8px" }}>

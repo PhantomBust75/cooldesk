@@ -466,10 +466,10 @@ function BrandModal({ brand, onClose, onSaved }: BrandModalProps) {
             {/* Installation charge */}
             <div>
               <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
-                Installation charge (SAR) <span style={{ color: "#EF4444" }}>*</span>
+                Installation charge (RS) <span style={{ color: "#EF4444" }}>*</span>
               </label>
               <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "13px", color: "#737373", pointerEvents: "none" }}>SAR</span>
+                <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "13px", color: "#737373", pointerEvents: "none" }}>RS</span>
                 <input
                   type="number"
                   min={0}
@@ -582,7 +582,7 @@ function BrandsSection() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
-              {["Brand", "Installation Charge (SAR)", "Status", "Actions"].map((h) => (
+              {["Brand", "Installation Charge (RS)", "Status", "Actions"].map((h) => (
                 <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>{h}</th>
               ))}
             </tr>
@@ -604,7 +604,7 @@ function BrandsSection() {
                 </td>
                 {/* Charge */}
                 <td style={{ padding: "13px 16px", fontSize: "14px", fontWeight: 500, color: "#065F46", fontVariantNumeric: "tabular-nums" }}>
-                  SAR {brand.installationCharge.toLocaleString()}
+                  RS {brand.installationCharge.toLocaleString()}
                 </td>
                 {/* Status chip */}
                 <td style={{ padding: "13px 16px" }}>

@@ -36,6 +36,7 @@ export type TechnicianDirectoryItem = {
   role: "technician";
   isActive: boolean;
   activeAssignments: number;
+  createdAt: string | null;
 };
 
 export type TechnicianStats = {
@@ -137,6 +138,8 @@ export type TechnicianJob = {
   type: "installation" | "complaint";
   status: string;
   createdAt: string;
+  address: string | null;
+  scheduledAt: string | null;
   amountCollected: number;
   avgRating: number | null;
 };

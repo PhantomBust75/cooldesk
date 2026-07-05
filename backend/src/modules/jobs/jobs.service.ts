@@ -501,6 +501,7 @@ export class JobsService {
         u.phone,
         u.region,
         u.is_active,
+        u.created_at,
         COALESCE(COUNT(ja.id), 0) AS active_assignments
       FROM users u
       LEFT JOIN job_assignments ja
@@ -510,7 +511,7 @@ export class JobsService {
       WHERE u.organization_id = $1
         AND u.role = 'technician'
         AND u.is_deleted = FALSE
-      GROUP BY u.id, u.full_name, u.email, u.phone, u.region, u.is_active
+      GROUP BY u.id, u.full_name, u.email, u.phone, u.region, u.is_active, u.created_at
       ORDER BY u.is_active DESC, u.full_name ASC
       `,
       [ctx.organizationId],
@@ -4116,6 +4117,8 @@ export class JobsService {
         j.type,
         j.status,
         j.created_at,
+        j.address,
+        j.scheduled_at,
         COALESCE(SUM(p.amount) FILTER (WHERE p.status = 'collected'), 0) AS amount_collected,
         ROUND(AVG(r.star_rating)::numeric, 1) AS avg_rating
       FROM jobs j
@@ -4129,7 +4132,7 @@ export class JobsService {
       WHERE j.organization_id = $1
         AND j.technician_id = $2
         AND j.is_deleted = FALSE
-      GROUP BY j.id, j.customer_name, j.type, j.status, j.created_at
+      GROUP BY j.id, j.customer_name, j.type, j.status, j.created_at, j.address, j.scheduled_at
       ORDER BY j.created_at DESC
       LIMIT 50
       `,

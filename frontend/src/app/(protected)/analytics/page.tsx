@@ -343,7 +343,7 @@ export default function AnalyticsPage() {
               }}
             >
               <KpiCard
-                title="Total Revenue (SAR)"
+                title="Total Revenue (RS)"
                 value={overview.totalRevenue.toLocaleString("en", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
@@ -385,7 +385,7 @@ export default function AnalyticsPage() {
           {dailyQuery.isError ? <ErrorRow /> : null}
           {!dailyQuery.isLoading && !dailyQuery.isError && dailyData.length > 0 ? (
             <>
-              <ChartCard title="Daily Revenue (SAR)">
+              <ChartCard title="Daily Revenue (RS)">
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={dailyData} barSize={28}>
                     <CartesianGrid
@@ -475,7 +475,7 @@ export default function AnalyticsPage() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#F9F9F9", color: "#737373", textAlign: "left" }}>
-                    {["NAME", "JOBS COMPLETED", "REVENUE (SAR)", "1ST VISIT RES.", "AVG RESOLUTION", "ON-TIME RATE", "RATING"].map(
+                    {["NAME", "JOBS COMPLETED", "REVENUE (RS)", "1ST VISIT RES.", "AVG RESOLUTION", "ON-TIME RATE", "RATING"].map(
                       (h) => (
                         <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5", fontSize: "13px", color: "#525252", fontWeight: 500 }}>
                           {h}
@@ -539,7 +539,7 @@ export default function AnalyticsPage() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#F9F9F9", color: "#737373", textAlign: "left" }}>
-                    {["BRAND", "TOTAL JOBS", "ACTIVE JOBS", "COMPLETED JOBS", "REVENUE (SAR)", "REVISIT RATE"].map(
+                    {["BRAND", "TOTAL JOBS", "ACTIVE JOBS", "COMPLETED JOBS", "REVENUE (RS)", "REVISIT RATE"].map(
                       (h) => (
                         <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
                           {h}
@@ -596,7 +596,7 @@ export default function AnalyticsPage() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#F9F9F9", color: "#737373", textAlign: "left" }}>
-                    {["DEALER", "JOBS SUBMITTED", "ACTIVE JOBS", "COMPLETED JOBS", "REVENUE (SAR)"].map(
+                    {["DEALER", "JOBS SUBMITTED", "ACTIVE JOBS", "COMPLETED JOBS", "REVENUE (RS)"].map(
                       (h) => (
                         <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
                           {h}
