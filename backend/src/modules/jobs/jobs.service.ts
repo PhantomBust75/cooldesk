@@ -15,6 +15,7 @@ import {
   CustomerLookupQueryDto,
   CreateJobDto,
   CreateOfficeTechnicianDto,
+  CreateOfficeStaffDto,
   UpdateOfficeTechnicianDto,
   DecideCancellationRequestDto,
   JobStatus,
@@ -565,6 +566,54 @@ export class JobsService {
     return { technicianId: created.rows[0].id };
   }
 
+  async createOfficeStaff(
+    input: CreateOfficeStaffDto,
+    ctx: RequestContext,
+  ): Promise<{ staffId: string }> {
+    if (ctx.role !== 'owner') {
+      throw new ForbiddenException('Only owner can create staff accounts');
+    }
+
+    const fullName = input.fullName.trim();
+    const email = input.email.trim().toLowerCase();
+    const passwordHash = this.hashPassword(input.password.trim());
+
+    const existing = await this.db.query<{ id: string }>(
+      `
+      SELECT id
+      FROM users
+      WHERE organization_id = $1
+        AND LOWER(email) = $2
+        AND is_deleted = FALSE
+      LIMIT 1
+      `,
+      [ctx.organizationId, email],
+    );
+
+    if (existing.rows.length > 0) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    const created = await this.db.query<{ id: string }>(
+      `
+      INSERT INTO users (
+        organization_id,
+        email,
+        full_name,
+        role,
+        password_hash,
+        is_active,
+        is_deleted
+      )
+      VALUES ($1, $2, $3, 'office_staff', $4, TRUE, FALSE)
+      RETURNING id
+      `,
+      [ctx.organizationId, email, fullName, passwordHash],
+    );
+
+    return { staffId: created.rows[0].id };
+  }
+
   async updateOfficeTechnician(
     technicianId: string,
     input: UpdateOfficeTechnicianDto,
@@ -817,10 +866,6 @@ export class JobsService {
     return this.db.withTransaction(async (client) => {
       const job = await this.getJobForUpdate(client, jobId, ctx.organizationId);
 
-
-      if (job.status !== 'pending_schedule') {
-        throw new ConflictException('Job must be in pending_schedule before office scheduling');
-      }
 
       if (input.technicianId) {
         await this.assertTechnicianBelongsToOrg(client, input.technicianId, ctx.organizationId);
@@ -3705,7 +3750,7 @@ export class JobsService {
     if (query.search) {
       params.push(`%${query.search}%`);
       conditions.push(
-        `(j.customer_name ILIKE $${params.length} OR j.phone ILIKE $${params.length} OR j.address ILIKE $${params.length})`,
+        `(j.customer_name ILIKE $${params.length} OR j.phone ILIKE $${params.length} OR j.address ILIKE $${params.length} OR j.id::text ILIKE $${params.length} OR b.name ILIKE $${params.length})`,
       );
     }
     if (query.brandId) add('j.brand_id = :p', query.brandId);
@@ -3714,7 +3759,7 @@ export class JobsService {
     const where = conditions.join(' AND ');
 
     const countResult = await this.db.query<{ count: string }>(
-      `SELECT COUNT(*)::text AS count FROM jobs j WHERE ${where}`,
+      `SELECT COUNT(*)::text AS count FROM jobs j LEFT JOIN brands b ON b.id = j.brand_id WHERE ${where}`,
       params,
     );
     const total = Number.parseInt(countResult.rows[0].count, 10);

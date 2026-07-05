@@ -331,6 +331,23 @@ export class CreateOfficeTechnicianDto {
   password!: string;
 }
 
+export class CreateOfficeStaffDto {
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 120)
+  fullName!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Length(5, 255)
+  email!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Length(8, 120)
+  password!: string;
+}
+
 export class UpdateOfficeTechnicianDto {
   @IsOptional()
   @IsBoolean()

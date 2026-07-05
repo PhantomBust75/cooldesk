@@ -21,7 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 const PAGE_SIZE = 10;
@@ -68,8 +68,15 @@ export function JobsList() {
 
   // Applied filter state (what actually goes to the API)
   const [filter, setFilter] = useState<JobListFilter>({});
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState(""); // raw input value
+  const [search, setSearch] = useState("");            // debounced value sent to API
   const [page, setPage] = useState(1);
+
+  // 300ms debounce: only fire API when user stops typing
+  useEffect(() => {
+    const t = setTimeout(() => { setSearch(searchInput.trim()); setPage(1); }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   // Inline filter panel toggle
   const [inlineFiltersOpen, setInlineFiltersOpen] = useState(false);
@@ -121,6 +128,7 @@ export function JobsList() {
     setInlineBrandId("");
     setInlineChronic(false);
     setFilter({});
+    setSearchInput("");
     setSearch("");
     setPage(1);
   }
@@ -251,8 +259,8 @@ export function JobsList() {
             style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#A3A3A3", pointerEvents: "none" }}
           />
           <input
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search by name, job ID, brand…"
             style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px 8px 32px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#171717", outline: "none", backgroundColor: "#fff" }}
           />
