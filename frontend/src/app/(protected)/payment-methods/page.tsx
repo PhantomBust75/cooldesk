@@ -22,12 +22,13 @@ import {
   Layers,
   Pencil,
   Plus,
+  Save,
   Tag,
   Trash2,
   X,
 } from "lucide-react";
 import { useSnackbar } from "notistack";
-import { FormEvent, useState } from "react";
+import { type CSSProperties, FormEvent, useState } from "react";
 
 // ─── Service Items Modal ─────────────────────────────────────────────────────
 
@@ -95,102 +96,144 @@ function ServiceItemModal({ item, onClose, onSaved }: ServiceItemModalProps) {
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
+  const isValid = name.trim() && Number(unitPrice) >= 0 && !Number.isNaN(Number(unitPrice)) &&
+    (pricingType === "fixed" || unitLabel.trim());
+
+  const LBL: CSSProperties = { display: "block", fontSize: "14px", fontWeight: 600, color: "#0A0A0A", marginBottom: "8px" };
+  const INP: CSSProperties = { width: "100%", boxSizing: "border-box", padding: "14px 16px", border: "1px solid #E5E5E5", borderRadius: "12px", fontSize: "14px", color: "#171717", outline: "none", fontFamily: "inherit" };
+
   return (
-    <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ backgroundColor: "#fff", borderRadius: "14px", padding: "24px", width: "100%", maxWidth: "420px", boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-          <div style={{ fontSize: "15px", fontWeight: 600, color: "#171717" }}>{isEdit ? "Edit Service Item" : "Add Service Item"}</div>
-          <button type="button" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#737373", display: "flex", alignItems: "center" }}>
-            <X size={18} strokeWidth={1.5} />
+    <div
+      style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.35)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{ backgroundColor: "#fff", borderRadius: "16px", width: "100%", maxWidth: "560px", boxShadow: "0 10px 40px rgba(0,0,0,0.14)", display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
+
+        {/* Header */}
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <span style={{ fontSize: "18px", fontWeight: 600, color: "#0A0A0A" }}>
+            {isEdit ? "Edit service item" : "Add service item"}
+          </span>
+          <button type="button" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#737373", lineHeight: 0, padding: "4px" }}>
+            <X size={20} strokeWidth={1.5} />
           </button>
         </div>
 
-        <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          {/* Name */}
+        {/* Body */}
+        <form onSubmit={onSubmit} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "20px", overflowY: "auto", flex: 1 }}>
+
+          {/* Item name */}
           <div>
-            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "#525252", marginBottom: "6px" }}>Item Name</label>
+            <label style={LBL}>Item name <span style={{ color: "#EF4444" }}>*</span></label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. AC Service, Filter Replacement"
+              placeholder="e.g. Copper Pipe"
               autoFocus
-              style={{ width: "100%", borderRadius: "8px", border: "1px solid #E5E5E5", padding: "9px 12px", fontSize: "13px", boxSizing: "border-box" }}
+              style={INP}
+              onFocus={(e) => (e.target.style.borderColor = "#A3A3A3")}
+              onBlur={(e) => (e.target.style.borderColor = "#E5E5E5")}
             />
           </div>
 
-          {/* Pricing type toggle */}
+          {/* Pricing type */}
           <div>
-            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "#525252", marginBottom: "6px" }}>Pricing Type</label>
-            <div style={{ display: "flex", gap: "8px" }}>
+            <label style={LBL}>Pricing type</label>
+            <div style={{ display: "inline-flex", backgroundColor: "#EBEBEB", borderRadius: "9999px", padding: "3px", gap: "2px" }}>
               {(["fixed", "variable"] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
-                  onClick={() => setPricingType(t)}
+                  onClick={() => { setPricingType(t); setUnitLabel(""); }}
                   style={{
-                    flex: 1,
-                    borderRadius: "8px",
-                    border: `1px solid ${pricingType === t ? "#0A0A0A" : "#E5E5E5"}`,
-                    backgroundColor: pricingType === t ? "#0A0A0A" : "#fff",
-                    color: pricingType === t ? "#fff" : "#525252",
-                    padding: "8px",
-                    fontSize: "13px",
+                    padding: "8px 22px",
+                    borderRadius: "9999px",
+                    border: pricingType === t ? "2px solid #0A0A0A" : "2px solid transparent",
+                    backgroundColor: pricingType === t ? "#fff" : "transparent",
+                    color: pricingType === t ? "#0A0A0A" : "#737373",
+                    fontSize: "14px",
+                    fontWeight: pricingType === t ? 700 : 400,
                     cursor: "pointer",
-                    fontWeight: pricingType === t ? 600 : 400,
-                    textTransform: "capitalize",
+                    transition: "all 150ms",
                   }}
                 >
-                  {t}
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
               ))}
             </div>
+            <p style={{ fontSize: "13px", color: "#737373", margin: "10px 0 0", lineHeight: 1.5 }}>
+              {pricingType === "fixed"
+                ? "A single flat charge applied per job (e.g. Dismantling, Transportation)."
+                : "Charged per unit of quantity — technician enters how much was used (e.g. Copper Pipe per meter, AC Gas per kg)."}
+            </p>
           </div>
 
-          {/* Unit price */}
-          <div>
-            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "#525252", marginBottom: "6px" }}>Unit Price</label>
-            <input
-              value={unitPrice}
-              onChange={(e) => setUnitPrice(e.target.value)}
-              placeholder="0.00"
-              type="number"
-              min="0"
-              step="0.01"
-              style={{ width: "100%", borderRadius: "8px", border: "1px solid #E5E5E5", padding: "9px 12px", fontSize: "13px", boxSizing: "border-box" }}
-            />
-          </div>
-
-          {/* Unit label — only for variable */}
+          {/* Unit label — variable only */}
           {pricingType === "variable" && (
             <div>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "#525252", marginBottom: "6px" }}>Unit Label <span style={{ color: "#737373", fontWeight: 400 }}>(optional)</span></label>
+              <label style={LBL}>Unit label <span style={{ color: "#EF4444" }}>*</span></label>
               <input
                 value={unitLabel}
                 onChange={(e) => setUnitLabel(e.target.value)}
-                placeholder="e.g. per unit, per hour"
-                style={{ width: "100%", borderRadius: "8px", border: "1px solid #E5E5E5", padding: "9px 12px", fontSize: "13px", boxSizing: "border-box" }}
+                placeholder="e.g. meter, kg, unit"
+                style={INP}
+                onFocus={(e) => (e.target.style.borderColor = "#A3A3A3")}
+                onBlur={(e) => (e.target.style.borderColor = "#E5E5E5")}
               />
             </div>
           )}
 
+          {/* Price */}
+          <div>
+            <label style={LBL}>
+              {pricingType === "fixed" ? "Price (RS)" : `Price per ${unitLabel.trim() || "unit"} (RS)`}
+              {" "}<span style={{ color: "#EF4444" }}>*</span>
+            </label>
+            <div style={{ position: "relative" }}>
+              <span style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", fontSize: "14px", color: "#737373", pointerEvents: "none", userSelect: "none" }}>RS</span>
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                value={unitPrice}
+                onChange={(e) => setUnitPrice(e.target.value)}
+                placeholder="0.00"
+                style={{ ...INP, paddingLeft: "48px" }}
+                onFocus={(e) => (e.target.style.borderColor = "#A3A3A3")}
+                onBlur={(e) => (e.target.style.borderColor = "#E5E5E5")}
+              />
+            </div>
+          </div>
+
           {error && (
-            <div style={{ fontSize: "12px", color: "#EF4444" }}>{error}</div>
+            <div style={{ fontSize: "13px", color: "#EF4444", padding: "10px 14px", backgroundColor: "#FEF2F2", borderRadius: "8px", border: "1px solid #FECACA" }}>
+              {error}
+            </div>
           )}
 
-          <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-            <button
-              type="submit"
-              disabled={isPending}
-              style={{ flex: 1, borderRadius: "8px", border: "none", backgroundColor: "#0A0A0A", color: "#fff", padding: "10px", fontSize: "13px", cursor: "pointer", fontWeight: 500, opacity: isPending ? 0.6 : 1 }}
-            >
-              {isPending ? "Saving…" : isEdit ? "Save Changes" : "Add Item"}
-            </button>
+          {/* Footer */}
+          <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", paddingTop: "4px" }}>
             <button
               type="button"
               onClick={onClose}
-              style={{ borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#404040", padding: "10px 16px", fontSize: "13px", cursor: "pointer" }}
+              style={{ padding: "12px 20px", borderRadius: "10px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#404040", fontSize: "14px", cursor: "pointer", fontWeight: 500, minWidth: "90px" }}
             >
               Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isPending || !isValid}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                padding: "12px 20px", borderRadius: "10px", border: "none",
+                backgroundColor: isPending || !isValid ? "#E5E5E5" : "#0A0A0A",
+                color: isPending || !isValid ? "#A3A3A3" : "#fff",
+                fontSize: "14px", fontWeight: 500, cursor: isPending || !isValid ? "not-allowed" : "pointer",
+                minWidth: "110px",
+              }}
+            >
+              <Save size={14} strokeWidth={1.5} />
+              {isPending ? "Saving…" : isEdit ? "Save changes" : "Add item"}
             </button>
           </div>
         </form>

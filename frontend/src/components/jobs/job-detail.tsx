@@ -720,8 +720,65 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
           {/* Payment tab */}
           {activeTab === "payment" ? (
-            <div style={{ padding: "40px 0", textAlign: "center" }}>
-              <p style={{ margin: 0, fontSize: "13px", color: "#737373" }}>Payment details coming soon.</p>
+            <div style={{ padding: "24px 0" }}>
+              {!detail.payment ? (
+                <div style={{ padding: "48px 0", textAlign: "center" }}>
+                  <p style={{ margin: "0 0 4px", fontSize: "14px", fontWeight: 500, color: "#171717" }}>No payment recorded</p>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#A3A3A3" }}>Payment is recorded when a technician completes the job</p>
+                </div>
+              ) : (() => {
+                const pmt = detail.payment!;
+                const STATUS_STYLE: Record<string, { bg: string; color: string; dot: string; label: string }> = {
+                  collected: { bg: "#DCFCE7", color: "#166534", dot: "#22C55E", label: "Collected" },
+                  refunded:  { bg: "#FEF3C7", color: "#92400E", dot: "#F59E0B", label: "Refunded"  },
+                  disputed:  { bg: "#FEE2E2", color: "#991B1B", dot: "#EF4444", label: "Disputed"  },
+                  pending:   { bg: "#F5F5F5", color: "#525252", dot: "#A3A3A3", label: "Pending"   },
+                };
+                const s = STATUS_STYLE[pmt.status] ?? STATUS_STYLE["pending"];
+                const recordedDate = new Date(pmt.recordedAt).toLocaleString("en-US", {
+                  day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false,
+                });
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    {/* Amount + status */}
+                    <div style={{ backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "12px", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                      <div>
+                        <p style={{ margin: "0 0 4px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Amount Collected</p>
+                        <p style={{ margin: 0, fontSize: "28px", fontWeight: 700, color: "#171717", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
+                          RS {pmt.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "9999px", backgroundColor: s.bg, color: s.color, fontSize: "13px", fontWeight: 600 }}>
+                        <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: s.dot, flexShrink: 0 }} />
+                        {s.label}
+                      </span>
+                    </div>
+
+                    {/* Detail rows */}
+                    <div style={{ border: "1px solid #E5E5E5", borderRadius: "12px", overflow: "hidden" }}>
+                      {[
+                        { label: "Payment Method", value: pmt.paymentMethodName ?? "—" },
+                        { label: "Recorded By",    value: pmt.recordedByName ?? "—"     },
+                        { label: "Date & Time",    value: recordedDate                   },
+                        { label: "Payment ID",     value: pmt.id                         },
+                      ].map(({ label, value }, i, arr) => (
+                        <div
+                          key={label}
+                          style={{
+                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                            padding: "14px 20px", gap: "16px",
+                            borderBottom: i < arr.length - 1 ? "1px solid #F5F5F5" : "none",
+                            backgroundColor: "#fff",
+                          }}
+                        >
+                          <span style={{ fontSize: "13px", color: "#737373", flexShrink: 0 }}>{label}</span>
+                          <span style={{ fontSize: "13px", color: "#171717", fontWeight: 500, textAlign: "right", wordBreak: "break-all" }}>{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           ) : null}
 

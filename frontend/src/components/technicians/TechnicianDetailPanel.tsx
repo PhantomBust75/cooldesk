@@ -81,7 +81,7 @@ function formatScheduled(iso: string): string {
 function OngoingCard({ job, onView }: { job: TechnicianJob; onView: () => void }) {
   return (
     <div style={{
-      backgroundColor: "#fff",
+      backgroundColor: "rgb(250, 250, 250)",
       border: "1px solid #E5E5E5",
       borderRadius: "12px",
       padding: "20px 24px",

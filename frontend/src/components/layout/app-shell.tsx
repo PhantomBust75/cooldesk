@@ -76,6 +76,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [session?.user.role]);
 
   const isPlatformAdmin = session?.user.role === "platform_admin";
+  const isTechnician = session?.user.role === "technician";
 
   const unreadCountQuery = useQuery({
     queryKey: ["notifications", audience, "unread-count", "shell"],
@@ -316,47 +317,49 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <Plus size={22} strokeWidth={1.5} />
                 </Link>
               )}
-              {/* Bell button */}
-              <div ref={notifRef} style={{ position: "relative" }}>
-                <button
-                  type="button"
-                  onClick={() => setNotifOpen((prev) => !prev)}
-                  style={{
-                    position: "relative",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "8px",
-                    backgroundColor: notifOpen ? "#F5F5F5" : "transparent",
-                    color: notifOpen ? "#0A0A0A" : "#737373",
-                    transition: "background-color 120ms",
-                    padding: 0,
-                  }}
-                  aria-label="Open notifications"
-                >
-                  <Bell size={18} strokeWidth={1.5} />
-                  {unreadCount > 0 && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        top: "8px",
-                        right: "8px",
-                        width: "7px",
-                        height: "7px",
-                        backgroundColor: "#9F1239",
-                        borderRadius: "9999px",
-                        border: "1.5px solid #fff",
-                      }}
-                    />
-                  )}
-                </button>
-                {notifPopover}
-              </div>
+              {/* Bell button — hidden for technicians */}
+              {!isTechnician && (
+                <div ref={notifRef} style={{ position: "relative" }}>
+                  <button
+                    type="button"
+                    onClick={() => setNotifOpen((prev) => !prev)}
+                    style={{
+                      position: "relative",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "40px",
+                      height: "40px",
+                      borderRadius: "8px",
+                      backgroundColor: notifOpen ? "#F5F5F5" : "transparent",
+                      color: notifOpen ? "#0A0A0A" : "#737373",
+                      transition: "background-color 120ms",
+                      padding: 0,
+                    }}
+                    aria-label="Open notifications"
+                  >
+                    <Bell size={18} strokeWidth={1.5} />
+                    {unreadCount > 0 && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: "8px",
+                          right: "8px",
+                          width: "7px",
+                          height: "7px",
+                          backgroundColor: "#9F1239",
+                          borderRadius: "9999px",
+                          border: "1.5px solid #fff",
+                        }}
+                      />
+                    )}
+                  </button>
+                  {notifPopover}
+                </div>
+              )}
               {/* Avatar button */}
               <div style={{ position: "relative" }} ref={menuRef}>
                 <button
@@ -461,52 +464,54 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               zIndex: 30,
             }}
           >
-            {/* Search bar */}
-            <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
-              <button
-                type="button"
-                onClick={() => setSearchOpen(true)}
-                style={{
-                  border: "1px solid #E5E5E5",
-                  borderRadius: "8px",
-                  backgroundColor: "#fff",
-                  height: "34px",
-                  width: "380px",
-                  maxWidth: "min(380px, calc(100vw - 560px))",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "0 10px",
-                  color: "#737373",
-                  fontSize: "13px",
-                  cursor: "pointer",
-                }}
-              >
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                  <Search size={14} strokeWidth={1.5} color="#A3A3A3" />
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    Search jobs, customers...
-                  </span>
-                </span>
-                <span
+            {/* Search bar — hidden for technicians */}
+            {!isTechnician && (
+              <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(true)}
                   style={{
-                    backgroundColor: "#F5F5F5",
                     border: "1px solid #E5E5E5",
-                    borderRadius: "5px",
-                    fontSize: "11px",
-                    lineHeight: 1,
-                    padding: "4px 6px",
-                    color: "#A3A3A3",
-                    flexShrink: 0,
+                    borderRadius: "8px",
+                    backgroundColor: "#fff",
+                    height: "34px",
+                    width: "380px",
+                    maxWidth: "min(380px, calc(100vw - 560px))",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "0 10px",
+                    color: "#737373",
+                    fontSize: "13px",
+                    cursor: "pointer",
                   }}
                 >
-                  ⌘K
-                </span>
-              </button>
-            </div>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                    <Search size={14} strokeWidth={1.5} color="#A3A3A3" />
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      Search jobs, customers...
+                    </span>
+                  </span>
+                  <span
+                    style={{
+                      backgroundColor: "#F5F5F5",
+                      border: "1px solid #E5E5E5",
+                      borderRadius: "5px",
+                      fontSize: "11px",
+                      lineHeight: 1,
+                      padding: "4px 6px",
+                      color: "#A3A3A3",
+                      flexShrink: 0,
+                    }}
+                  >
+                    ⌘K
+                  </span>
+                </button>
+              </div>
+            )}
 
             {/* Right: log-new-job + divider + bell + avatar */}
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "auto" }}>
               {session?.user.role !== "technician" && (
                 <>
                   <Link
@@ -531,47 +536,49 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <div style={{ width: "1px", height: "20px", backgroundColor: "#E5E5E5" }} />
                 </>
               )}
-              {/* Bell button */}
-              <div ref={notifRef} style={{ position: "relative" }}>
-                <button
-                  type="button"
-                  onClick={() => setNotifOpen((prev) => !prev)}
-                  style={{
-                    position: "relative",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "8px",
-                    backgroundColor: notifOpen ? "#F5F5F5" : "transparent",
-                    color: notifOpen ? "#0A0A0A" : "#737373",
-                    transition: "background-color 120ms",
-                    padding: 0,
-                  }}
-                  aria-label="Open notifications"
-                >
-                  <Bell size={18} strokeWidth={1.5} />
-                  {unreadCount > 0 && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        top: "8px",
-                        right: "8px",
-                        width: "7px",
-                        height: "7px",
-                        backgroundColor: "#9F1239",
-                        borderRadius: "9999px",
-                        border: "1.5px solid #fff",
-                      }}
-                    />
-                  )}
-                </button>
-                {notifPopover}
-              </div>
+              {/* Bell button — hidden for technicians */}
+              {!isTechnician && (
+                <div ref={notifRef} style={{ position: "relative" }}>
+                  <button
+                    type="button"
+                    onClick={() => setNotifOpen((prev) => !prev)}
+                    style={{
+                      position: "relative",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "40px",
+                      height: "40px",
+                      borderRadius: "8px",
+                      backgroundColor: notifOpen ? "#F5F5F5" : "transparent",
+                      color: notifOpen ? "#0A0A0A" : "#737373",
+                      transition: "background-color 120ms",
+                      padding: 0,
+                    }}
+                    aria-label="Open notifications"
+                  >
+                    <Bell size={18} strokeWidth={1.5} />
+                    {unreadCount > 0 && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: "8px",
+                          right: "8px",
+                          width: "7px",
+                          height: "7px",
+                          backgroundColor: "#9F1239",
+                          borderRadius: "9999px",
+                          border: "1.5px solid #fff",
+                        }}
+                      />
+                    )}
+                  </button>
+                  {notifPopover}
+                </div>
+              )}
               {/* Avatar button */}
               <div style={{ position: "relative" }} ref={menuRef}>
                 <button
