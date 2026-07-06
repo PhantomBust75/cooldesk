@@ -67,17 +67,24 @@ export class PaymentsService {
     input: UpdatePaymentMethodDto,
     ctx: RequestContext,
   ): Promise<{ ok: true; isActive: boolean }> {
+    const setClauses: string[] = ['updated_at = NOW()'];
+    const params: unknown[] = [paymentMethodId, ctx.organizationId];
+    let idx = 3;
+
+    if (typeof input.isActive === 'boolean') {
+      setClauses.push(`is_active = $${idx++}`);
+      params.push(input.isActive);
+    }
+    if (input.name) {
+      setClauses.push(`name = $${idx++}`);
+      params.push(input.name.trim());
+    }
+
     const update = await this.db.query<{ is_active: boolean }>(
-      `
-      UPDATE payment_methods
-      SET is_active = $3,
-          updated_at = NOW()
-      WHERE id = $1
-        AND organization_id = $2
-        AND is_deleted = FALSE
-      RETURNING is_active
-      `,
-      [paymentMethodId, ctx.organizationId, input.isActive ?? false],
+      `UPDATE payment_methods SET ${setClauses.join(', ')}
+       WHERE id = $1 AND organization_id = $2 AND is_deleted = FALSE
+       RETURNING is_active`,
+      params,
     );
 
     if (update.rows.length === 0) {
@@ -85,6 +92,21 @@ export class PaymentsService {
     }
 
     return { ok: true, isActive: update.rows[0].is_active };
+  }
+
+  async deletePaymentMethod(
+    paymentMethodId: string,
+    ctx: RequestContext,
+  ): Promise<{ ok: true }> {
+    const result = await this.db.query(
+      `UPDATE payment_methods SET is_deleted = TRUE, updated_at = NOW()
+       WHERE id = $1 AND organization_id = $2 AND is_deleted = FALSE`,
+      [paymentMethodId, ctx.organizationId],
+    );
+    if ((result.rowCount ?? 0) === 0) {
+      throw new NotFoundException('Payment method not found');
+    }
+    return { ok: true };
   }
 
   async togglePaymentMethod(

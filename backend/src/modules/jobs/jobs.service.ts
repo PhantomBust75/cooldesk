@@ -2223,8 +2223,9 @@ export class JobsService {
       throw new ConflictException('Optimistic lock conflict: version mismatch');
     }
 
+    let paymentId: string;
     try {
-      await client.query(
+      const insertResult = await client.query<{ id: string }>(
         `
         INSERT INTO payments (
           job_id,
@@ -2235,15 +2236,28 @@ export class JobsService {
           organization_id
         )
         VALUES ($1, $2, $3, 'collected', $4, $5)
+        RETURNING id
         `,
         [job.id, input.paymentAmount, input.paymentMethodId, ctx.userId, ctx.organizationId],
       );
+      paymentId = insertResult.rows[0].id;
     } catch (error: unknown) {
       const code = (error as { code?: string }).code;
       if (code === '23505') {
         throw new ConflictException('Payment already exists for this job');
       }
       throw error;
+    }
+
+    if (input.serviceItems?.length) {
+      for (const item of input.serviceItems) {
+        await client.query(
+          `INSERT INTO job_payment_items
+            (organization_id, payment_id, job_id, service_item_id, name, unit_price, quantity, total)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [ctx.organizationId, paymentId, job.id, item.serviceItemId ?? null, item.name, item.unitPrice, item.quantity, item.total],
+        );
+      }
     }
 
     await this.insertTimelineByUser(
@@ -3848,7 +3862,19 @@ export class JobsService {
           'payment_method_name', pm.name,
           'status', p.status,
           'recorded_by_name', rb.full_name,
-          'recorded_at', p.created_at
+          'recorded_at', p.created_at,
+          'items', COALESCE(
+            (SELECT jsonb_agg(jsonb_build_object(
+              'id',         jpi.id,
+              'name',       jpi.name,
+              'unit_price', jpi.unit_price,
+              'quantity',   jpi.quantity,
+              'total',      jpi.total
+            ) ORDER BY jpi.created_at ASC)
+             FROM job_payment_items jpi
+             WHERE jpi.payment_id = p.id),
+            '[]'::jsonb
+          )
         ) END AS payment
       FROM jobs j
       LEFT JOIN brands b ON b.id = j.brand_id

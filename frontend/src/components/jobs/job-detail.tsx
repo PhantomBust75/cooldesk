@@ -22,7 +22,8 @@ import { canProgressInstallation } from "@/lib/job-status-groups";
 import { Modal } from "@/components/ui/modal";
 import { StatusChip } from "@/components/ui/status-chip";
 import { BrandSwatch } from "@/components/ui/job-type-chip";
-import { fetchOfficeBrands, fetchPaymentMethods, fetchServiceItems } from "@/lib/api/operations";
+import { fetchOfficeBrands, fetchPaymentMethods } from "@/lib/api/operations";
+import { fetchServiceItems } from "@/lib/api/service-items";
 import {
   ArrowLeft,
   Check,
@@ -38,6 +39,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import type { TransitionJobStatusInput } from "@/types/jobs";
 
 const TERMINAL_OR_CLOSED = new Set(["completed", "resolved", "resolved_on_revisit", "cancelled"]);
 const INSTALLATION_STATUSES = [
@@ -86,6 +88,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
   const [advanceStatusOpen, setAdvanceStatusOpen] = useState(false);
   const [collectPaymentOpen, setCollectPaymentOpen] = useState(false);
   const [paySelectedItems, setPaySelectedItems] = useState<Set<string>>(new Set());
+  const [payItemQuantities, setPayItemQuantities] = useState<Map<string, number>>(new Map());
   const [paySelectedMethodId, setPaySelectedMethodId] = useState("");
   const [payAdditional, setPayAdditional] = useState("");
 
@@ -193,13 +196,14 @@ export function JobDetail({ jobId }: { jobId: string }) {
   });
 
   const collectPaymentMutation = useMutation({
-    mutationFn: async (payload: { toStatus: string; paymentMethodId: string; paymentAmount: number }) => {
+    mutationFn: async (payload: { toStatus: string; paymentMethodId: string; paymentAmount: number; serviceItems: TransitionJobStatusInput["serviceItems"] }) => {
       if (!detailQuery.data) return;
       await transitionJobStatus(jobId, {
         toStatus: payload.toStatus,
         expectedVersion: detailQuery.data.version,
         paymentAmount: payload.paymentAmount,
         paymentMethodId: payload.paymentMethodId,
+        serviceItems: payload.serviceItems,
       });
     },
     onSuccess: async () => {
@@ -754,6 +758,50 @@ export function JobDetail({ jobId }: { jobId: string }) {
                       </span>
                     </div>
 
+                    {/* Service items breakdown */}
+                    {pmt.items.length > 0 && (
+                      <div style={{ border: "1px solid #E5E5E5", borderRadius: "12px", overflow: "hidden" }}>
+                        <div style={{ padding: "12px 20px", backgroundColor: "#FAFAFA", borderBottom: "1px solid #E5E5E5" }}>
+                          <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Service Items</span>
+                        </div>
+                        {pmt.items.map((item, i) => (
+                          <div
+                            key={item.id}
+                            style={{
+                              display: "flex", alignItems: "center", justifyContent: "space-between",
+                              padding: "12px 20px", gap: "16px",
+                              borderBottom: i < pmt.items.length - 1 ? "1px solid #F5F5F5" : "none",
+                              backgroundColor: "#fff",
+                            }}
+                          >
+                            <div style={{ minWidth: 0 }}>
+                              <span style={{ fontSize: "13px", color: "#171717" }}>{item.name}</span>
+                              {item.quantity !== 1 && (
+                                <span style={{ fontSize: "12px", color: "#737373", marginLeft: "6px" }}>× {item.quantity}</span>
+                              )}
+                            </div>
+                            <span style={{ fontSize: "13px", color: "#171717", fontWeight: 500, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
+                              RS {item.total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        ))}
+                        {/* Subtotal row if there's also an additional amount */}
+                        {(() => {
+                          const itemsSum = pmt.items.reduce((s, it) => s + it.total, 0);
+                          const diff = parseFloat((pmt.amount - itemsSum).toFixed(2));
+                          if (diff > 0.005) return (
+                            <>
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderTop: "1px solid #F5F5F5", backgroundColor: "#fff" }}>
+                                <span style={{ fontSize: "13px", color: "#737373" }}>Additional charges</span>
+                                <span style={{ fontSize: "13px", color: "#171717", fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>RS {diff.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              </div>
+                            </>
+                          );
+                          return null;
+                        })()}
+                      </div>
+                    )}
+
                     {/* Detail rows */}
                     <div style={{ border: "1px solid #E5E5E5", borderRadius: "12px", overflow: "hidden" }}>
                       {[
@@ -1061,9 +1109,11 @@ export function JobDetail({ jobId }: { jobId: string }) {
         const brands = brandsQuery.data ?? [];
         const serviceItems = serviceItemsQuery.data ?? [];
         const paymentMethods = paymentMethodsQuery.data ?? [];
-        const selectedItemsTotal = serviceItems
-          .filter((si) => paySelectedItems.has(si.id))
-          .reduce((sum, si) => sum + si.unitPrice, 0);
+        const selectedServiceItems = serviceItems.filter((si) => paySelectedItems.has(si.id));
+        const selectedItemsTotal = selectedServiceItems.reduce((sum, si) => {
+          const qty = si.pricingType === "variable" ? (payItemQuantities.get(si.id) ?? 1) : 1;
+          return sum + si.unitPrice * qty;
+        }, 0);
         const additionalNum = parseFloat(payAdditional) || 0;
         const totalAmount = selectedItemsTotal + additionalNum;
         const canConfirm = paySelectedMethodId && totalAmount >= 0;
@@ -1127,34 +1177,56 @@ export function JobDetail({ jobId }: { jobId: string }) {
                     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                       {serviceItems.map((si) => {
                         const checked = paySelectedItems.has(si.id);
+                        const isVariable = si.pricingType === "variable";
+                        const qty = payItemQuantities.get(si.id) ?? 1;
+                        const lineTotal = si.unitPrice * (isVariable ? qty : 1);
                         return (
-                          <label
+                          <div
                             key={si.id}
                             style={{
-                              display: "flex", alignItems: "center", justifyContent: "space-between",
-                              padding: "10px 12px", borderRadius: "8px", cursor: "pointer",
+                              padding: "10px 12px", borderRadius: "8px",
                               backgroundColor: checked ? "#F0FDF4" : "transparent",
                               border: checked ? "1px solid #BBF7D0" : "1px solid transparent",
                               transition: "all 0.1s",
                             }}
                           >
-                            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => {
-                                  const next = new Set(paySelectedItems);
-                                  if (checked) next.delete(si.id); else next.add(si.id);
-                                  setPaySelectedItems(next);
-                                }}
-                                style={{ width: "16px", height: "16px", accentColor: "#16A34A", cursor: "pointer" }}
-                              />
-                              <span style={{ fontSize: "14px", color: "#171717" }}>{si.name}</span>
-                            </span>
-                            <span style={{ fontSize: "13px", color: "#525252", fontWeight: 500 }}>
-                              RS {si.unitPrice.toFixed(2)}{si.unit ? `/${si.unit}` : ""}
-                            </span>
-                          </label>
+                            <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+                              <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => {
+                                    const next = new Set(paySelectedItems);
+                                    if (checked) next.delete(si.id); else next.add(si.id);
+                                    setPaySelectedItems(next);
+                                  }}
+                                  style={{ width: "16px", height: "16px", accentColor: "#16A34A", cursor: "pointer" }}
+                                />
+                                <span style={{ fontSize: "14px", color: "#171717" }}>{si.name}</span>
+                                {isVariable && <span style={{ fontSize: "11px", padding: "1px 6px", backgroundColor: "#EEF2FF", borderRadius: "4px", color: "#4338CA" }}>per {si.unitLabel ?? "unit"}</span>}
+                              </span>
+                              <span style={{ fontSize: "13px", color: "#525252", fontWeight: 500 }}>
+                                RS {lineTotal.toFixed(2)}
+                              </span>
+                            </label>
+                            {isVariable && checked && (
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px", paddingLeft: "26px" }}>
+                                <span style={{ fontSize: "12px", color: "#737373" }}>Qty ({si.unitLabel ?? "unit"}):</span>
+                                <input
+                                  type="number"
+                                  min="0.001"
+                                  step="0.5"
+                                  value={qty}
+                                  onChange={(e) => {
+                                    const next = new Map(payItemQuantities);
+                                    next.set(si.id, Math.max(0.001, parseFloat(e.target.value) || 1));
+                                    setPayItemQuantities(next);
+                                  }}
+                                  style={{ width: "80px", border: "1px solid #D1FAE5", borderRadius: "6px", padding: "4px 8px", fontSize: "13px", outline: "none" }}
+                                />
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
@@ -1225,10 +1297,17 @@ export function JobDetail({ jobId }: { jobId: string }) {
                     disabled={!canConfirm || collectPaymentMutation.isPending}
                     onClick={() => {
                       if (!paySelectedMethodId) return;
+                      const builtItems = selectedServiceItems.map((si) => {
+                        const isVar = si.pricingType === "variable";
+                        const qty = isVar ? (payItemQuantities.get(si.id) ?? 1) : 1;
+                        const tot = parseFloat((si.unitPrice * qty).toFixed(2));
+                        return { serviceItemId: si.id, name: si.name, unitPrice: si.unitPrice, quantity: qty, total: tot };
+                      });
                       collectPaymentMutation.mutate({
                         toStatus: terminalStatus,
                         paymentMethodId: paySelectedMethodId,
                         paymentAmount: totalAmount,
+                        serviceItems: builtItems.length > 0 ? builtItems : undefined,
                       });
                       setCollectPaymentOpen(false);
                     }}

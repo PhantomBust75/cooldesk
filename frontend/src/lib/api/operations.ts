@@ -258,6 +258,14 @@ export function togglePaymentMethod(paymentMethodId: string): Promise<{ ok: true
   return apiClient.patch<{ ok: true }>(`/payment-methods/${paymentMethodId}/toggle`);
 }
 
+export function updatePaymentMethodName(paymentMethodId: string, name: string): Promise<{ ok: true }> {
+  return apiClient.patch<{ ok: true }>(`/payment-methods/${paymentMethodId}`, { name });
+}
+
+export function deletePaymentMethod(paymentMethodId: string): Promise<{ ok: true }> {
+  return apiClient.delete<{ ok: true }>(`/payment-methods/${paymentMethodId}`);
+}
+
 export type ServiceItem = {
   id: string;
   name: string;

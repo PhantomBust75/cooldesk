@@ -100,6 +100,15 @@ function mapJobDetail(row: UnknownRecord): JobDetail {
           status: asString(paymentRecord.status),
           recordedByName: asNullableString(paymentRecord.recorded_by_name),
           recordedAt: asString(paymentRecord.recorded_at),
+          items: Array.isArray(paymentRecord.items)
+            ? (paymentRecord.items as Record<string, unknown>[]).map((it) => ({
+                id: asString(it.id),
+                name: asString(it.name),
+                unitPrice: asNumber(it.unit_price),
+                quantity: asNumber(it.quantity, 1),
+                total: asNumber(it.total),
+              }))
+            : [],
         }
       : null,
   };

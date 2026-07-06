@@ -21,8 +21,15 @@ export class CreatePaymentMethodDto {
 }
 
 export class UpdatePaymentMethodDto {
+  @IsOptional()
   @IsBoolean()
-  isActive!: boolean;
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 120)
+  name?: string;
 }
 
 export class UpdatePaymentDto {

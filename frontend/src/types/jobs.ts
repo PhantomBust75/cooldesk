@@ -71,6 +71,14 @@ export type JobRevisitItem = {
   createdAt: string;
 };
 
+export type JobPaymentItem = {
+  id: string;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  total: number;
+};
+
 export type JobPaymentInfo = {
   id: string;
   amount: number;
@@ -79,6 +87,7 @@ export type JobPaymentInfo = {
   status: string;
   recordedByName: string | null;
   recordedAt: string;
+  items: JobPaymentItem[];
 };
 
 export type JobDetail = {
@@ -111,6 +120,13 @@ export type TransitionJobStatusInput = {
   reason?: string;
   paymentAmount?: number;
   paymentMethodId?: string;
+  serviceItems?: Array<{
+    serviceItemId?: string;
+    name: string;
+    unitPrice: number;
+    quantity: number;
+    total: number;
+  }>;
 };
 
 export type TransitionJobStatusResult = {

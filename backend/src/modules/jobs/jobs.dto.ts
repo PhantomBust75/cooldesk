@@ -116,6 +116,29 @@ export class CreateJobDto {
   units?: CreateJobUnitDto[];
 }
 
+export class ServiceItemLineDto {
+  @IsOptional()
+  @IsUUID()
+  serviceItemId?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 200)
+  name!: string;
+
+  @IsNumber()
+  @Min(0)
+  unitPrice!: number;
+
+  @IsNumber()
+  @Min(0)
+  quantity!: number;
+
+  @IsNumber()
+  @Min(0)
+  total!: number;
+}
+
 export class UpdateJobStatusDto {
   @IsEnum([
     'pending_schedule',
@@ -155,6 +178,12 @@ export class UpdateJobStatusDto {
   @IsOptional()
   @IsUUID()
   paymentMethodId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ServiceItemLineDto)
+  serviceItems?: ServiceItemLineDto[];
 
   @IsOptional()
   @IsEnum([

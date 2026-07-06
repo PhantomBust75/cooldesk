@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { Roles } from '../security/roles.decorator';
 import { RolesGuard } from '../security/roles.guard';
 import { RequestContext } from '../security/request-context';
@@ -77,5 +77,11 @@ export class PaymentsController {
   @Roles('owner')
   togglePaymentMethod(@Param('id') id: string, @Req() req: UserRequest) {
     return this.paymentsService.togglePaymentMethod(id, req.context);
+  }
+
+  @Delete('payment-methods/:id')
+  @Roles('owner')
+  deletePaymentMethod(@Param('id') id: string, @Req() req: UserRequest) {
+    return this.paymentsService.deletePaymentMethod(id, req.context);
   }
 }
