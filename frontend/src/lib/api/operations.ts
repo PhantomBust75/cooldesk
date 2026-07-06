@@ -224,6 +224,10 @@ export async function fetchDealerJobs(dealerId: string): Promise<DealerJobItem[]
     status: asString(row.status),
     customerName: asString(row.customer_name),
     createdAt: asString(row.created_at),
+    scheduledAt: asNullableString(row.scheduled_at),
+    address: asNullableString(row.address),
+    technicianName: asNullableString(row.technician_name),
+    amountCollected: Number(row.amount_collected ?? 0),
   }));
 }
 

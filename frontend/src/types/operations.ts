@@ -62,6 +62,10 @@ export type DealerJobItem = {
   status: string;
   customerName: string;
   createdAt: string;
+  scheduledAt: string | null;
+  address: string | null;
+  technicianName: string | null;
+  amountCollected: number;
 };
 
 export type PaymentMethodItem = {

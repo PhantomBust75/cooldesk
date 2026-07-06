@@ -324,11 +324,20 @@ export class DealersService {
         j.type,
         j.status,
         j.customer_name,
-        j.created_at
+        j.created_at,
+        j.scheduled_at,
+        j.address,
+        u.full_name AS technician_name,
+        COALESCE(SUM(p.amount) FILTER (WHERE p.status = 'collected'), 0) AS amount_collected
       FROM jobs j
+      LEFT JOIN users u
+        ON u.id = j.technician_id AND u.is_deleted = FALSE
+      LEFT JOIN payments p
+        ON p.job_id = j.id AND p.organization_id = j.organization_id AND p.is_deleted = FALSE
       WHERE j.dealer_id = $1
         AND j.organization_id = $2
         AND j.is_deleted = FALSE
+      GROUP BY j.id, j.type, j.status, j.customer_name, j.created_at, j.scheduled_at, j.address, u.full_name
       ORDER BY j.created_at DESC
       LIMIT 200
       `,

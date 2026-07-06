@@ -41,6 +41,10 @@ const mockJobs: DealerJobItem[] = [
     type: "installation",
     status: "in_process",
     createdAt: "2024-01-15T10:00:00Z",
+    scheduledAt: null,
+    address: null,
+    technicianName: null,
+    amountCollected: 0,
   },
   {
     id: "job-done-1",
@@ -48,6 +52,10 @@ const mockJobs: DealerJobItem[] = [
     type: "complaint",
     status: "completed",
     createdAt: "2024-01-10T09:00:00Z",
+    scheduledAt: null,
+    address: null,
+    technicianName: "Ahmed Ali",
+    amountCollected: 500,
   },
   {
     id: "job-done-2",
@@ -55,6 +63,10 @@ const mockJobs: DealerJobItem[] = [
     type: "installation",
     status: "cancelled",
     createdAt: "2024-01-05T08:00:00Z",
+    scheduledAt: null,
+    address: null,
+    technicianName: null,
+    amountCollected: 0,
   },
 ];
 
