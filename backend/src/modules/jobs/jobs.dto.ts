@@ -565,6 +565,12 @@ export class OfficeTransitionJobDto {
   paymentMethodId?: string;
 
   @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ServiceItemLineDto)
+  serviceItems?: ServiceItemLineDto[];
+
+  @IsOptional()
   @IsEnum(['part_unavailable', 'customer_not_home', 'issue_recurring', 'further_diagnosis_required', 'custom'])
   revisitReason?: RevisitReason;
 

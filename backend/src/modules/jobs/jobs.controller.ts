@@ -373,6 +373,7 @@ export class JobsController {
         reason: body.reason,
         paymentAmount: body.paymentAmount,
         paymentMethodId: body.paymentMethodId,
+        serviceItems: body.serviceItems,
         revisitReason: body.revisitReason,
         customRevisitReason: body.customRevisitReason,
       },
