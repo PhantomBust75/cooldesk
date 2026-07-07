@@ -5,8 +5,9 @@ import { fetchTechnicianJobs } from "@/lib/api/operations";
 import { isTerminalStatus } from "@/lib/job-status-groups";
 import type { TechnicianDirectoryItem, TechnicianJob } from "@/types/operations";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ChevronRight, Clock, Mail, MapPin, Phone, X } from "lucide-react";
+import { ArrowLeft, Briefcase, ChevronRight, Clock, Mail, MapPin, Phone, TrendingUp, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -146,16 +147,23 @@ function OngoingCard({ job, onView }: { job: TechnicianJob; onView: () => void }
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
+function StatCard({ label, value, sub, valueColor, bg }: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  valueColor?: string;
+  bg?: string;
+}) {
   return (
     <div style={{
-      backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5",
-      borderRadius: "12px", padding: "20px 24px",
+      backgroundColor: bg ?? "#FAFAFA", border: "1px solid #E5E5E5",
+      borderRadius: "12px", padding: "18px 20px",
     }}>
-      <div style={{ fontSize: "12px", fontWeight: 500, color: "#737373", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>
+      <div style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "10px" }}>
         {label}
       </div>
-      <div style={{ fontSize: "28px", fontWeight: 600, color: "#0A0A0A" }}>{value}</div>
+      <div style={{ fontSize: "26px", fontWeight: 600, color: valueColor ?? "#0A0A0A", fontVariantNumeric: "tabular-nums" }}>{value}</div>
+      {sub && <div style={{ fontSize: "12px", color: "#737373", marginTop: "3px" }}>{sub}</div>}
     </div>
   );
 }
@@ -185,6 +193,39 @@ export function TechnicianDetailPanel({ technician, onClose }: Props) {
   const totalRevenue = useMemo(() => historyJobs.reduce((s, j) => s + j.amountCollected, 0), [historyJobs]);
   const ratings      = useMemo(() => historyJobs.map((j) => j.avgRating).filter((r): r is number => r !== null), [historyJobs]);
   const avgRating    = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
+
+  const cancelledCount   = useMemo(() => allJobs.filter((j) => j.status === "cancelled").length, [allJobs]);
+  const completedCount   = useMemo(() => historyJobs.filter((j) => j.status !== "cancelled").length, [historyJobs]);
+  const completionRate   = allJobs.length > 0 ? Math.round((completedCount / allJobs.length) * 100) : 0;
+  const avgJobValue      = completedCount > 0 ? Math.round(totalRevenue / completedCount) : 0;
+  const crColor          = completionRate >= 88 ? "#065F46" : completionRate >= 75 ? "#92400E" : "#991B1B";
+  const crBg             = completionRate >= 88 ? "#F0FDF4" : completionRate >= 75 ? "#FEF3C7" : "#FEE2E2";
+
+  const monthlyData = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      const y = d.getFullYear();
+      const m = d.getMonth();
+      const label = d.toLocaleString("en-GB", { month: "short" });
+      const monthJobs = allJobs.filter((j) => {
+        const jd = new Date(j.createdAt);
+        return jd.getFullYear() === y && jd.getMonth() === m;
+      });
+      const submitted = monthJobs.length;
+      const completed = monthJobs.filter((j) =>
+        ["completed", "resolved", "resolved_on_revisit"].includes(j.status)
+      ).length;
+      return { month: label, submitted, completed };
+    });
+  }, [allJobs]);
+
+  const trendData = useMemo(() =>
+    monthlyData.map(({ month, submitted, completed }) => ({
+      month,
+      rate: submitted > 0 ? Math.round((completed / submitted) * 100) : 0,
+    })),
+  [monthlyData]);
 
   const av = avatarColors(technician.name);
 
@@ -374,11 +415,75 @@ export function TechnicianDetailPanel({ technician, onClose }: Props) {
 
           {/* Performance — stat cards */}
           {tab === "performance" && !jobsQuery.isLoading && !jobsQuery.isError && (
-            <div style={{ padding: "32px 40px", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "16px" }}>
-              <StatCard label="Jobs completed" value={historyJobs.length} />
-              <StatCard label="Active jobs"    value={ongoingJobs.length} />
-              <StatCard label="Total revenue"  value={`RS ${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0 })}`} />
-              <StatCard label="Avg rating"     value={avgRating !== null ? `${avgRating.toFixed(1)} / 5` : "—"} />
+            <div style={{ padding: "32px 40px", display: "flex", flexDirection: "column", gap: "32px" }}>
+
+              {/* KPI 2×2 grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
+                <StatCard
+                  label="Revenue generated"
+                  value={totalRevenue > 0 ? `RS ${totalRevenue.toLocaleString()}` : "—"}
+                  sub="all time"
+                  valueColor="#065F46"
+                  bg="#F0FDF4"
+                />
+                <StatCard
+                  label="Total jobs"
+                  value={allJobs.length}
+                  sub={`${cancelledCount} cancelled`}
+                />
+                <StatCard
+                  label="Completion rate"
+                  value={`${completionRate}%`}
+                  valueColor={crColor}
+                  bg={crBg}
+                />
+                <StatCard
+                  label="Avg job value"
+                  value={avgJobValue > 0 ? `RS ${avgJobValue.toLocaleString()}` : "—"}
+                  sub="per job"
+                />
+              </div>
+
+              {/* Monthly job volume bar chart */}
+              <div>
+                <div style={{ fontSize: "13px", fontWeight: 500, color: "#0A0A0A", marginBottom: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Briefcase size={14} strokeWidth={1.5} color="#737373" /> Monthly job volume
+                </div>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={monthlyData} barGap={4} barCategoryGap="30%">
+                    <CartesianGrid vertical={false} stroke="#F5F5F5" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#A3A3A3" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 12, fill: "#A3A3A3" }} axisLine={false} tickLine={false} width={28} />
+                    <Tooltip contentStyle={{ border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "12px" }} cursor={{ fill: "#F5F5F5" }} />
+                    <Bar dataKey="submitted" name="Submitted" fill="#E5E5E5" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="completed" name="Completed" fill="#0A0A0A" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+                <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
+                  {[{ color: "#E5E5E5", label: "Submitted" }, { color: "#0A0A0A", label: "Completed" }].map((l) => (
+                    <span key={l.label} style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "#737373" }}>
+                      <span style={{ width: "10px", height: "10px", borderRadius: "2px", backgroundColor: l.color, flexShrink: 0 }} />{l.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Completion rate trend line chart */}
+              <div>
+                <div style={{ fontSize: "13px", fontWeight: 500, color: "#0A0A0A", marginBottom: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <TrendingUp size={14} strokeWidth={1.5} color="#737373" /> Completion rate trend (6 months)
+                </div>
+                <ResponsiveContainer width="100%" height={160}>
+                  <LineChart data={trendData}>
+                    <CartesianGrid vertical={false} stroke="#F5F5F5" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#A3A3A3" }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "#A3A3A3" }} axisLine={false} tickLine={false} width={36} tickFormatter={(v) => `${v}%`} />
+                    <Tooltip contentStyle={{ border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "12px" }} formatter={(v) => [`${v}%`, "Completion rate"]} />
+                    <Line type="monotone" dataKey="rate" stroke={crColor} strokeWidth={2} dot={{ r: 3, fill: crColor, strokeWidth: 0 }} activeDot={{ r: 5, fill: crColor }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
             </div>
           )}
         </div>

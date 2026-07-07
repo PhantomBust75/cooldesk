@@ -77,6 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const isPlatformAdmin = session?.user.role === "platform_admin";
   const isTechnician = session?.user.role === "technician";
+  const isDealer = session?.user.role === "dealer";
 
   const unreadCountQuery = useQuery({
     queryKey: ["notifications", audience, "unread-count", "shell"],
@@ -299,7 +300,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             {/* Right: plus + bell + avatar */}
             <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              {session?.user.role !== "technician" && (
+              {session?.user.role !== "technician" && !isDealer && (
                 <Link
                   href="/log-new-job"
                   style={{
@@ -464,8 +465,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               zIndex: 30,
             }}
           >
-            {/* Search bar — hidden for technicians */}
-            {!isTechnician && (
+            {/* Search bar — hidden for technicians and dealers */}
+            {!isTechnician && !isDealer && (
               <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
                 <button
                   type="button"
@@ -512,7 +513,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             {/* Right: log-new-job + divider + bell + avatar */}
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "auto" }}>
-              {session?.user.role !== "technician" && (
+              {session?.user.role !== "technician" && !isDealer && (
                 <>
                   <Link
                     href="/log-new-job"

@@ -62,9 +62,9 @@ export default function LoginPage() {
     setErrorMessage(null);
 
     try {
-      await login(form);
+      const role = await login(form);
       enqueueSnackbar("Logged in successfully", { variant: "success" });
-      router.replace(nextPath);
+      router.replace(role === "dealer" ? "/dealer/jobs" : nextPath);
     } catch (error) {
       const msg = error instanceof ApiError ? error.message : "Unable to login at the moment.";
       setErrorMessage(msg);

@@ -202,14 +202,18 @@ export class DealersService {
   ): Promise<Record<string, unknown>> {
     const result = await this.db.query(
       `
-      SELECT id, type, status, source, brand_id, customer_name, phone, address,
-             issue_description, installation_notes, scheduled_at, created_at, updated_at
-      FROM jobs
-      WHERE id = $1
-        AND organization_id = $2
-        AND dealer_id = $3
-        AND source = 'via_dealer'
-        AND is_deleted = FALSE
+      SELECT j.id, j.type, j.status, j.source, j.brand_id, j.customer_name, j.phone, j.address,
+             j.issue_description, j.installation_notes, j.scheduled_at, j.created_at, j.updated_at,
+             b.name AS brand_name, b.color_hex AS brand_color,
+             u.full_name AS technician_name
+      FROM jobs j
+      LEFT JOIN brands b ON b.id = j.brand_id AND b.organization_id = j.organization_id
+      LEFT JOIN users u ON u.id = j.technician_id AND u.organization_id = j.organization_id
+      WHERE j.id = $1
+        AND j.organization_id = $2
+        AND j.dealer_id = $3
+        AND j.source = 'via_dealer'
+        AND j.is_deleted = FALSE
       LIMIT 1
       `,
       [jobId, ctx.organizationId, ctx.dealerId],
@@ -229,13 +233,16 @@ export class DealersService {
     const limit = query.limit ?? 100;
     const result = await this.db.query(
       `
-      SELECT id, type, status, brand_id, customer_name, phone, scheduled_at, created_at, updated_at
-      FROM jobs
-      WHERE organization_id = $1
-        AND dealer_id = $2
-        AND source = 'via_dealer'
-        AND is_deleted = FALSE
-      ORDER BY created_at DESC
+      SELECT j.id, j.type, j.status, j.brand_id, j.customer_name, j.phone,
+             j.scheduled_at, j.created_at, j.updated_at,
+             b.name AS brand_name, b.color_hex AS brand_color
+      FROM jobs j
+      LEFT JOIN brands b ON b.id = j.brand_id AND b.organization_id = j.organization_id
+      WHERE j.organization_id = $1
+        AND j.dealer_id = $2
+        AND j.source = 'via_dealer'
+        AND j.is_deleted = FALSE
+      ORDER BY j.created_at DESC
       LIMIT $3
       `,
       [ctx.organizationId, ctx.dealerId, limit],

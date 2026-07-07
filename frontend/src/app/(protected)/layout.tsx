@@ -24,7 +24,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     }
 
     if (isDealer) {
-      router.replace("/login");
+      router.replace("/dealer/jobs");
       return;
     }
 

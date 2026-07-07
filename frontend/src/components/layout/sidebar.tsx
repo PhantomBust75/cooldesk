@@ -35,6 +35,9 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/analytics", label: "Analytics", icon: BarChart2, roles: ["owner", "office_staff"] },
   { href: "/payment-methods", label: "Payments & Brands", icon: CreditCard, roles: ["owner"] },
   { href: "/admin/system-config", label: "System config", icon: Settings, roles: ["owner"] },
+  // Dealer portal
+  { href: "/dealer/jobs", label: "Active Jobs", icon: Briefcase, roles: ["dealer"] },
+  { href: "/dealer/jobs/history", label: "Job History", icon: Clock, roles: ["dealer"] },
 ];
 
 function isActiveRoute(pathname: string, href: string): boolean {

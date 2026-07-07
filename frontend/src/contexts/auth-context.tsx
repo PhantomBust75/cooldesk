@@ -8,7 +8,7 @@ type AuthContextValue = {
   isReady: boolean;
   isAuthenticated: boolean;
   session: SessionState | null;
-  login: (credentials: LoginRequest) => Promise<void>;
+  login: (credentials: LoginRequest) => Promise<UserRole>;
   logout: () => void;
   hasRole: (roles: UserRole[]) => boolean;
 };
@@ -68,19 +68,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const login = useCallback(async (credentials: LoginRequest) => {
+  const login = useCallback(async (credentials: LoginRequest): Promise<UserRole> => {
     const path = process.env.NEXT_PUBLIC_AUTH_LOGIN_PATH ?? "/auth/login";
     const response = await apiClient.post<LoginResponse>(path, credentials, { auth: false });
     const mappedSession = mapLoginResponseToSession(response);
-
-    if (mappedSession.user.role === "dealer") {
-      throw new ApiError("Dealer accounts cannot access the staff dashboard.", 403, response);
-    }
 
     setSession(mappedSession);
     if (typeof window !== "undefined") {
       window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(mappedSession));
     }
+    return mappedSession.user.role;
   }, []);
 
   const logout = useCallback(() => {
