@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Search, Plus } from "lucide-react";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
 const STATUS_FILTERS = ["All", "Pending Schedule", "Scheduled", "In Progress", "Needs Revisit"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
@@ -50,6 +51,7 @@ function shortId(id: string): string {
 
 export default function DealerJobsPage() {
   const router = useRouter();
+  const isMobile = useMobileBreakpoint();
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("All");
   const [search, setSearch] = useState("");
 
@@ -74,11 +76,11 @@ export default function DealerJobsPage() {
   });
 
   return (
-    <div style={{ padding: "24px 24px 0" }}>
+    <div style={{ padding: isMobile ? "16px 16px 0" : "24px 24px 0" }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "16px" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "16px", gap: "12px" }}>
         <div>
-          <h1 style={{ fontSize: "36px", fontWeight: 600, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+          <h1 style={{ fontSize: isMobile ? "26px" : "36px", fontWeight: 600, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
             Active Jobs
           </h1>
           <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0" }}>{activeJobs.length} jobs</p>
@@ -86,15 +88,15 @@ export default function DealerJobsPage() {
         <button
           type="button"
           onClick={() => router.push("/dealer/jobs/new")}
-          style={{ display: "flex", alignItems: "center", gap: "7px", padding: "10px 18px", backgroundColor: "#0A0A0A", color: "#fff", border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }}
+          style={{ display: "flex", alignItems: "center", gap: "7px", padding: isMobile ? "9px 14px" : "10px 18px", backgroundColor: "#0A0A0A", color: "#fff", border: "none", borderRadius: "8px", fontSize: isMobile ? "13px" : "14px", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
         >
           <Plus size={14} strokeWidth={2} />
-          Log new job
+          {isMobile ? "New job" : "Log new job"}
         </button>
       </div>
 
       {/* Search */}
-      <div style={{ marginBottom: "16px", maxWidth: "380px" }}>
+      <div style={{ marginBottom: "12px" }}>
         <div style={{ position: "relative" }}>
           <Search size={14} strokeWidth={1.5} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#A3A3A3", pointerEvents: "none" }} />
           <input
@@ -107,7 +109,7 @@ export default function DealerJobsPage() {
       </div>
 
       {/* Filter pills */}
-      <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "6px", marginBottom: "14px", flexWrap: "wrap", overflowX: isMobile ? "auto" : "visible", paddingBottom: isMobile ? "4px" : 0 }}>
         {STATUS_FILTERS.map((f) => {
           const active = activeFilter === f;
           return (
@@ -116,7 +118,7 @@ export default function DealerJobsPage() {
               type="button"
               onClick={() => setActiveFilter(f)}
               style={{
-                padding: "6px 16px",
+                padding: "5px 14px",
                 borderRadius: "9999px",
                 border: active ? "none" : "1px solid #E5E5E5",
                 backgroundColor: active ? "#0A0A0A" : "#fff",
@@ -125,6 +127,7 @@ export default function DealerJobsPage() {
                 fontWeight: active ? 500 : 400,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
+                flexShrink: 0,
               }}
             >
               {f}
@@ -133,22 +136,16 @@ export default function DealerJobsPage() {
         })}
       </div>
 
-      {/* Table */}
+      {/* Table (desktop) / Cards (mobile) */}
       <div style={{ border: "1px solid #E5E5E5", borderRadius: "12px", overflow: "hidden", backgroundColor: "#fff" }}>
-        {/* Table header */}
-        <div style={{ display: "grid", gridTemplateColumns: "130px 1fr 120px 140px 160px 160px 32px", padding: "12px 20px", borderBottom: "1px solid #E5E5E5", backgroundColor: "#FAFAFA", gap: "16px" }}>
-          {["JOB ID", "CUSTOMER", "TYPE", "BRAND", "SCHEDULED", "STATUS", ""].map((h) => (
-            <span key={h} style={{ fontSize: "11px", fontWeight: 500, color: "#737373", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</span>
-          ))}
-        </div>
-
         {isPending ? (
           <div style={{ padding: "48px", textAlign: "center", fontSize: "13px", color: "#737373" }}>Loading…</div>
         ) : isError ? (
           <div style={{ padding: "48px", textAlign: "center", fontSize: "13px", color: "#EF4444" }}>Failed to load jobs.</div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: "48px", textAlign: "center", fontSize: "13px", color: "#737373" }}>No jobs found</div>
-        ) : (
+        ) : isMobile ? (
+          /* Mobile card list */
           filtered.map((job, i) => {
             const status = STATUS_MAP[job.status] ?? { label: job.status, color: "#525252", bg: "#F5F5F5" };
             const type = TYPE_MAP[job.type] ?? { label: job.type, color: "#525252", bg: "#F5F5F5" };
@@ -158,47 +155,74 @@ export default function DealerJobsPage() {
                 key={job.id}
                 onClick={() => router.push(`/dealer/jobs/${job.id}`)}
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "130px 1fr 120px 140px 160px 160px 32px",
-                  alignItems: "center",
-                  padding: "16px 20px",
+                  padding: "14px 16px",
                   borderBottom: i < filtered.length - 1 ? "1px solid #F5F5F5" : "none",
-                  gap: "16px",
                   cursor: "pointer",
-                  transition: "background-color 100ms",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#FAFAFA")}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
               >
-                <span style={{ fontSize: "12px", color: "#737373", fontFamily: "monospace", fontWeight: 500 }}>
-                  {shortId(job.id)}
-                </span>
-                <span style={{ fontSize: "14px", fontWeight: 500, color: "#171717" }}>
-                  {job.customer_name}
-                </span>
-                <span>
-                  <span style={{ fontSize: "12px", fontWeight: 500, color: type.color, backgroundColor: type.bg, borderRadius: "6px", padding: "3px 8px" }}>
-                    {type.label}
-                  </span>
-                </span>
-                <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#171717" }}>
-                  {job.brand_color && (
-                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: job.brand_color, flexShrink: 0, display: "inline-block" }} />
-                  )}
-                  {job.brand_name ?? "—"}
-                </span>
-                <span style={{ fontSize: "13px", color: sched.italic ? "#A3A3A3" : "#171717", fontStyle: sched.italic ? "italic" : "normal" }}>
-                  {sched.text}
-                </span>
-                <span>
-                  <span style={{ fontSize: "12px", fontWeight: 500, color: status.color, backgroundColor: status.bg, borderRadius: "6px", padding: "3px 8px", whiteSpace: "nowrap" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "6px" }}>
+                  <span style={{ fontSize: "14px", fontWeight: 500, color: "#171717" }}>{job.customer_name}</span>
+                  <span style={{ fontSize: "12px", fontWeight: 500, color: status.color, backgroundColor: status.bg, borderRadius: "6px", padding: "3px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>
                     {status.label}
                   </span>
-                </span>
-                <ChevronRight size={14} strokeWidth={1.5} color="#A3A3A3" />
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: "11px", color: "#A3A3A3", fontFamily: "monospace" }}>{shortId(job.id)}</span>
+                  <span style={{ fontSize: "12px", fontWeight: 500, color: type.color, backgroundColor: type.bg, borderRadius: "6px", padding: "2px 7px" }}>{type.label}</span>
+                  {job.brand_name && (
+                    <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "#525252" }}>
+                      {job.brand_color && <span style={{ width: "7px", height: "7px", borderRadius: "50%", backgroundColor: job.brand_color, display: "inline-block", flexShrink: 0 }} />}
+                      {job.brand_name}
+                    </span>
+                  )}
+                  <span style={{ fontSize: "12px", color: sched.italic ? "#A3A3A3" : "#525252", fontStyle: sched.italic ? "italic" : "normal" }}>{sched.text}</span>
+                </div>
               </div>
             );
           })
+        ) : (
+          /* Desktop table */
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "130px 1fr 120px 140px 160px 160px 32px", padding: "12px 20px", borderBottom: "1px solid #E5E5E5", backgroundColor: "#FAFAFA", gap: "16px" }}>
+              {["JOB ID", "CUSTOMER", "TYPE", "BRAND", "SCHEDULED", "STATUS", ""].map((h) => (
+                <span key={h} style={{ fontSize: "11px", fontWeight: 500, color: "#737373", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</span>
+              ))}
+            </div>
+            {filtered.map((job, i) => {
+              const status = STATUS_MAP[job.status] ?? { label: job.status, color: "#525252", bg: "#F5F5F5" };
+              const type = TYPE_MAP[job.type] ?? { label: job.type, color: "#525252", bg: "#F5F5F5" };
+              const sched = formatScheduled(job.scheduled_at);
+              return (
+                <div
+                  key={job.id}
+                  onClick={() => router.push(`/dealer/jobs/${job.id}`)}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "130px 1fr 120px 140px 160px 160px 32px",
+                    alignItems: "center",
+                    padding: "16px 20px",
+                    borderBottom: i < filtered.length - 1 ? "1px solid #F5F5F5" : "none",
+                    gap: "16px",
+                    cursor: "pointer",
+                    transition: "background-color 100ms",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#FAFAFA")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                >
+                  <span style={{ fontSize: "12px", color: "#737373", fontFamily: "monospace", fontWeight: 500 }}>{shortId(job.id)}</span>
+                  <span style={{ fontSize: "14px", fontWeight: 500, color: "#171717" }}>{job.customer_name}</span>
+                  <span><span style={{ fontSize: "12px", fontWeight: 500, color: type.color, backgroundColor: type.bg, borderRadius: "6px", padding: "3px 8px" }}>{type.label}</span></span>
+                  <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#171717" }}>
+                    {job.brand_color && <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: job.brand_color, flexShrink: 0, display: "inline-block" }} />}
+                    {job.brand_name ?? "—"}
+                  </span>
+                  <span style={{ fontSize: "13px", color: sched.italic ? "#A3A3A3" : "#171717", fontStyle: sched.italic ? "italic" : "normal" }}>{sched.text}</span>
+                  <span><span style={{ fontSize: "12px", fontWeight: 500, color: status.color, backgroundColor: status.bg, borderRadius: "6px", padding: "3px 8px", whiteSpace: "nowrap" }}>{status.label}</span></span>
+                  <ChevronRight size={14} strokeWidth={1.5} color="#A3A3A3" />
+                </div>
+              );
+            })}
+          </>
         )}
       </div>
 

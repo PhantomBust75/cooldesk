@@ -7,6 +7,7 @@ import type { TechnicianDirectoryItem, TechnicianJob } from "@/types/operations"
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Briefcase, ChevronRight, Clock, Mail, MapPin, Phone, TrendingUp, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -180,6 +181,7 @@ type Props = {
 export function TechnicianDetailPanel({ technician, onClose }: Props) {
   const [tab, setTab] = useState<Tab>("history");
   const [viewJobId, setViewJobId] = useState<string | null>(null);
+  const isMobile = useMobileBreakpoint();
 
   const jobsQuery = useQuery({
     queryKey: ["technician-jobs", technician.id],
@@ -263,27 +265,27 @@ export function TechnicianDetailPanel({ technician, onClose }: Props) {
   const Header = (
     <>
       <div style={{
-        padding: "28px 40px 24px",
+        padding: isMobile ? "16px" : "28px 40px 24px",
         borderBottom: "1px solid #E5E5E5",
         backgroundColor: "#fff",
         flexShrink: 0,
         display: "flex",
         alignItems: "flex-start",
         justifyContent: "space-between",
-        gap: "20px",
+        gap: "12px",
       }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "20px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: isMobile ? "12px" : "20px" }}>
           <div style={{
-            width: 56, height: 56, borderRadius: "50%",
+            width: isMobile ? 44 : 56, height: isMobile ? 44 : 56, borderRadius: "50%",
             backgroundColor: av.bg, color: av.text,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "18px", fontWeight: 700, letterSpacing: "0.02em", flexShrink: 0,
+            fontSize: isMobile ? "15px" : "18px", fontWeight: 700, letterSpacing: "0.02em", flexShrink: 0,
           }}>
             {initials(technician.name)}
           </div>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-              <span style={{ fontSize: "22px", fontWeight: 600, color: "#0A0A0A", lineHeight: 1.2 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "5px", flexWrap: "wrap" }}>
+              <span style={{ fontSize: isMobile ? "17px" : "22px", fontWeight: 600, color: "#0A0A0A", lineHeight: 1.2 }}>
                 {technician.name}
               </span>
               <span style={{
@@ -297,7 +299,7 @@ export function TechnicianDetailPanel({ technician, onClose }: Props) {
                 {technician.isActive ? "Active" : "Inactive"}
               </span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "10px" : "20px", flexWrap: "wrap" }}>
               {technician.phone && (
                 <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "13px", color: "#737373" }}>
                   <Phone size={13} strokeWidth={1.5} color="#A3A3A3" /> {technician.phone}
@@ -326,7 +328,7 @@ export function TechnicianDetailPanel({ technician, onClose }: Props) {
         </button>
       </div>
 
-      <div style={{ borderBottom: "1px solid #E5E5E5", padding: "0 40px", display: "flex", backgroundColor: "#fff", flexShrink: 0 }}>
+      <div style={{ borderBottom: "1px solid #E5E5E5", padding: isMobile ? "0 16px" : "0 40px", display: "flex", backgroundColor: "#fff", flexShrink: 0 }}>
         <button type="button" style={tabStyle("history")}     onClick={() => setTab("history")}>Job History</button>
         <button type="button" style={tabStyle("ongoing")}     onClick={() => setTab("ongoing")}>Ongoing ({ongoingJobs.length})</button>
         <button type="button" style={tabStyle("performance")} onClick={() => setTab("performance")}>Performance</button>
@@ -351,7 +353,7 @@ export function TechnicianDetailPanel({ technician, onClose }: Props) {
           {/* Job History — table */}
           {tab === "history" && !jobsQuery.isLoading && !jobsQuery.isError && (
             historyJobs.length === 0 ? (
-              <div style={{ padding: "48px 40px", fontSize: "13px", color: "#737373" }}>No completed jobs yet.</div>
+              <div style={{ padding: isMobile ? "32px 16px" : "48px 40px", fontSize: "13px", color: "#737373" }}>No completed jobs yet.</div>
             ) : (
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
@@ -403,9 +405,9 @@ export function TechnicianDetailPanel({ technician, onClose }: Props) {
           {/* Ongoing — cards */}
           {tab === "ongoing" && !jobsQuery.isLoading && !jobsQuery.isError && (
             ongoingJobs.length === 0 ? (
-              <div style={{ padding: "48px 40px", fontSize: "13px", color: "#737373" }}>No active jobs right now.</div>
+              <div style={{ padding: isMobile ? "32px 16px" : "48px 40px", fontSize: "13px", color: "#737373" }}>No active jobs right now.</div>
             ) : (
-              <div style={{ padding: "24px 40px", display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ padding: isMobile ? "16px" : "24px 40px", display: "flex", flexDirection: "column", gap: "12px" }}>
                 {ongoingJobs.map((job) => (
                   <OngoingCard key={job.id} job={job} onView={() => setViewJobId(job.id)} />
                 ))}
@@ -415,7 +417,7 @@ export function TechnicianDetailPanel({ technician, onClose }: Props) {
 
           {/* Performance — stat cards */}
           {tab === "performance" && !jobsQuery.isLoading && !jobsQuery.isError && (
-            <div style={{ padding: "32px 40px", display: "flex", flexDirection: "column", gap: "32px" }}>
+            <div style={{ padding: isMobile ? "16px" : "32px 40px", display: "flex", flexDirection: "column", gap: "32px" }}>
 
               {/* KPI 2×2 grid */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>

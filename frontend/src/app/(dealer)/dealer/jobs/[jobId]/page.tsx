@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Copy, MapPin, Phone, Info, XCircle } from "lucide-react";
 import { useSnackbar } from "notistack";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
   new:                  { label: "New",                  color: "#D97706", bg: "#FEF3C7" },
@@ -37,6 +38,7 @@ function formatScheduled(iso: string | null): string {
 export default function DealerJobDetailPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const router = useRouter();
+  const isMobile = useMobileBreakpoint();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>("details");
@@ -81,13 +83,68 @@ export default function DealerJobDetailPage() {
     { key: "payment",  label: "Payment" },
   ];
 
+  const Sidebar = (
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      {/* Status card */}
+      <div style={{ border: "1px solid #E5E5E5", borderRadius: "12px", padding: "16px" }}>
+        <div style={{ fontSize: "11px", fontWeight: 600, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "10px" }}>
+          Current Status
+        </div>
+        <span style={{ fontSize: "13px", fontWeight: 500, color: status.color, backgroundColor: status.bg, borderRadius: "8px", padding: "4px 10px" }}>
+          {status.label}
+        </span>
+      </div>
+
+      {/* Scheduling card */}
+      <div style={{ border: "1px solid #E5E5E5", borderRadius: "12px", padding: "16px", display: "flex", flexDirection: isMobile ? "row" : "column", gap: isMobile ? "24px" : "12px" }}>
+        <div>
+          <div style={{ fontSize: "11px", fontWeight: 600, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "4px" }}>
+            Scheduled
+          </div>
+          <div style={{ fontSize: "13px", color: job.scheduled_at ? "#171717" : "#A3A3A3", fontStyle: job.scheduled_at ? "normal" : "italic" }}>
+            {formatScheduled(job.scheduled_at)}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: "11px", fontWeight: 600, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "4px" }}>
+            Technician
+          </div>
+          <div style={{ fontSize: "13px", color: job.technician_name ? "#171717" : "#A3A3A3", fontStyle: job.technician_name ? "normal" : "italic" }}>
+            {job.technician_name ?? "Not yet assigned"}
+          </div>
+        </div>
+      </div>
+
+      {/* Info note */}
+      <div style={{ border: "1px solid #E5E5E5", borderRadius: "12px", padding: "14px 16px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
+        <Info size={14} strokeWidth={1.5} color="#A3A3A3" style={{ flexShrink: 0, marginTop: "1px" }} />
+        <p style={{ fontSize: "13px", color: "#737373", margin: 0, lineHeight: 1.5 }}>
+          Scheduling and technician assignment is managed by the CoolDesk office team.
+        </p>
+      </div>
+
+      {/* Cancel job button */}
+      {canCancel && (
+        <button
+          type="button"
+          onClick={() => { if (cancelMutation.isPending) return; cancelMutation.mutate(); }}
+          disabled={cancelMutation.isPending}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "7px", width: "100%", padding: "12px", border: "1px solid #FCA5A5", borderRadius: "12px", backgroundColor: "#fff", color: "#EF4444", fontSize: "14px", fontWeight: 500, cursor: cancelMutation.isPending ? "not-allowed" : "pointer", opacity: cancelMutation.isPending ? 0.6 : 1, boxSizing: "border-box" }}
+        >
+          <XCircle size={15} strokeWidth={1.5} />
+          {cancelMutation.isPending ? "Submitting…" : "Cancel job"}
+        </button>
+      )}
+    </div>
+  );
+
   return (
-    <div style={{ padding: "28px 32px", minHeight: "100vh" }}>
+    <div style={{ padding: isMobile ? "16px" : "28px 32px", minHeight: "100vh" }}>
       {/* Breadcrumb */}
       <button
         type="button"
         onClick={() => router.push("/dealer/jobs")}
-        style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", cursor: "pointer", color: "#737373", fontSize: "13px", padding: 0, marginBottom: "20px" }}
+        style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", cursor: "pointer", color: "#737373", fontSize: "13px", padding: 0, marginBottom: "16px" }}
       >
         <ArrowLeft size={14} strokeWidth={1.5} />
         Active Jobs
@@ -96,8 +153,8 @@ export default function DealerJobDetailPage() {
       </button>
 
       {/* Title row */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-        <h1 style={{ fontSize: "32px", fontWeight: 700, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px", flexWrap: "wrap" }}>
+        <h1 style={{ fontSize: isMobile ? "24px" : "32px", fontWeight: 700, color: "#0A0A0A", margin: 0, letterSpacing: "-0.02em" }}>
           {shortId(job.id)}
         </h1>
         <button
@@ -114,7 +171,7 @@ export default function DealerJobDetailPage() {
       </div>
 
       {/* Subtitle: brand + type */}
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "24px", fontSize: "14px", color: "#525252" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: isMobile ? "16px" : "24px", fontSize: "14px", color: "#525252", flexWrap: "wrap" }}>
         {job.brand_color && (
           <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: job.brand_color, display: "inline-block" }} />
         )}
@@ -123,8 +180,8 @@ export default function DealerJobDetailPage() {
         <span style={{ textTransform: "capitalize" }}>{job.type}</span>
       </div>
 
-      {/* Main layout: content + sidebar */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "24px", alignItems: "start" }}>
+      {/* Main layout: stacked on mobile, side-by-side on desktop */}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 300px", gap: "24px", alignItems: "start" }}>
         {/* Left: tabs + content */}
         <div>
           {/* Tab bar */}
@@ -153,7 +210,7 @@ export default function DealerJobDetailPage() {
 
           {/* Details tab */}
           {activeTab === "details" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "20px" : "32px" }}>
               {/* Customer section */}
               <div>
                 <div style={{ fontSize: "11px", fontWeight: 600, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "16px" }}>
@@ -256,79 +313,13 @@ export default function DealerJobDetailPage() {
               No payment recorded yet. Payment is processed by the technician upon job completion.
             </p>
           )}
+
+          {/* Sidebar appears below content on mobile */}
+          {isMobile && <div style={{ marginTop: "24px" }}>{Sidebar}</div>}
         </div>
 
-        {/* Right sidebar */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {/* Status card */}
-          <div style={{ border: "1px solid #E5E5E5", borderRadius: "12px", padding: "16px" }}>
-            <div style={{ fontSize: "11px", fontWeight: 600, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "10px" }}>
-              Current Status
-            </div>
-            <span style={{ fontSize: "13px", fontWeight: 500, color: status.color, backgroundColor: status.bg, borderRadius: "8px", padding: "4px 10px" }}>
-              {status.label}
-            </span>
-          </div>
-
-          {/* Scheduling card */}
-          <div style={{ border: "1px solid #E5E5E5", borderRadius: "12px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
-            <div>
-              <div style={{ fontSize: "11px", fontWeight: 600, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "4px" }}>
-                Scheduled
-              </div>
-              <div style={{ fontSize: "13px", color: job.scheduled_at ? "#171717" : "#A3A3A3", fontStyle: job.scheduled_at ? "normal" : "italic" }}>
-                {formatScheduled(job.scheduled_at)}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: "11px", fontWeight: 600, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "4px" }}>
-                Technician
-              </div>
-              <div style={{ fontSize: "13px", color: job.technician_name ? "#171717" : "#A3A3A3", fontStyle: job.technician_name ? "normal" : "italic" }}>
-                {job.technician_name ?? "Not yet assigned"}
-              </div>
-            </div>
-          </div>
-
-          {/* Info note */}
-          <div style={{ border: "1px solid #E5E5E5", borderRadius: "12px", padding: "14px 16px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
-            <Info size={14} strokeWidth={1.5} color="#A3A3A3" style={{ flexShrink: 0, marginTop: "1px" }} />
-            <p style={{ fontSize: "13px", color: "#737373", margin: 0, lineHeight: 1.5 }}>
-              Scheduling and technician assignment is managed by the CoolDesk office team.
-            </p>
-          </div>
-
-          {/* Cancel job button */}
-          {canCancel && (
-            <button
-              type="button"
-              onClick={() => {
-                if (cancelMutation.isPending) return;
-                cancelMutation.mutate();
-              }}
-              disabled={cancelMutation.isPending}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "7px",
-                width: "100%",
-                padding: "12px",
-                border: "1px solid #FCA5A5",
-                borderRadius: "12px",
-                backgroundColor: "#fff",
-                color: "#EF4444",
-                fontSize: "14px",
-                fontWeight: 500,
-                cursor: cancelMutation.isPending ? "not-allowed" : "pointer",
-                opacity: cancelMutation.isPending ? 0.6 : 1,
-              }}
-            >
-              <XCircle size={15} strokeWidth={1.5} />
-              {cancelMutation.isPending ? "Submitting…" : "Cancel job"}
-            </button>
-          )}
-        </div>
+        {/* Right sidebar — desktop only */}
+        {!isMobile && Sidebar}
       </div>
     </div>
   );

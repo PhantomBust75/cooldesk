@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 import { useSnackbar } from "notistack";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
 type Step = 1 | 2 | 3;
 
@@ -62,6 +63,7 @@ function StepHeader({ current, total }: { current: Step; total: number }) {
 
 export default function DealerLogNewJobPage() {
   const router = useRouter();
+  const isMobile = useMobileBreakpoint();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const [step, setStep] = useState<Step>(1);
@@ -108,7 +110,7 @@ export default function DealerLogNewJobPage() {
 
   if (createdJobId) {
     return (
-      <section style={{ padding: "24px", maxWidth: "720px" }}>
+      <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "720px" }}>
         <div
           style={{
             backgroundColor: "#FAFAFA",
@@ -203,7 +205,7 @@ export default function DealerLogNewJobPage() {
   }
 
   return (
-    <section style={{ padding: "24px", maxWidth: "720px" }}>
+    <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "720px" }}>
       <div style={{ marginBottom: "20px" }}>
         <button
           type="button"
