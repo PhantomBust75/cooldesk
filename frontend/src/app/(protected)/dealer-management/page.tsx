@@ -572,7 +572,7 @@ export default function DealerManagementPage() {
                           </div>
                         </div>
                         <p style={{ fontSize: "12px", color: "#737373", margin: "8px 0 0 0" }}>
-                          To change the password, use the "Reset password" flow in system settings.
+                          To change the password, use the &ldquo;Reset password&rdquo; flow in system settings.
                         </p>
                       </div>
                     </div>

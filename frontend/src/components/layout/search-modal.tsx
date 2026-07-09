@@ -23,14 +23,16 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [prevOpen, setPrevOpen] = useState(open);
 
   // Reset query when modal opens
-  useEffect(() => {
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) {
       setQuery('');
       setDebouncedQuery('');
     }
-  }, [open]);
+  }
 
   // Debounce query updates (300ms)
   useEffect(() => {

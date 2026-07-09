@@ -45,30 +45,39 @@ describe("LogNewJobPage - Success Screen", () => {
 
     vi.mocked(authContext.useAuth).mockReturnValue({
       session: {
+        accessToken: "test-token",
         user: {
-          id: "test-user",
-          email: "test@example.com",
-          name: "Test User",
+          userId: "test-user",
+          organizationId: "org-1",
           role: "owner",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          officeId: "office-1",
+          name: "Test User",
         },
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60),
       },
-      isLoading: false,
+      isReady: true,
       isAuthenticated: true,
+      login: vi.fn(),
       logout: vi.fn(),
-    } as any);
+      hasRole: vi.fn().mockReturnValue(true),
+    });
 
     vi.mocked(operationsApi.fetchDealers).mockResolvedValue([
-      { id: "dealer-1", name: "Test Dealer", isActive: true } as any,
+      {
+        id: "dealer-1",
+        name: "Test Dealer",
+        contactName: null,
+        email: null,
+        phone: "",
+        region: null,
+        isActive: true,
+        createdAt: "2024-01-01T00:00:00Z",
+        brandIds: [],
+      },
     ]);
     vi.mocked(operationsApi.fetchOfficeBrands).mockResolvedValue([
-      { id: "brand-1", name: "Test Brand" } as any,
+      { id: "brand-1", name: "Test Brand", isActive: true, installationCharge: 0 },
     ]);
     vi.mocked(officeApi.fetchOfficeTechnicians).mockResolvedValue([
-      { id: "tech-1", name: "Tech One", activeAssignments: 2 } as any,
+      { id: "tech-1", name: "Tech One", activeAssignments: 2 },
     ]);
   });
 
@@ -85,7 +94,7 @@ describe("LogNewJobPage - Success Screen", () => {
       id: jobId,
       status: "new",
       version: 1,
-    } as any);
+    });
 
     renderPage();
 

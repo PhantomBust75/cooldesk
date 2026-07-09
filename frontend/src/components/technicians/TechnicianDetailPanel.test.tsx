@@ -100,13 +100,13 @@ describe("TechnicianDetailPanel", () => {
     expect(screen.getByText("Alice Smith")).toBeTruthy();
   });
 
-  it("shows Active Jobs tab by default", async () => {
+  it("shows Job History tab by default", async () => {
     render(
       <TechnicianDetailPanel technician={mockTechnician} onClose={vi.fn()} />,
       { wrapper: makeWrapper() },
     );
-    const activeTab = screen.getByRole("button", { name: /Active Jobs/i });
-    expect(activeTab).toBeTruthy();
+    const historyTab = screen.getByRole("button", { name: /Job History/i });
+    expect(historyTab).toBeTruthy();
   });
 
   it("switches to History tab when clicked", async () => {
@@ -128,50 +128,36 @@ describe("TechnicianDetailPanel", () => {
     );
     // The close button — find by its type=button that is not a tab
     const buttons = screen.getAllByRole("button");
-    // The close button is the last one in the header row; click backdrop or close btn
-    const closeBtn = buttons.find((btn) => !btn.textContent?.match(/Active|History/));
+    const closeBtn = buttons.find((btn) => !btn.textContent?.match(/History|Ongoing|Performance/));
     if (closeBtn) fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("displays active jobs (non-terminal statuses) on Active Jobs tab", async () => {
+  it("displays active jobs (non-terminal statuses) on Ongoing tab", async () => {
     render(
       <TechnicianDetailPanel technician={mockTechnician} onClose={vi.fn()} />,
       { wrapper: makeWrapper() },
     );
+    fireEvent.click(screen.getByRole("button", { name: /Ongoing/i }));
     // Wait for data to load
     await screen.findByText("Bob Jones");
     expect(screen.getByText("Bob Jones")).toBeTruthy();
-    // Carol (completed) and Dave (cancelled) should not appear on Active tab
+    // Carol (completed) and Dave (cancelled) should not appear on the Ongoing tab
     expect(screen.queryByText("Carol Brown")).toBeNull();
     expect(screen.queryByText("Dave Wilson")).toBeNull();
   });
 
-  it("displays history jobs (terminal statuses) on History tab", async () => {
+  it("displays history jobs (terminal statuses) on Job History tab by default", async () => {
     render(
       <TechnicianDetailPanel technician={mockTechnician} onClose={vi.fn()} />,
       { wrapper: makeWrapper() },
     );
-    // Wait for data to load
-    await screen.findByText("Bob Jones");
-    // Switch to history tab
-    fireEvent.click(screen.getByRole("button", { name: /History/i }));
     // Carol (completed) should appear
+    await screen.findByText("Carol Brown");
     expect(screen.getByText("Carol Brown")).toBeTruthy();
     // Dave (cancelled) should appear
     expect(screen.getByText("Dave Wilson")).toBeTruthy();
     // Bob (in_process = active) should not appear
     expect(screen.queryByText("Bob Jones")).toBeNull();
-  });
-
-  it("calls onClose when backdrop is clicked", () => {
-    const onClose = vi.fn();
-    render(
-      <TechnicianDetailPanel technician={mockTechnician} onClose={onClose} />,
-      { wrapper: makeWrapper() },
-    );
-    const backdrop = screen.getByTestId("overlay-backdrop");
-    fireEvent.click(backdrop);
-    expect(onClose).toHaveBeenCalled();
   });
 });

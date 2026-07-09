@@ -1,10 +1,11 @@
 "use client";
 
 import { fetchSystemConfig, updateSystemConfig } from "@/lib/api/operations";
+import type { SystemConfigItem } from "@/types/operations";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Info, Save } from "lucide-react";
 import { useSnackbar } from "notistack";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
 // ─── Config key definitions ───────────────────────────────────────────────────
@@ -101,6 +102,7 @@ export default function SystemConfigPage() {
   // Local editable state — mirrors server values, seeded from query data
   const [local, setLocal] = useState<ConfigMap>({});
   const [savedFlash, setSavedFlash] = useState(false);
+  const [seededData, setSeededData] = useState<SystemConfigItem[] | undefined>(undefined);
 
   const configQuery = useQuery({
     queryKey: ["system-config"],
@@ -108,14 +110,14 @@ export default function SystemConfigPage() {
   });
 
   // Seed local state from server data (only once, or when query first resolves)
-  useEffect(() => {
-    if (!configQuery.data) return;
+  if (configQuery.data && configQuery.data !== seededData) {
+    setSeededData(configQuery.data);
     const map: ConfigMap = {};
     for (const row of configQuery.data) {
       map[row.key] = row.value;
     }
     setLocal(map);
-  }, [configQuery.data]);
+  }
 
   function get(key: string): string {
     if (key in local) return local[key];

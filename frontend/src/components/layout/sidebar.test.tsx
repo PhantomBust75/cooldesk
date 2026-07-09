@@ -7,7 +7,9 @@ vi.mock("@/contexts/auth-context", () => ({
   useAuth: () => ({ session: { user: { role: "owner" } } }),
 }));
 vi.mock("next/link", () => ({
-  default: ({ href, children, ...props }: any) => <a href={href} {...props}>{children}</a>,
+  default: ({ href, children, ...props }: React.ComponentProps<"a">) => (
+    <a href={href} {...props}>{children}</a>
+  ),
 }));
 
 describe("Sidebar", () => {
