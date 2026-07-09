@@ -67,8 +67,12 @@ services:
     volumes:
       - letsencrypt_data:/etc/letsencrypt
       - certbot_webroot:/var/www/certbot
-    # Run manually for first-time issuance and renewal via cron:
-    #   docker compose run --rm certbot certonly --webroot \
+    # Run manually for first-time issuance:
+    # NOTE: --entrypoint certbot is required — this service's own entrypoint below
+    # is a renewal-loop shell script that ignores any command passed to `run` and
+    # never exits, so without this override the container leaks forever (--rm
+    # only removes it once it exits) instead of running certonly and finishing.
+    #   docker compose run --rm --entrypoint certbot certbot certonly --webroot \
     #     -w /var/www/certbot \
     #     -d api.yourdomain.com \
     #     --email you@yourdomain.com --agree-tos --no-eff-email

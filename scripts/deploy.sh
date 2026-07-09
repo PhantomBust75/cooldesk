@@ -35,6 +35,26 @@ docker compose -f "$COMPOSE_FILE" pull
 
 STACK_DIR="$STACK_DIR" COMPOSE_FILE="$COMPOSE_FILE" bash scripts/init-ssl.sh
 
+# Defensive cleanup before recreate:
+# - When Compose recreates a container with a fixed container_name, it renames the
+#   old one to a temporary "<hash>_<name>" before creating the new one. If a prior
+#   deploy was killed mid-recreate, that renamed container is left running and
+#   blocks this deploy with a "name already in use" error.
+# - "cooldesk-certbot-run-*" containers are leftover one-off `docker compose run
+#   certbot certonly ...` invocations that never exited (see docker-compose.prod.yml).
+for name in cooldesk-postgres cooldesk-backend cooldesk-nginx cooldesk-certbot; do
+  stray=$(docker ps -aq --filter "name=^[0-9a-f]+_${name}$" || true)
+  if [[ -n "$stray" ]]; then
+    echo "Removing stray container(s) from an interrupted previous deploy: $stray"
+    docker rm -f $stray
+  fi
+done
+stale_certbot_runs=$(docker ps -aq --filter "name=cooldesk-certbot-run-" || true)
+if [[ -n "$stale_certbot_runs" ]]; then
+  echo "Removing orphaned certbot one-off run container(s): $stale_certbot_runs"
+  docker rm -f $stale_certbot_runs
+fi
+
 docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
 
 # Remove dangling images and stopped containers left over from previous deploys
