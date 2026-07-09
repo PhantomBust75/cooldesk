@@ -5,6 +5,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "migrate": "node dist/migrate.js",
+    "seed": "node dist/seed.js",
     "test": "jest --runInBand",
     "start": "node dist/main.js",
     "start:dev": "ts-node-dev --respawn --transpile-only src/main.ts"

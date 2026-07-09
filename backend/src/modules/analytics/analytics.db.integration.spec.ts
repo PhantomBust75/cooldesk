@@ -151,7 +151,8 @@ describeIfDb('Analytics DB integration', () => {
     expect(Number(purge.rows[0].deleted)).toBe(1);
 
     const remaining = await client.query<{ count: string }>(
-      `SELECT COUNT(*)::text AS count FROM analytics_processed_events_it`,
+      `SELECT COUNT(*)::text AS count FROM analytics_processed_events_it WHERE organization_id = $1`,
+      [orgId],
     );
     expect(Number(remaining.rows[0].count)).toBe(1);
   });

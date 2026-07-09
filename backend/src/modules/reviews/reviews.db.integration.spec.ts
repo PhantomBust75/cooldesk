@@ -14,6 +14,10 @@ describeIfDb('Reviews DB integration', () => {
     await client.query(`
       CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+      CREATE OR REPLACE FUNCTION immutable_add_48h(ts TIMESTAMPTZ)
+      RETURNS TIMESTAMPTZ LANGUAGE SQL IMMUTABLE
+      AS $$ SELECT ts + INTERVAL '48 hours' $$;
+
       CREATE TEMP TABLE customer_reviews_it (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         job_id UUID NOT NULL UNIQUE,
@@ -24,7 +28,7 @@ describeIfDb('Reviews DB integration', () => {
         submitted_at TIMESTAMPTZ,
         link_generated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         expires_at TIMESTAMPTZ GENERATED ALWAYS AS
-          (link_generated_at + INTERVAL '48 hours') STORED,
+          (immutable_add_48h(link_generated_at)) STORED,
         is_low_rated BOOLEAN GENERATED ALWAYS AS (
           CASE
             WHEN star_rating IS NOT NULL THEN star_rating <= 2

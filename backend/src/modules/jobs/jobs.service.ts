@@ -476,21 +476,6 @@ export class JobsService {
     });
   }
 
-  async listBrandsForOffice(ctx: RequestContext): Promise<Array<{ id: string; name: string }>> {
-    const result = await this.db.query(
-      `
-      SELECT id, name
-      FROM brands
-      WHERE organization_id = $1
-        AND is_active = TRUE
-        AND is_deleted = FALSE
-      ORDER BY name ASC
-      `,
-      [ctx.organizationId],
-    );
-    return result.rows as Array<{ id: string; name: string }>;
-  }
-
   async listTechniciansForOffice(ctx: RequestContext): Promise<Array<{ id: string; name: string; activeAssignments: number }>> {
     const result = await this.db.query(
       `

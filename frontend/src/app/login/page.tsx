@@ -306,20 +306,6 @@ export default function LoginPage() {
             <div style={{ height: "229px" }} aria-hidden="true" />
           )}
         </div>
-
-        <div
-          style={{
-            marginTop: "16px",
-            padding: "10px 16px",
-            backgroundColor: "#F5F5F5",
-            borderRadius: "8px",
-            fontSize: "12px",
-            color: "#737373",
-            textAlign: "center",
-          }}
-        >
-          Demo: owner@cooldesk.dev · password
-        </div>
       </div>
     </div>
   );

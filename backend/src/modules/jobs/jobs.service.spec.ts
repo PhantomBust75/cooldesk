@@ -49,7 +49,7 @@ describe('JobsService VCID resolution', () => {
         }
 
         if (text.includes('INSERT INTO jobs')) {
-          return result([{ id: 'job-1' }]);
+          return result([{ id: 'job-1', status: 'scheduled', version: 1 }]);
         }
 
         if (text.includes('INSERT INTO job_timeline')) {
@@ -87,7 +87,11 @@ describe('JobsService VCID resolution', () => {
       ],
     });
 
-    await expect(service.createByUser(baseInput, baseCtx)).resolves.toEqual({ jobId: 'job-1' });
+    await expect(service.createByUser(baseInput, baseCtx)).resolves.toEqual({
+      id: 'job-1',
+      status: 'scheduled',
+      version: 1,
+    });
   });
 
   it('throws 409 conflict when multiple phone matches exist without selectedVcid', async () => {
@@ -115,7 +119,11 @@ describe('JobsService VCID resolution', () => {
       selectedVcid: 'vcid-2',
     };
 
-    await expect(service.createByUser(retryInput, baseCtx)).resolves.toEqual({ jobId: 'job-1' });
+    await expect(service.createByUser(retryInput, baseCtx)).resolves.toEqual({
+      id: 'job-1',
+      status: 'scheduled',
+      version: 1,
+    });
   });
 });
 
@@ -2207,22 +2215,6 @@ describe('JobsService Phase 09 office quick-entry and dropdowns', () => {
         officeCtx,
       ),
     ).resolves.toMatchObject({ jobId: 'job-quick-1', status: 'assigned' });
-  });
-
-  it('listBrandsForOffice binds organization_id as first query param', async () => {
-    const capturedParams: unknown[][] = [];
-    const db = {
-      query: jest.fn(async (_text: string, params?: unknown[]) => {
-        capturedParams.push(params ?? []);
-        return result([{ id: 'brand-1', name: 'LG' }]);
-      }),
-    };
-    const config = { getInt: jest.fn(async (_o: string, _k: string, fb: number) => fb) };
-    const service = new JobsService(db as never, config as never);
-
-    await service.listBrandsForOffice(officeCtx);
-
-    expect(capturedParams[0][0]).toBe('org-office');
   });
 
   it('listTechniciansForOffice binds organization_id as first query param', async () => {

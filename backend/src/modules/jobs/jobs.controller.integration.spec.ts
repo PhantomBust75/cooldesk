@@ -24,7 +24,6 @@ describe('JobsController Phase 06 integration', () => {
     listPendingScheduleJobs: jest.fn(),
     getTechnicianWorkload: jest.fn(),
     quickEntryCreateJob: jest.fn(),
-    listBrandsForOffice: jest.fn(),
     listTechniciansForOffice: jest.fn(),
     listPendingRevisitCards: jest.fn(),
     rescheduleJob: jest.fn(),
@@ -48,7 +47,6 @@ describe('JobsController Phase 06 integration', () => {
     jobsService.listPendingScheduleJobs.mockReset();
     jobsService.getTechnicianWorkload.mockReset();
     jobsService.quickEntryCreateJob.mockReset();
-    jobsService.listBrandsForOffice.mockReset();
     jobsService.listTechniciansForOffice.mockReset();
     jobsService.listPendingRevisitCards.mockReset();
     jobsService.rescheduleJob.mockReset();
@@ -510,21 +508,6 @@ describe('JobsController Phase 06 integration', () => {
         role: 'office_staff',
       },
     );
-  });
-
-  it('passes tenant context into office brands dropdown endpoint', async () => {
-    jobsService.listBrandsForOffice.mockResolvedValue([{ id: 'brand-1', name: 'LG' }]);
-
-    await request(app.getHttpServer())
-      .get('/office/brands')
-      .set('Authorization', `Bearer ${tenantToken({ organization_id: 'org-office', sub: 'staff-30', role: 'office_staff' })}`)
-      .expect(200);
-
-    expect(jobsService.listBrandsForOffice).toHaveBeenCalledWith({
-      organizationId: 'org-office',
-      userId: 'staff-30',
-      role: 'office_staff',
-    });
   });
 
   it('passes tenant context into office technicians dropdown endpoint', async () => {
