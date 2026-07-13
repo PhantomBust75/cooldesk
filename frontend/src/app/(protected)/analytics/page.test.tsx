@@ -294,4 +294,37 @@ describe("AnalyticsPage", () => {
     fireEvent.mouseLeave(row);
     expect(row).toHaveStyle({ backgroundColor: "rgba(0, 0, 0, 0)" });
   });
+
+  it("shows a 'no data' row in the dealers table and colors active-jobs amber above 3", async () => {
+    vi.mocked(operationsApi.fetchAnalyticsDealers).mockResolvedValue([
+      { dealerId: "d1", dealerName: "Gulf Climate Systems", totalJobs: 8, activeJobs: 5, completedJobs: 3, revenueGenerated: 6000 },
+      { dealerId: "d2", dealerName: "Premium HVAC Trading", totalJobs: 6, activeJobs: 2, completedJobs: 4, revenueGenerated: 2500 },
+    ]);
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Dealer" }));
+
+    const highActive = await screen.findByText("5");
+    expect(highActive).toHaveStyle({ color: "#92400E" });
+    const lowActive = screen.getByText("2");
+    expect(lowActive).toHaveStyle({ color: "#404040" });
+
+    cleanup();
+    vi.mocked(operationsApi.fetchAnalyticsDealers).mockResolvedValue([]);
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Dealer" }));
+    expect(await screen.findByText("No dealer data for this period.")).toBeInTheDocument();
+  });
+
+  it("highlights a dealer table row on hover", async () => {
+    vi.mocked(operationsApi.fetchAnalyticsDealers).mockResolvedValue([
+      { dealerId: "d1", dealerName: "Gulf Climate Systems", totalJobs: 10, activeJobs: 1, completedJobs: 5, revenueGenerated: 6000 },
+    ]);
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Dealer" }));
+    const row = (await screen.findByText("Gulf Climate Systems")).closest("tr")!;
+    fireEvent.mouseEnter(row);
+    expect(row).toHaveStyle({ backgroundColor: "#FAFAFA" });
+    fireEvent.mouseLeave(row);
+    expect(row).toHaveStyle({ backgroundColor: "rgba(0, 0, 0, 0)" });
+  });
 });

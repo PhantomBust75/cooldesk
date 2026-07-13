@@ -297,6 +297,7 @@ export default function AnalyticsPage() {
   const [days, setDays] = useState(30);
   const [hoveredTechnicianId, setHoveredTechnicianId] = useState<string | null>(null);
   const [hoveredBrandId, setHoveredBrandId] = useState<string | null>(null);
+  const [hoveredDealerId, setHoveredDealerId] = useState<string | null>(null);
 
   const overviewQuery = useQuery({
     queryKey: ["analytics", "overview", days],
@@ -783,12 +784,12 @@ export default function AnalyticsPage() {
             {dealersQuery.isLoading ? <LoadingRow /> : null}
             {dealersQuery.isError ? <ErrorRow /> : null}
             {!dealersQuery.isLoading && !dealersQuery.isError ? (
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#F9F9F9", color: "#737373", textAlign: "left" }}>
                     {["DEALER", "JOBS SUBMITTED", "ACTIVE JOBS", "COMPLETED JOBS", "REVENUE (RS)"].map(
                       (h) => (
-                        <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                        <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5", fontSize: "13px", color: "#525252", fontWeight: 500 }}>
                           {h}
                         </th>
                       ),
@@ -796,17 +797,43 @@ export default function AnalyticsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(dealersQuery.data ?? []).map((item) => (
-                    <tr key={item.dealerId} style={{ borderBottom: "1px solid #E5E5E5" }}>
-                      <td style={{ padding: "10px 12px", color: "#171717" }}>{item.dealerName || "—"}</td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.totalJobs}</td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.activeJobs}</td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.completedJobs}</td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>
-                        {item.revenueGenerated.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {(dealersQuery.data ?? []).length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ padding: "24px 12px", textAlign: "center", fontSize: "14px", color: "#737373" }}>
+                        No dealer data for this period.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    (dealersQuery.data ?? []).map((item) => (
+                      <tr
+                        key={item.dealerId}
+                        onMouseEnter={() => setHoveredDealerId(item.dealerId)}
+                        onMouseLeave={() => setHoveredDealerId(null)}
+                        style={{
+                          borderBottom: "1px solid #F5F5F5",
+                          backgroundColor: hoveredDealerId === item.dealerId ? "#FAFAFA" : "transparent",
+                        }}
+                      >
+                        <td style={{ padding: "10px 12px", fontWeight: 500, color: "#171717", fontSize: "14px" }}>
+                          {item.dealerName || "—"}
+                        </td>
+                        <td style={{ padding: "10px 12px", color: "#404040", fontVariantNumeric: "tabular-nums" }}>{item.totalJobs}</td>
+                        <td
+                          style={{
+                            padding: "10px 12px",
+                            color: item.activeJobs > 3 ? "#92400E" : "#404040",
+                            fontVariantNumeric: "tabular-nums",
+                          }}
+                        >
+                          {item.activeJobs}
+                        </td>
+                        <td style={{ padding: "10px 12px", color: "#404040", fontVariantNumeric: "tabular-nums" }}>{item.completedJobs}</td>
+                        <td style={{ padding: "10px 12px", color: "#065F46", fontVariantNumeric: "tabular-nums" }}>
+                          {item.revenueGenerated.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             ) : null}
