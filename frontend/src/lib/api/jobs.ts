@@ -98,6 +98,12 @@ function mapJobDetail(row: UnknownRecord): JobDetail {
           paymentMethodId: asNullableString(paymentRecord.payment_method_id),
           paymentMethodName: asNullableString(paymentRecord.payment_method_name),
           status: asString(paymentRecord.status),
+          installedBrandId: asNullableString(paymentRecord.installed_brand_id),
+          installedBrandName: asNullableString(paymentRecord.installed_brand_name),
+          installationCharge:
+            paymentRecord.installation_charge == null
+              ? null
+              : asNumber(paymentRecord.installation_charge),
           recordedByName: asNullableString(paymentRecord.recorded_by_name),
           recordedAt: asString(paymentRecord.recorded_at),
           items: Array.isArray(paymentRecord.items)

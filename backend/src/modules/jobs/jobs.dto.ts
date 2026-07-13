@@ -186,6 +186,19 @@ export class UpdateJobStatusDto {
   serviceItems?: ServiceItemLineDto[];
 
   @IsOptional()
+  @IsUUID()
+  installedBrandId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  installationCharge?: number;
+
+  @IsOptional()
+  @IsEnum(['collected', 'pending'])
+  paymentStatus?: 'collected' | 'pending';
+
+  @IsOptional()
   @IsEnum([
     'part_unavailable',
     'customer_not_home',
@@ -569,6 +582,19 @@ export class OfficeTransitionJobDto {
   @ValidateNested({ each: true })
   @Type(() => ServiceItemLineDto)
   serviceItems?: ServiceItemLineDto[];
+
+  @IsOptional()
+  @IsUUID()
+  installedBrandId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  installationCharge?: number;
+
+  @IsOptional()
+  @IsEnum(['collected', 'pending'])
+  paymentStatus?: 'collected' | 'pending';
 
   @IsOptional()
   @IsEnum(['part_unavailable', 'customer_not_home', 'issue_recurring', 'further_diagnosis_required', 'custom'])

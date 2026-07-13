@@ -2189,6 +2189,12 @@ export class JobsService {
 
     await this.assertPaymentMethodBelongsToOrg(client, input.paymentMethodId, ctx.organizationId);
 
+    if (input.installedBrandId) {
+      await this.assertBrandBelongsToOrg(client, input.installedBrandId, ctx.organizationId);
+    }
+
+    const paymentStatus = input.paymentStatus ?? 'collected';
+
     const updateResult = await client.query<{ status: JobStatus; version: number }>(
       `
       UPDATE jobs
@@ -2218,12 +2224,23 @@ export class JobsService {
           payment_method_id,
           status,
           recorded_by,
-          organization_id
+          organization_id,
+          installed_brand_id,
+          installation_charge
         )
-        VALUES ($1, $2, $3, 'collected', $4, $5)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING id
         `,
-        [job.id, input.paymentAmount, input.paymentMethodId, ctx.userId, ctx.organizationId],
+        [
+          job.id,
+          input.paymentAmount,
+          input.paymentMethodId,
+          paymentStatus,
+          ctx.userId,
+          ctx.organizationId,
+          input.installedBrandId ?? null,
+          input.installationCharge ?? null,
+        ],
       );
       paymentId = insertResult.rows[0].id;
     } catch (error: unknown) {
@@ -2291,6 +2308,28 @@ export class JobsService {
 
     if (method.rows.length === 0) {
       throw new BadRequestException('Payment method is invalid or cross-organization');
+    }
+  }
+
+  private async assertBrandBelongsToOrg(
+    client: PoolClient,
+    brandId: string,
+    organizationId: string,
+  ): Promise<void> {
+    const brand = await client.query<{ id: string }>(
+      `
+      SELECT id
+      FROM brands
+      WHERE id = $1
+        AND organization_id = $2
+        AND is_deleted = FALSE
+      LIMIT 1
+      `,
+      [brandId, organizationId],
+    );
+
+    if (brand.rows.length === 0) {
+      throw new BadRequestException('Installed brand is invalid or cross-organization');
     }
   }
 
@@ -3846,6 +3885,9 @@ export class JobsService {
           'payment_method_id', p.payment_method_id,
           'payment_method_name', pm.name,
           'status', p.status,
+          'installed_brand_id', p.installed_brand_id,
+          'installed_brand_name', ib.name,
+          'installation_charge', p.installation_charge,
           'recorded_by_name', rb.full_name,
           'recorded_at', p.created_at,
           'items', COALESCE(
@@ -3867,6 +3909,7 @@ export class JobsService {
       LEFT JOIN users u ON u.id = j.technician_id
       LEFT JOIN payments p ON p.job_id = j.id AND p.organization_id = j.organization_id AND p.is_deleted = FALSE
       LEFT JOIN payment_methods pm ON pm.id = p.payment_method_id
+      LEFT JOIN brands ib ON ib.id = p.installed_brand_id
       LEFT JOIN users rb ON rb.id = p.recorded_by
       WHERE j.id = $1
         AND j.organization_id = $2

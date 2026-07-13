@@ -85,6 +85,9 @@ export type JobPaymentInfo = {
   paymentMethodId: string | null;
   paymentMethodName: string | null;
   status: string;
+  installedBrandId: string | null;
+  installedBrandName: string | null;
+  installationCharge: number | null;
   recordedByName: string | null;
   recordedAt: string;
   items: JobPaymentItem[];
@@ -127,6 +130,9 @@ export type TransitionJobStatusInput = {
     quantity: number;
     total: number;
   }>;
+  installedBrandId?: string;
+  installationCharge?: number;
+  paymentStatus?: "collected" | "pending";
 };
 
 export type TransitionJobStatusResult = {

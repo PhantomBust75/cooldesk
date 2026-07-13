@@ -226,7 +226,9 @@ export function JobsList() {
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "flex-start",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "12px",
           marginBottom: "16px",
           padding: "24px 24px 0",
         }}
@@ -248,6 +250,32 @@ export function JobsList() {
             {total} jobs
           </p>
         </div>
+        {!isTechnician && (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "8px 12px", minHeight: "44px", border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", color: "#737373", fontSize: "13px", cursor: "pointer" }}
+              >
+                <X size={13} strokeWidth={1.5} /> Clear
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setInlineFiltersOpen((prev) => !prev)}
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 14px", minHeight: "44px", border: "1px solid", borderColor: inlineFiltersOpen ? "#0A0A0A" : "#E5E5E5", borderRadius: "8px", backgroundColor: inlineFiltersOpen ? "#0A0A0A" : "#fff", color: inlineFiltersOpen ? "#fff" : "#404040", fontSize: "13px", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap", transition: "all 150ms ease" }}
+            >
+              <Filter size={14} strokeWidth={1.5} />
+              Filters
+              {activeFilterCount > 0 && (
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "16px", height: "16px", borderRadius: "9999px", backgroundColor: inlineFiltersOpen ? "rgba(255,255,255,0.9)" : "#0A0A0A", color: inlineFiltersOpen ? "#0A0A0A" : "#fff", fontSize: "10px", fontWeight: 600 }}>
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Search row ─────────────────────────────────────── */}
@@ -301,35 +329,8 @@ export function JobsList() {
           })}
         </div>
       ) : (
-        /* ── Owner/staff: full filter panel ───────────────── */
-        <>
-          <div style={{ padding: "0 24px 16px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px" }}>
-              {activeFilterCount > 0 && (
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "8px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", color: "#737373", fontSize: "13px", cursor: "pointer" }}
-                >
-                  <X size={13} strokeWidth={1.5} /> Clear
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setInlineFiltersOpen((prev) => !prev)}
-                style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 14px", border: "1px solid", borderColor: inlineFiltersOpen ? "#0A0A0A" : "#E5E5E5", borderRadius: "8px", backgroundColor: inlineFiltersOpen ? "#0A0A0A" : "#fff", color: inlineFiltersOpen ? "#fff" : "#404040", fontSize: "13px", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap", transition: "all 150ms ease" }}
-              >
-                <Filter size={14} strokeWidth={1.5} />
-                Filters
-                {activeFilterCount > 0 && (
-                  <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "16px", height: "16px", borderRadius: "9999px", backgroundColor: inlineFiltersOpen ? "rgba(255,255,255,0.9)" : "#0A0A0A", color: inlineFiltersOpen ? "#0A0A0A" : "#fff", fontSize: "10px", fontWeight: 600 }}>
-                    {activeFilterCount}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
-          <div style={{ overflow: "hidden", maxHeight: inlineFiltersOpen ? "300px" : "0px", opacity: inlineFiltersOpen ? 1 : 0, transition: "max-height 300ms cubic-bezier(0.4,0,0.2,1), opacity 200ms ease" }}>
+        /* ── Owner/staff: collapsible filter panel ────────── */
+        <div style={{ overflow: "hidden", maxHeight: inlineFiltersOpen ? "300px" : "0px", opacity: inlineFiltersOpen ? 1 : 0, transition: "max-height 300ms cubic-bezier(0.4,0,0.2,1), opacity 200ms ease" }}>
             <div style={{ transform: inlineFiltersOpen ? "translateY(0)" : "translateY(-6px)", transition: "transform 300ms cubic-bezier(0.4,0,0.2,1)", padding: "0 24px 12px" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", padding: "14px 16px", flexWrap: "wrap", backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "8px" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
@@ -363,8 +364,7 @@ export function JobsList() {
                 </label>
               </div>
             </div>
-          </div>
-        </>
+        </div>
       )}
 
       {/* ── Jobs content ───────────────────────────────────── */}

@@ -32,8 +32,10 @@ import {
   Copy,
   MapPin,
   Phone,
+  Plus,
   RotateCcw,
   ShieldAlert,
+  Trash2,
   UserRound,
   X,
 } from "lucide-react";
@@ -91,7 +93,11 @@ export function JobDetail({ jobId }: { jobId: string }) {
   const [paySelectedItems, setPaySelectedItems] = useState<Set<string>>(new Set());
   const [payItemQuantities, setPayItemQuantities] = useState<Map<string, number>>(new Map());
   const [paySelectedMethodId, setPaySelectedMethodId] = useState("");
-  const [payAdditional, setPayAdditional] = useState("");
+  const [paySelectedBrandId, setPaySelectedBrandId] = useState("");
+  const [payStatus, setPayStatus] = useState<"collected" | "pending">("collected");
+  const [payAdditionalCharges, setPayAdditionalCharges] = useState<
+    Array<{ id: string; description: string; amount: string }>
+  >([]);
 
   const role = session?.user.role;
   const isOwner = role === "owner";
@@ -197,7 +203,15 @@ export function JobDetail({ jobId }: { jobId: string }) {
   });
 
   const collectPaymentMutation = useMutation({
-    mutationFn: async (payload: { toStatus: string; paymentMethodId: string; paymentAmount: number; serviceItems: TransitionJobStatusInput["serviceItems"] }) => {
+    mutationFn: async (payload: {
+      toStatus: string;
+      paymentMethodId: string;
+      paymentAmount: number;
+      serviceItems: TransitionJobStatusInput["serviceItems"];
+      installedBrandId?: string;
+      installationCharge?: number;
+      paymentStatus: "collected" | "pending";
+    }) => {
       if (!detailQuery.data) return;
       await transitionJobStatus(jobId, {
         toStatus: payload.toStatus,
@@ -205,6 +219,9 @@ export function JobDetail({ jobId }: { jobId: string }) {
         paymentAmount: payload.paymentAmount,
         paymentMethodId: payload.paymentMethodId,
         serviceItems: payload.serviceItems,
+        installedBrandId: payload.installedBrandId,
+        installationCharge: payload.installationCharge,
+        paymentStatus: payload.paymentStatus,
       });
     },
     onSuccess: async () => {
@@ -219,6 +236,16 @@ export function JobDetail({ jobId }: { jobId: string }) {
       enqueueSnackbar(err instanceof Error ? err.message : "Failed to collect payment.", { variant: "error" });
     },
   });
+
+  const closeCollectPayment = () => {
+    setCollectPaymentOpen(false);
+    setPaySelectedItems(new Set());
+    setPayItemQuantities(new Map());
+    setPaySelectedMethodId("");
+    setPaySelectedBrandId("");
+    setPayStatus("collected");
+    setPayAdditionalCharges([]);
+  };
 
   const rollbackMutation = useMutation({
     mutationFn: (payload: { reason: string }) => {
@@ -750,7 +777,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                       <div>
                         <p style={{ margin: "0 0 4px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Amount Collected</p>
                         <p style={{ margin: 0, fontSize: "28px", fontWeight: 700, color: "#171717", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
-                          RS {pmt.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          SAR {pmt.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                       </div>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "9999px", backgroundColor: s.bg, color: s.color, fontSize: "13px", fontWeight: 600 }}>
@@ -759,49 +786,59 @@ export function JobDetail({ jobId }: { jobId: string }) {
                       </span>
                     </div>
 
-                    {/* Service items breakdown */}
-                    {pmt.items.length > 0 && (
-                      <div style={{ border: "1px solid #E5E5E5", borderRadius: "12px", overflow: "hidden" }}>
-                        <div style={{ padding: "12px 20px", backgroundColor: "#FAFAFA", borderBottom: "1px solid #E5E5E5" }}>
-                          <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Service Items</span>
-                        </div>
-                        {pmt.items.map((item, i) => (
-                          <div
-                            key={item.id}
-                            style={{
-                              display: "flex", alignItems: "center", justifyContent: "space-between",
-                              padding: "12px 20px", gap: "16px",
-                              borderBottom: i < pmt.items.length - 1 ? "1px solid #F5F5F5" : "none",
-                              backgroundColor: "#fff",
-                            }}
-                          >
-                            <div style={{ minWidth: 0 }}>
-                              <span style={{ fontSize: "13px", color: "#171717" }}>{item.name}</span>
-                              {item.quantity !== 1 && (
-                                <span style={{ fontSize: "12px", color: "#737373", marginLeft: "6px" }}>× {item.quantity}</span>
-                              )}
-                            </div>
-                            <span style={{ fontSize: "13px", color: "#171717", fontWeight: 500, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
-                              RS {item.total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
+                    {/* Payment breakdown */}
+                    {(() => {
+                      const money = (n: number) =>
+                        n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                      const brandFee = pmt.installationCharge ?? 0;
+                      const hasBrand = brandFee > 0;
+                      const itemsSum = pmt.items.reduce((s, it) => s + it.total, 0);
+                      const extra = parseFloat((pmt.amount - itemsSum - brandFee).toFixed(2));
+                      const showExtra = extra > 0.005;
+                      if (!hasBrand && pmt.items.length === 0 && !showExtra) return null;
+                      return (
+                        <div style={{ border: "1px solid #E5E5E5", borderRadius: "12px", overflow: "hidden" }}>
+                          <div style={{ padding: "12px 20px", backgroundColor: "#FAFAFA", borderBottom: "1px solid #E5E5E5" }}>
+                            <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Breakdown</span>
                           </div>
-                        ))}
-                        {/* Subtotal row if there's also an additional amount */}
-                        {(() => {
-                          const itemsSum = pmt.items.reduce((s, it) => s + it.total, 0);
-                          const diff = parseFloat((pmt.amount - itemsSum).toFixed(2));
-                          if (diff > 0.005) return (
-                            <>
-                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderTop: "1px solid #F5F5F5", backgroundColor: "#fff" }}>
-                                <span style={{ fontSize: "13px", color: "#737373" }}>Additional charges</span>
-                                <span style={{ fontSize: "13px", color: "#171717", fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>RS {diff.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          {hasBrand && (
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", gap: "16px", borderBottom: pmt.items.length > 0 || showExtra ? "1px solid #F5F5F5" : "none", backgroundColor: "#fff" }}>
+                              <span style={{ fontSize: "13px", color: "#171717" }}>
+                                Brand installation{pmt.installedBrandName ? ` (${pmt.installedBrandName})` : ""}
+                              </span>
+                              <span style={{ fontSize: "13px", color: "#171717", fontWeight: 500, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>SAR {money(brandFee)}</span>
+                            </div>
+                          )}
+                          {pmt.items.map((item, i) => (
+                            <div
+                              key={item.id}
+                              style={{
+                                display: "flex", alignItems: "center", justifyContent: "space-between",
+                                padding: "12px 20px", gap: "16px",
+                                borderBottom: i < pmt.items.length - 1 || showExtra ? "1px solid #F5F5F5" : "none",
+                                backgroundColor: "#fff",
+                              }}
+                            >
+                              <div style={{ minWidth: 0 }}>
+                                <span style={{ fontSize: "13px", color: "#171717" }}>{item.name}</span>
+                                {item.quantity !== 1 && (
+                                  <span style={{ fontSize: "12px", color: "#737373", marginLeft: "6px" }}>× {item.quantity}</span>
+                                )}
                               </div>
-                            </>
-                          );
-                          return null;
-                        })()}
-                      </div>
-                    )}
+                              <span style={{ fontSize: "13px", color: "#171717", fontWeight: 500, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
+                                SAR {money(item.total)}
+                              </span>
+                            </div>
+                          ))}
+                          {showExtra && (
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", backgroundColor: "#fff" }}>
+                              <span style={{ fontSize: "13px", color: "#737373" }}>Additional charges</span>
+                              <span style={{ fontSize: "13px", color: "#171717", fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>SAR {money(extra)}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Detail rows */}
                     <div style={{ border: "1px solid #E5E5E5", borderRadius: "12px", overflow: "hidden" }}>
@@ -1073,7 +1110,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
               <p style={{ margin: 0, fontSize: "13px", color: "#737373" }}>No payment recorded</p>
             ) : (
               <div style={{ display: "grid", gap: "4px" }}>
-                <p style={{ margin: 0, fontSize: "13px", color: "#171717", fontWeight: 500 }}>RS {detail.payment.amount.toFixed(2)}</p>
+                <p style={{ margin: 0, fontSize: "13px", color: "#171717", fontWeight: 500 }}>SAR {detail.payment.amount.toFixed(2)}</p>
                 <p style={{ margin: 0, fontSize: "12px", color: "#737373" }}>{detail.payment.paymentMethodName ?? "—"}</p>
               </div>
             )}
@@ -1107,46 +1144,107 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
       {/* ── Collect Payment modal ──────────────────────────── */}
       {collectPaymentOpen && (() => {
+        const fmt = (n: number) =>
+          Number.isInteger(n)
+            ? n.toLocaleString("en-US")
+            : n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
         const brands = brandsQuery.data ?? [];
         const serviceItems = serviceItemsQuery.data ?? [];
-        const paymentMethods = paymentMethodsQuery.data ?? [];
+        const paymentMethods = (paymentMethodsQuery.data ?? []).filter((m) => m.isActive);
+        const isInstallation = detail.type === "installation";
+
         const selectedServiceItems = serviceItems.filter((si) => paySelectedItems.has(si.id));
-        const selectedItemsTotal = selectedServiceItems.reduce((sum, si) => {
+        const itemsTotal = selectedServiceItems.reduce((sum, si) => {
           const qty = si.pricingType === "variable" ? (payItemQuantities.get(si.id) ?? 1) : 1;
           return sum + si.unitPrice * qty;
         }, 0);
-        const additionalNum = parseFloat(payAdditional) || 0;
-        const totalAmount = selectedItemsTotal + additionalNum;
-        const canConfirm = paySelectedMethodId && totalAmount >= 0;
-        const terminalStatus = detail.type === "installation" ? "completed" : "resolved";
+        const selectedBrand = isInstallation
+          ? brands.find((b) => b.id === paySelectedBrandId)
+          : undefined;
+        const brandFee = selectedBrand?.installationCharge ?? 0;
+        const additionalTotal = payAdditionalCharges.reduce(
+          (sum, c) => sum + (parseFloat(c.amount) || 0),
+          0,
+        );
+        const grandTotal = brandFee + itemsTotal + additionalTotal;
+        const extrasCount = payAdditionalCharges.filter((c) => (parseFloat(c.amount) || 0) > 0).length;
+        const canConfirm = Boolean(paySelectedMethodId) && grandTotal > 0;
+        const terminalStatus = isInstallation ? "completed" : "resolved";
+
+        const summaryParts = [
+          selectedBrand ? "Installation" : null,
+          selectedServiceItems.length > 0
+            ? `${selectedServiceItems.length} item${selectedServiceItems.length > 1 ? "s" : ""}`
+            : null,
+          extrasCount > 0 ? "extras" : null,
+        ].filter(Boolean) as string[];
+        const summaryText =
+          grandTotal > 0 && summaryParts.length > 0
+            ? summaryParts.join(" · ")
+            : "Select items to calculate total";
+
+        const submitPayment = () => {
+          if (!canConfirm) return;
+          const builtServiceItems = selectedServiceItems.map((si) => {
+            const isVar = si.pricingType === "variable";
+            const qty = isVar ? (payItemQuantities.get(si.id) ?? 1) : 1;
+            const tot = parseFloat((si.unitPrice * qty).toFixed(2));
+            return { serviceItemId: si.id, name: si.name, unitPrice: si.unitPrice, quantity: qty, total: tot };
+          });
+          const builtAdditional = payAdditionalCharges
+            .filter((c) => (parseFloat(c.amount) || 0) > 0)
+            .map((c) => {
+              const amt = parseFloat((parseFloat(c.amount) || 0).toFixed(2));
+              return { name: c.description.trim() || "Additional charge", unitPrice: amt, quantity: 1, total: amt };
+            });
+          const builtItems = [...builtServiceItems, ...builtAdditional];
+          collectPaymentMutation.mutate({
+            toStatus: terminalStatus,
+            paymentMethodId: paySelectedMethodId,
+            paymentAmount: parseFloat(grandTotal.toFixed(2)),
+            serviceItems: builtItems.length > 0 ? builtItems : undefined,
+            installedBrandId: selectedBrand ? selectedBrand.id : undefined,
+            installationCharge: selectedBrand ? parseFloat(brandFee.toFixed(2)) : undefined,
+            paymentStatus: payStatus,
+          });
+          closeCollectPayment();
+        };
 
         return (
           <div
             style={{
               position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.45)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              zIndex: 1000, padding: "16px",
+              display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center",
+              zIndex: 1000, padding: isMobile ? "0" : "16px",
             }}
-            onClick={() => setCollectPaymentOpen(false)}
+            onClick={closeCollectPayment}
           >
             <div
               style={{
-                backgroundColor: "#fff", borderRadius: "16px",
-                width: "100%", maxWidth: "480px", maxHeight: "90vh",
+                backgroundColor: "#fff",
+                borderRadius: isMobile ? "16px 16px 0 0" : "16px",
+                width: "100%", maxWidth: isMobile ? "100%" : "480px",
+                maxHeight: isMobile ? "92vh" : "90vh",
                 overflow: "hidden", display: "flex", flexDirection: "column",
-                boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
+                boxShadow: isMobile ? "0 -4px 32px rgba(0,0,0,0.14)" : "0 20px 60px rgba(0,0,0,0.18)",
               }}
               onClick={(e) => e.stopPropagation()}
             >
+              {isMobile && (
+                <div style={{ display: "flex", justifyContent: "center", paddingTop: "8px" }}>
+                  <div style={{ width: "36px", height: "4px", borderRadius: "9999px", backgroundColor: "#E5E5E5" }} />
+                </div>
+              )}
               {/* Modal header */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 20px 16px", borderBottom: "1px solid #F5F5F5" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #F5F5F5" }}>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: "14px", fontWeight: 500, color: "#171717" }}>Collect Payment</h2>
+                  <h2 style={{ margin: 0, fontSize: "15px", fontWeight: 600, color: "#171717" }}>Collect Payment</h2>
                   <p style={{ margin: "3px 0 0", fontSize: "13px", color: "#737373" }}>{detail.customerName}</p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setCollectPaymentOpen(false)}
+                  onClick={closeCollectPayment}
                   style={{ border: "none", background: "none", cursor: "pointer", padding: "4px", color: "#737373", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
                   <X size={18} strokeWidth={1.5} />
@@ -1156,18 +1254,22 @@ export function JobDetail({ jobId }: { jobId: string }) {
               {/* Scrollable body */}
               <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "20px" }}>
 
-                {/* Brand */}
-                <div>
-                  <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Brand Installed</p>
-                  <select
-                    style={{ width: "100%", border: "1px solid #E5E5E5", borderRadius: "10px", padding: "10px 12px", fontSize: "14px", color: "#171717", backgroundColor: "#fff", boxSizing: "border-box" }}
-                  >
-                    <option value="">Select brand…</option>
-                    {brands.map((b) => (
-                      <option key={b.id} value={b.id} selected={b.id === detail.brandId}>{b.name}</option>
-                    ))}
-                  </select>
-                </div>
+                {/* Brand — installation only */}
+                {isInstallation && (
+                  <div>
+                    <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Brand Installed</p>
+                    <select
+                      value={paySelectedBrandId}
+                      onChange={(e) => setPaySelectedBrandId(e.target.value)}
+                      style={{ width: "100%", border: "1px solid #E5E5E5", borderRadius: "10px", padding: "12px", fontSize: "14px", color: "#171717", backgroundColor: "#fff", boxSizing: "border-box", minHeight: "44px" }}
+                    >
+                      <option value="">Select brand…</option>
+                      {brands.filter((b) => b.isActive).map((b) => (
+                        <option key={b.id} value={b.id}>{b.name} — SAR {b.installationCharge}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Service items */}
                 <div>
@@ -1175,24 +1277,27 @@ export function JobDetail({ jobId }: { jobId: string }) {
                   {serviceItems.length === 0 ? (
                     <p style={{ fontSize: "13px", color: "#A3A3A3", margin: 0 }}>No service items configured.</p>
                   ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      {serviceItems.map((si) => {
+                    <div style={{ border: "1px solid #E5E5E5", borderRadius: "10px", overflow: "hidden" }}>
+                      {serviceItems.map((si, idx) => {
                         const checked = paySelectedItems.has(si.id);
                         const isVariable = si.pricingType === "variable";
                         const qty = payItemQuantities.get(si.id) ?? 1;
                         const lineTotal = si.unitPrice * (isVariable ? qty : 1);
+                        const priceLabel = checked
+                          ? `SAR ${fmt(lineTotal)}`
+                          : isVariable
+                            ? `SAR ${si.unitPrice}/${si.unitLabel ?? "unit"}`
+                            : `SAR ${si.unitPrice}`;
                         return (
                           <div
                             key={si.id}
                             style={{
-                              padding: "10px 12px", borderRadius: "8px",
-                              backgroundColor: checked ? "#F0FDF4" : "transparent",
-                              border: checked ? "1px solid #BBF7D0" : "1px solid transparent",
-                              transition: "all 0.1s",
+                              backgroundColor: checked ? "#FAFAFA" : "#fff",
+                              borderTop: idx === 0 ? "none" : "1px solid #F0F0F0",
                             }}
                           >
-                            <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
-                              <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", padding: "12px", gap: "10px" }}>
+                              <span style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
                                 <input
                                   type="checkbox"
                                   checked={checked}
@@ -1201,30 +1306,32 @@ export function JobDetail({ jobId }: { jobId: string }) {
                                     if (checked) next.delete(si.id); else next.add(si.id);
                                     setPaySelectedItems(next);
                                   }}
-                                  style={{ width: "16px", height: "16px", accentColor: "#16A34A", cursor: "pointer" }}
+                                  style={{ width: "18px", height: "18px", accentColor: "#0A0A0A", cursor: "pointer", flexShrink: 0 }}
                                 />
                                 <span style={{ fontSize: "14px", color: "#171717" }}>{si.name}</span>
-                                {isVariable && <span style={{ fontSize: "11px", padding: "1px 6px", backgroundColor: "#EEF2FF", borderRadius: "4px", color: "#4338CA" }}>per {si.unitLabel ?? "unit"}</span>}
                               </span>
-                              <span style={{ fontSize: "13px", color: "#525252", fontWeight: 500 }}>
-                                RS {lineTotal.toFixed(2)}
+                              <span style={{ fontSize: "13px", fontWeight: 600, color: checked ? "#065F46" : "#A3A3A3", flexShrink: 0, whiteSpace: "nowrap" }}>
+                                {priceLabel}
                               </span>
                             </label>
                             {isVariable && checked && (
-                              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px", paddingLeft: "26px" }}>
-                                <span style={{ fontSize: "12px", color: "#737373" }}>Qty ({si.unitLabel ?? "unit"}):</span>
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 12px 12px 40px" }}>
                                 <input
                                   type="number"
-                                  min="0.001"
+                                  min="0.1"
                                   step="0.5"
                                   value={qty}
                                   onChange={(e) => {
                                     const next = new Map(payItemQuantities);
-                                    next.set(si.id, Math.max(0.001, parseFloat(e.target.value) || 1));
+                                    next.set(si.id, Math.max(0.1, parseFloat(e.target.value) || 1));
                                     setPayItemQuantities(next);
                                   }}
-                                  style={{ width: "80px", border: "1px solid #D1FAE5", borderRadius: "6px", padding: "4px 8px", fontSize: "13px", outline: "none" }}
+                                  style={{ width: "72px", border: "1px solid #E5E5E5", borderRadius: "6px", padding: "6px 8px", fontSize: "13px", outline: "none", textAlign: "center" }}
                                 />
+                                <span style={{ fontSize: "12px", color: "#737373" }}>{si.unitLabel ?? "unit"}</span>
+                                <span style={{ marginLeft: "auto", fontSize: "12px", color: "#737373", whiteSpace: "nowrap" }}>
+                                  × SAR {si.unitPrice} = <span style={{ color: "#065F46", fontWeight: 600 }}>SAR {fmt(lineTotal)}</span>
+                                </span>
                               </div>
                             )}
                           </div>
@@ -1236,23 +1343,69 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
                 {/* Additional charges */}
                 <div>
-                  <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Additional Charges (RS)</p>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={payAdditional}
-                    onChange={(e) => setPayAdditional(e.target.value)}
-                    placeholder="0.00"
-                    style={{ width: "100%", border: "1px solid #E5E5E5", borderRadius: "10px", padding: "10px 12px", fontSize: "14px", color: "#171717", boxSizing: "border-box", outline: "none" }}
-                  />
+                  <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Additional Charges</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {payAdditionalCharges.map((c) => (
+                      <div key={c.id} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <input
+                          type="text"
+                          value={c.description}
+                          placeholder="Description"
+                          onChange={(e) =>
+                            setPayAdditionalCharges((prev) =>
+                              prev.map((row) => (row.id === c.id ? { ...row, description: e.target.value } : row)),
+                            )
+                          }
+                          style={{ flex: 1, minWidth: 0, border: "1px solid #E5E5E5", borderRadius: "8px", padding: "10px 12px", fontSize: "14px", color: "#171717", outline: "none", boxSizing: "border-box" }}
+                        />
+                        <div style={{ position: "relative", width: "104px", flexShrink: 0 }}>
+                          <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "12px", color: "#A3A3A3", pointerEvents: "none" }}>SAR</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={c.amount}
+                            placeholder="0"
+                            onChange={(e) =>
+                              setPayAdditionalCharges((prev) =>
+                                prev.map((row) => (row.id === c.id ? { ...row, amount: e.target.value } : row)),
+                              )
+                            }
+                            style={{ width: "100%", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "10px 10px 10px 38px", fontSize: "14px", color: "#171717", outline: "none", boxSizing: "border-box" }}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPayAdditionalCharges((prev) => prev.filter((row) => row.id !== c.id))}
+                          aria-label="Remove charge"
+                          style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "38px", height: "38px", border: "none", borderRadius: "8px", backgroundColor: "#FFF5F5", color: "#EF4444", cursor: "pointer" }}
+                        >
+                          <Trash2 size={15} strokeWidth={1.5} />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPayAdditionalCharges((prev) => [
+                          ...prev,
+                          { id: crypto.randomUUID(), description: "", amount: "" },
+                        ])
+                      }
+                      style={{ display: "inline-flex", alignItems: "center", gap: "6px", alignSelf: "flex-start", padding: "9px 14px", border: "1px dashed #D4D4D4", borderRadius: "8px", backgroundColor: "#FAFAFA", color: "#525252", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}
+                    >
+                      <Plus size={14} strokeWidth={1.5} /> Add charge
+                    </button>
+                  </div>
                 </div>
 
                 {/* Payment method */}
                 <div>
-                  <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Payment Method</p>
+                  <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    Payment Method <span style={{ color: "#EF4444" }}>*</span>
+                  </p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                    {paymentMethods.filter((m) => m.isActive).map((m) => {
+                    {paymentMethods.map((m) => {
                       const sel = paySelectedMethodId === m.id;
                       return (
                         <button
@@ -1260,67 +1413,73 @@ export function JobDetail({ jobId }: { jobId: string }) {
                           type="button"
                           onClick={() => setPaySelectedMethodId(m.id)}
                           style={{
-                            padding: "8px 16px", borderRadius: "9999px", fontSize: "13px", fontWeight: 500, cursor: "pointer",
-                            border: sel ? "none" : "1px solid #E5E5E5",
+                            padding: "9px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, cursor: "pointer", minHeight: "44px",
+                            border: sel ? "1px solid #0A0A0A" : "1px solid #E5E5E5",
                             backgroundColor: sel ? "#0A0A0A" : "#fff",
-                            color: sel ? "#fff" : "#525252",
+                            color: sel ? "#fff" : "#404040",
                           }}
                         >
                           {m.name}
                         </button>
                       );
                     })}
-                    {paymentMethods.filter((m) => m.isActive).length === 0 && (
+                    {paymentMethods.length === 0 && (
                       <p style={{ fontSize: "13px", color: "#A3A3A3", margin: 0 }}>No payment methods configured.</p>
                     )}
+                  </div>
+                  {/* Collected / Pending toggle */}
+                  <div style={{ display: "inline-flex", marginTop: "12px", backgroundColor: "#EBEBEB", borderRadius: "9999px", padding: "3px" }}>
+                    {(["collected", "pending"] as const).map((st) => {
+                      const active = payStatus === st;
+                      return (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => setPayStatus(st)}
+                          style={{
+                            padding: "7px 18px", borderRadius: "9999px", fontSize: "13px", fontWeight: 500, border: "none", cursor: "pointer",
+                            backgroundColor: active ? "#fff" : "transparent",
+                            color: active ? "#171717" : "#737373",
+                            boxShadow: active ? "0 1px 2px rgba(0,0,0,0.12)" : "none",
+                          }}
+                        >
+                          {st === "collected" ? "Collected" : "Pending"}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
 
               {/* Footer */}
-              <div style={{ padding: "16px 20px", borderTop: "1px solid #F5F5F5", backgroundColor: "#FAFAFA" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-                  <span style={{ fontSize: "13px", color: "#737373" }}>Total</span>
-                  <span style={{ fontSize: "20px", fontWeight: 700, color: "#0A0A0A" }}>
-                    RS {totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <div style={{ padding: "12px 20px 16px", borderTop: "1px solid #E5E5E5", backgroundColor: "#FAFAFA" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", gap: "12px" }}>
+                  <span style={{ fontSize: "13px", color: "#737373" }}>{summaryText}</span>
+                  <span style={{ fontSize: "20px", fontWeight: 700, color: grandTotal > 0 ? "#065F46" : "#A3A3A3", whiteSpace: "nowrap" }}>
+                    SAR {grandTotal > 0 ? fmt(grandTotal) : "—"}
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: "8px" }}>
                   <button
                     type="button"
-                    onClick={() => setCollectPaymentOpen(false)}
-                    style={{ flex: 1, border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", color: "#404040", padding: "9px 14px", fontSize: "13px", fontWeight: 400, cursor: "pointer" }}
+                    onClick={closeCollectPayment}
+                    style={{ border: "1px solid #E5E5E5", borderRadius: "10px", backgroundColor: "#fff", color: "#404040", padding: "12px 18px", fontSize: "14px", fontWeight: 500, cursor: "pointer", minHeight: "44px" }}
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     disabled={!canConfirm || collectPaymentMutation.isPending}
-                    onClick={() => {
-                      if (!paySelectedMethodId) return;
-                      const builtItems = selectedServiceItems.map((si) => {
-                        const isVar = si.pricingType === "variable";
-                        const qty = isVar ? (payItemQuantities.get(si.id) ?? 1) : 1;
-                        const tot = parseFloat((si.unitPrice * qty).toFixed(2));
-                        return { serviceItemId: si.id, name: si.name, unitPrice: si.unitPrice, quantity: qty, total: tot };
-                      });
-                      collectPaymentMutation.mutate({
-                        toStatus: terminalStatus,
-                        paymentMethodId: paySelectedMethodId,
-                        paymentAmount: totalAmount,
-                        serviceItems: builtItems.length > 0 ? builtItems : undefined,
-                      });
-                      setCollectPaymentOpen(false);
-                    }}
+                    onClick={submitPayment}
                     style={{
-                      flex: 2, border: "none", borderRadius: "10px",
+                      flex: 1, border: "none", borderRadius: "10px",
                       backgroundColor: canConfirm ? "#0A0A0A" : "#E5E5E5",
                       color: canConfirm ? "#fff" : "#A3A3A3",
-                      padding: "12px 16px", fontSize: "14px", fontWeight: 500,
+                      padding: "12px 16px", fontSize: "14px", fontWeight: 600, minHeight: "44px",
                       cursor: canConfirm ? "pointer" : "not-allowed",
                     }}
                   >
-                    {collectPaymentMutation.isPending ? "Processing…" : paySelectedMethodId ? `Confirm — ${paymentMethods.find((m) => m.id === paySelectedMethodId)?.name ?? ""}` : "Select method to confirm"}
+                    {collectPaymentMutation.isPending ? "Processing…" : canConfirm ? "Confirm & Complete" : "Select method to confirm"}
                   </button>
                 </div>
               </div>
