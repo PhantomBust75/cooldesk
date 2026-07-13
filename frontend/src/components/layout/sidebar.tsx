@@ -101,7 +101,7 @@ export function Sidebar({
       >
         <Zap size={20} strokeWidth={1.5} color="#0A0A0A" style={{ flexShrink: 0 }} />
         {!collapsed && (
-          <span style={{ fontSize: "15px", color: "#0A0A0A", fontWeight: 500, whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: "16px", color: "#0A0A0A", fontWeight: 500, whiteSpace: "nowrap" }}>
             CoolDesk
           </span>
         )}

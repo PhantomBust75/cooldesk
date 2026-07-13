@@ -569,7 +569,7 @@ export function JobsList() {
                       {job.id.slice(0, 8)}
                     </td>
                     {/* CUSTOMER */}
-                    <td style={{ padding: "14px 16px", color: "#171717", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap", borderLeft: job.tags.includes("chronic") ? "2px solid #9F1239" : "2px solid transparent" }}>
+                    <td style={{ padding: "14px 16px", color: "#171717", fontSize: "14px", whiteSpace: "nowrap", borderLeft: job.tags.includes("chronic") ? "2px solid #9F1239" : "2px solid transparent" }}>
                       {job.customerName}
                     </td>
                     {/* PHONE — owner/staff only */}
