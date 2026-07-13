@@ -190,4 +190,75 @@ describe("AnalyticsPage", () => {
     expect(await screen.findByText("42")).toBeInTheDocument();
     expect(screen.queryByText("No analytics available for the selected period.")).not.toBeInTheDocument();
   });
+
+  it("shows a 'no data' row in the technicians table when the array is empty, and colors on-time-rate by threshold", async () => {
+    vi.mocked(operationsApi.fetchAnalyticsTechnicians).mockResolvedValue([
+      {
+        technicianId: "t1",
+        technicianName: "Ahmed Al-Rashid",
+        jobsCompleted: 12,
+        revenueCollected: 4200,
+        firstVisitResolutionRate: 90,
+        avgResolutionMinutes: 45,
+        onTimeRate: 92,
+        avgStarRating: 4.5,
+      },
+      {
+        technicianId: "t2",
+        technicianName: "Nora Al-Shehri",
+        jobsCompleted: 5,
+        revenueCollected: 1000,
+        firstVisitResolutionRate: null,
+        avgResolutionMinutes: null,
+        onTimeRate: 50,
+        avgStarRating: null,
+      },
+    ]);
+
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Technician scorecards" }));
+
+    expect(await screen.findByText("Ahmed Al-Rashid")).toBeInTheDocument();
+    // The percentage <span> sits after the track <div>, which itself wraps the colored
+    // fill <div> as its only child — so the fill color is previousElementSibling.firstElementChild.
+    const highRateTrack = screen.getByText("92.0%").previousElementSibling!;
+    expect(highRateTrack.firstElementChild).toHaveStyle({ backgroundColor: "#10B981" });
+
+    const lowRateTrack = screen.getByText("50.0%").previousElementSibling!;
+    expect(lowRateTrack.firstElementChild).toHaveStyle({ backgroundColor: "#EF4444" });
+
+    expect(screen.getAllByText("—")).not.toHaveLength(0);
+
+    cleanup();
+    vi.mocked(operationsApi.fetchAnalyticsTechnicians).mockResolvedValue([]);
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Technician scorecards" }));
+    expect(await screen.findByText("No technician data for this period.")).toBeInTheDocument();
+  });
+
+  it("highlights a technician table row on hover", async () => {
+    vi.mocked(operationsApi.fetchAnalyticsTechnicians).mockResolvedValue([
+      {
+        technicianId: "t1",
+        technicianName: "Ahmed Al-Rashid",
+        jobsCompleted: 12,
+        revenueCollected: 4200,
+        firstVisitResolutionRate: 90,
+        avgResolutionMinutes: 45,
+        onTimeRate: 92,
+        avgStarRating: 4.5,
+      },
+    ]);
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Technician scorecards" }));
+    const row = (await screen.findByText("Ahmed Al-Rashid")).closest("tr")!;
+    // jsdom's getComputedStyle normalizes the "transparent" keyword to its rgba
+    // equivalent; jest-dom's toHaveStyle expected-value builder does not, so the
+    // literal keyword never matches computed style here — assert the normalized form.
+    expect(row).toHaveStyle({ backgroundColor: "rgba(0, 0, 0, 0)" });
+    fireEvent.mouseEnter(row);
+    expect(row).toHaveStyle({ backgroundColor: "#FAFAFA" });
+    fireEvent.mouseLeave(row);
+    expect(row).toHaveStyle({ backgroundColor: "rgba(0, 0, 0, 0)" });
+  });
 });

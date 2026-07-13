@@ -21,7 +21,7 @@ import {
 import { fetchAnalyticsDaily } from "@/lib/api/analytics-daily";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Calendar, ChevronDown, Download } from "lucide-react";
+import { Calendar, ChevronDown, Download, Star } from "lucide-react";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -295,6 +295,7 @@ export default function AnalyticsPage() {
   const isMobile = useMobileBreakpoint();
   const [tab, setTab] = useState<"business" | "technicians" | "brands" | "dealers">("business");
   const [days, setDays] = useState(30);
+  const [hoveredTechnicianId, setHoveredTechnicianId] = useState<string | null>(null);
 
   const overviewQuery = useQuery({
     queryKey: ["analytics", "overview", days],
@@ -593,7 +594,7 @@ export default function AnalyticsPage() {
             {techniciansQuery.isLoading ? <LoadingRow /> : null}
             {techniciansQuery.isError ? <ErrorRow /> : null}
             {!techniciansQuery.isLoading && !techniciansQuery.isError ? (
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#F9F9F9", color: "#737373", textAlign: "left" }}>
                     {["NAME", "JOBS COMPLETED", "REVENUE (RS)", "1ST VISIT RES.", "AVG RESOLUTION", "ON-TIME RATE", "RATING"].map(
@@ -606,27 +607,88 @@ export default function AnalyticsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(techniciansQuery.data ?? []).map((item) => (
-                    <tr key={item.technicianId} style={{ borderBottom: "1px solid #E5E5E5" }}>
-                      <td style={{ padding: "10px 12px", color: "#171717" }}>{item.technicianName || "—"}</td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.jobsCompleted}</td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>
-                        {item.revenueCollected.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>
-                        {nullFmt(item.firstVisitResolutionRate, 1, "%")}
-                      </td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>
-                        {item.avgResolutionMinutes != null ? `${item.avgResolutionMinutes} min` : "—"}
-                      </td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>
-                        {nullFmt(item.onTimeRate, 1, "%")}
-                      </td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>
-                        {nullFmt(item.avgStarRating, 2)}
+                  {(techniciansQuery.data ?? []).length === 0 ? (
+                    <tr>
+                      <td colSpan={7} style={{ padding: "24px 12px", textAlign: "center", fontSize: "14px", color: "#737373" }}>
+                        No technician data for this period.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    (techniciansQuery.data ?? []).map((item) => {
+                      const onTimeColor =
+                        item.onTimeRate == null
+                          ? "#E5E5E5"
+                          : item.onTimeRate >= 85
+                            ? "#10B981"
+                            : item.onTimeRate >= 70
+                              ? "#F59E0B"
+                              : "#EF4444";
+                      return (
+                        <tr
+                          key={item.technicianId}
+                          onMouseEnter={() => setHoveredTechnicianId(item.technicianId)}
+                          onMouseLeave={() => setHoveredTechnicianId(null)}
+                          style={{
+                            borderBottom: "1px solid #F5F5F5",
+                            backgroundColor: hoveredTechnicianId === item.technicianId ? "#FAFAFA" : "transparent",
+                          }}
+                        >
+                          <td style={{ padding: "10px 12px", fontWeight: 500, color: "#171717", fontSize: "14px" }}>
+                            {item.technicianName || "—"}
+                          </td>
+                          <td style={{ padding: "10px 12px", color: "#404040", fontVariantNumeric: "tabular-nums" }}>
+                            {item.jobsCompleted}
+                          </td>
+                          <td style={{ padding: "10px 12px", color: "#065F46", fontVariantNumeric: "tabular-nums" }}>
+                            {item.revenueCollected.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td style={{ padding: "10px 12px", color: "#404040", fontVariantNumeric: "tabular-nums" }}>
+                            {nullFmt(item.firstVisitResolutionRate, 1, "%")}
+                          </td>
+                          <td style={{ padding: "10px 12px", color: "#404040", fontVariantNumeric: "tabular-nums" }}>
+                            {item.avgResolutionMinutes != null ? `${item.avgResolutionMinutes} min` : "—"}
+                          </td>
+                          <td style={{ padding: "10px 12px", color: "#404040" }}>
+                            {item.onTimeRate == null ? (
+                              "—"
+                            ) : (
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <div
+                                  style={{
+                                    height: "4px",
+                                    width: "80px",
+                                    maxWidth: "80px",
+                                    backgroundColor: "#F5F5F5",
+                                    borderRadius: "9999px",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      height: "4px",
+                                      width: `${Math.min(item.onTimeRate, 100)}%`,
+                                      backgroundColor: onTimeColor,
+                                      borderRadius: "9999px",
+                                    }}
+                                  />
+                                </div>
+                                <span style={{ fontVariantNumeric: "tabular-nums" }}>{item.onTimeRate.toFixed(1)}%</span>
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: "10px 12px", color: "#404040" }}>
+                            {item.avgStarRating == null ? (
+                              "—"
+                            ) : (
+                              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                <Star size={13} fill="#F59E0B" color="#F59E0B" />
+                                <span style={{ fontVariantNumeric: "tabular-nums" }}>{item.avgStarRating.toFixed(2)}</span>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             ) : null}
