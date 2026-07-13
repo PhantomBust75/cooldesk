@@ -99,8 +99,8 @@ function ServiceItemModal({ item, onClose, onSaved }: ServiceItemModalProps) {
   const isValid = name.trim() && Number(unitPrice) >= 0 && !Number.isNaN(Number(unitPrice)) &&
     (pricingType === "fixed" || unitLabel.trim());
 
-  const LBL: CSSProperties = { display: "block", fontSize: "14px", fontWeight: 600, color: "#0A0A0A", marginBottom: "8px" };
-  const INP: CSSProperties = { width: "100%", boxSizing: "border-box", padding: "14px 16px", border: "1px solid #E5E5E5", borderRadius: "12px", fontSize: "14px", color: "#171717", outline: "none", fontFamily: "inherit" };
+  const LBL: CSSProperties = { display: "block", fontSize: "12px", fontWeight: 500, color: "#404040", marginBottom: "8px" };
+  const INP: CSSProperties = { width: "100%", boxSizing: "border-box", padding: "14px 16px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#171717", outline: "none", fontFamily: "inherit", minHeight: "44px" };
 
   return (
     <div
@@ -111,7 +111,7 @@ function ServiceItemModal({ item, onClose, onSaved }: ServiceItemModalProps) {
 
         {/* Header */}
         <div style={{ padding: "20px 24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <span style={{ fontSize: "18px", fontWeight: 600, color: "#0A0A0A" }}>
+          <span style={{ fontSize: "14px", fontWeight: 500, color: "#171717" }}>
             {isEdit ? "Edit service item" : "Add service item"}
           </span>
           <button type="button" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#737373", lineHeight: 0, padding: "4px" }}>
@@ -146,13 +146,13 @@ function ServiceItemModal({ item, onClose, onSaved }: ServiceItemModalProps) {
                   type="button"
                   onClick={() => { setPricingType(t); setUnitLabel(""); }}
                   style={{
-                    padding: "8px 22px",
+                    padding: "6px 16px",
                     borderRadius: "9999px",
-                    border: pricingType === t ? "2px solid #0A0A0A" : "2px solid transparent",
+                    border: "none",
                     backgroundColor: pricingType === t ? "#fff" : "transparent",
                     color: pricingType === t ? "#0A0A0A" : "#737373",
-                    fontSize: "14px",
-                    fontWeight: pricingType === t ? 700 : 400,
+                    fontSize: "13px",
+                    fontWeight: pricingType === t ? 500 : 400,
                     cursor: "pointer",
                     transition: "all 150ms",
                   }}
@@ -216,7 +216,7 @@ function ServiceItemModal({ item, onClose, onSaved }: ServiceItemModalProps) {
             <button
               type="button"
               onClick={onClose}
-              style={{ padding: "12px 20px", borderRadius: "10px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#404040", fontSize: "14px", cursor: "pointer", fontWeight: 500, minWidth: "90px" }}
+              style={{ padding: "9px 14px", borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#404040", fontSize: "13px", cursor: "pointer", fontWeight: 400, minWidth: "90px" }}
             >
               Cancel
             </button>
@@ -225,10 +225,10 @@ function ServiceItemModal({ item, onClose, onSaved }: ServiceItemModalProps) {
               disabled={isPending || !isValid}
               style={{
                 display: "inline-flex", alignItems: "center", gap: "6px",
-                padding: "12px 20px", borderRadius: "10px", border: "none",
+                padding: "8px 14px", borderRadius: "8px", border: "none",
                 backgroundColor: isPending || !isValid ? "#E5E5E5" : "#0A0A0A",
                 color: isPending || !isValid ? "#A3A3A3" : "#fff",
-                fontSize: "14px", fontWeight: 500, cursor: isPending || !isValid ? "not-allowed" : "pointer",
+                fontSize: "13px", fontWeight: 500, cursor: isPending || !isValid ? "not-allowed" : "pointer",
                 minWidth: "110px",
               }}
             >
@@ -534,14 +534,14 @@ function BrandModal({ brand, onClose, onSaved }: BrandModalProps) {
               <button
                 type="button"
                 onClick={onClose}
-                style={{ padding: "10px 16px", borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#fff", cursor: "pointer", fontSize: "13px", color: "#404040", minHeight: "44px" }}
+                style={{ padding: "9px 14px", borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#fff", cursor: "pointer", fontSize: "13px", color: "#404040", minHeight: "44px" }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isPending || !isValid}
-                style={{ display: "flex", alignItems: "center", gap: "5px", padding: "10px 16px", borderRadius: "8px", border: "none", backgroundColor: isValid && !isPending ? "#0A0A0A" : "#E5E5E5", color: isValid && !isPending ? "#fff" : "#A3A3A3", cursor: isValid && !isPending ? "pointer" : "not-allowed", fontSize: "13px", fontWeight: 500, minHeight: "44px" }}
+                style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 14px", borderRadius: "8px", border: "none", backgroundColor: isValid && !isPending ? "#0A0A0A" : "#E5E5E5", color: isValid && !isPending ? "#fff" : "#A3A3A3", cursor: isValid && !isPending ? "pointer" : "not-allowed", fontSize: "13px", fontWeight: 500, minHeight: "44px" }}
               >
                 {isPending ? "Saving…" : isEdit ? "Save changes" : "Add brand"}
               </button>

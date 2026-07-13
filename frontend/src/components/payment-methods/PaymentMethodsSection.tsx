@@ -69,7 +69,7 @@ function PaymentMethodModal({ item, onClose }: ModalProps) {
       <div style={{ backgroundColor: "#fff", borderRadius: "16px", width: "100%", maxWidth: "520px", boxShadow: "0 10px 40px rgba(0,0,0,0.14)" }}>
         {/* Header */}
         <div style={{ padding: "20px 24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: "17px", fontWeight: 600, color: "#0A0A0A" }}>
+          <span style={{ fontSize: "14px", fontWeight: 500, color: "#171717" }}>
             {isEdit ? "Edit payment method" : "Add payment method"}
           </span>
           <button type="button" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#737373", lineHeight: 0, padding: "4px" }}>
@@ -81,7 +81,7 @@ function PaymentMethodModal({ item, onClose }: ModalProps) {
         <form onSubmit={onSubmit}>
           <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 500, color: "#404040", marginBottom: "6px" }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "#404040", marginBottom: "6px" }}>
                 Method name <span style={{ color: "#EF4444" }}>*</span>
               </label>
               <input
@@ -89,7 +89,7 @@ function PaymentMethodModal({ item, onClose }: ModalProps) {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Cash, Bank Transfer, Easypaisa"
                 autoFocus
-                style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", border: "1px solid #E5E5E5", borderRadius: "10px", fontSize: "14px", color: "#171717", outline: "none", fontFamily: "inherit" }}
+                style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#171717", outline: "none", fontFamily: "inherit", minHeight: "44px" }}
                 onFocus={(e) => (e.target.style.borderColor = "#A3A3A3")}
                 onBlur={(e) => (e.target.style.borderColor = "#E5E5E5")}
               />
@@ -99,7 +99,7 @@ function PaymentMethodModal({ item, onClose }: ModalProps) {
               <button
                 type="button"
                 onClick={onClose}
-                style={{ padding: "10px 18px", borderRadius: "9px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#404040", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}
+                style={{ padding: "9px 14px", borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#404040", fontSize: "13px", fontWeight: 400, cursor: "pointer" }}
               >
                 Cancel
               </button>
@@ -108,7 +108,7 @@ function PaymentMethodModal({ item, onClose }: ModalProps) {
                 disabled={isPending || !isValid}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: "6px",
-                  padding: "10px 18px", borderRadius: "9px", border: "none",
+                  padding: "8px 14px", borderRadius: "8px", border: "none",
                   backgroundColor: isPending || !isValid ? "#E5E5E5" : "#0A0A0A",
                   color: isPending || !isValid ? "#A3A3A3" : "#fff",
                   fontSize: "13px", fontWeight: 500,
