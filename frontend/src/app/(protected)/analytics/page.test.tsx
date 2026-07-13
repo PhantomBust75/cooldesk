@@ -157,4 +157,10 @@ describe("AnalyticsPage", () => {
     const grid = value.closest("div")?.parentElement?.parentElement;
     expect(grid).toHaveStyle({ gridTemplateColumns: "repeat(2, 1fr)" });
   });
+
+  it("renders chart titles as headings, not inside a bordered ChartCard box", async () => {
+    renderPage();
+    expect(await screen.findByRole("heading", { level: 3, name: "Daily Revenue (RS)" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "Daily Jobs" })).toBeInTheDocument();
+  });
 });

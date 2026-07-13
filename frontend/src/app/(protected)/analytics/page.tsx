@@ -4,6 +4,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -50,32 +51,6 @@ function nullFmt(v: number | null, decimals = 1, suffix = "") {
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
-
-function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        backgroundColor: "#fff",
-        border: "1px solid #E5E5E5",
-        borderRadius: "12px",
-        padding: "16px",
-        marginBottom: "16px",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "13px",
-          fontWeight: 500,
-          color: "#171717",
-          marginBottom: "12px",
-        }}
-      >
-        {title}
-      </div>
-      {children}
-    </div>
-  );
-}
 
 function KpiCard({
   title,
@@ -309,9 +284,10 @@ const tooltipStyle = {
   fontSize: "12px",
   borderRadius: "8px",
   border: "1px solid #E5E5E5",
+  boxShadow: "none",
 };
 
-const axisTickStyle = { fontSize: 11, fill: "#737373" };
+const axisTickStyle = { fontSize: 12, fill: "#737373" };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -487,15 +463,14 @@ export default function AnalyticsPage() {
           {dailyQuery.isLoading ? <LoadingRow /> : null}
           {dailyQuery.isError ? <ErrorRow /> : null}
           {!dailyQuery.isLoading && !dailyQuery.isError && dailyData.length > 0 ? (
-            <>
-              <ChartCard title="Daily Revenue (RS)">
-                <ResponsiveContainer width="100%" height={200}>
+            <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "24px" : "32px" }}>
+              <div>
+                <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#171717", marginBottom: "16px" }}>
+                  Daily Revenue (RS)
+                </h3>
+                <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={dailyData} barSize={28}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="#E5E5E5"
-                      vertical={false}
-                    />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F5F5F5" vertical={false} />
                     <XAxis
                       dataKey="date"
                       tick={axisTickStyle}
@@ -508,17 +483,16 @@ export default function AnalyticsPage() {
                     <Bar dataKey="revenue" fill="#0A0A0A" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
-              </ChartCard>
+              </div>
 
               {/* Line chart — daily jobs */}
-              <ChartCard title="Daily Jobs">
+              <div>
+                <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#171717", marginBottom: "16px" }}>
+                  Daily Jobs
+                </h3>
                 <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={dailyData}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="#E5E5E5"
-                      vertical={false}
-                    />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F5F5F5" vertical={false} />
                     <XAxis
                       dataKey="date"
                       tick={axisTickStyle}
@@ -528,26 +502,27 @@ export default function AnalyticsPage() {
                     />
                     <YAxis tick={axisTickStyle} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={tooltipStyle} />
+                    <Legend />
                     <Line
                       type="monotone"
                       dataKey="total"
-                      stroke="#737373"
-                      strokeWidth={2}
-                      dot={false}
+                      stroke="#525252"
+                      strokeWidth={1.5}
+                      dot={{ r: 3 }}
                       name="Total"
                     />
                     <Line
                       type="monotone"
                       dataKey="completed"
                       stroke="#F59E0B"
-                      strokeWidth={2}
-                      dot={false}
+                      strokeWidth={1.5}
+                      dot={{ r: 3 }}
                       name="Completed"
                     />
                   </LineChart>
                 </ResponsiveContainer>
-              </ChartCard>
-            </>
+              </div>
+            </div>
           ) : null}
         </>
       ) : null}
