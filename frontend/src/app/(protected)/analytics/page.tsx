@@ -152,8 +152,17 @@ function DateRangeDropdown({
         setOpen(false);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [open]);
 
   const activeOption = DAY_OPTIONS.find((o) => o.value === value) ?? DAY_OPTIONS[1];
@@ -163,6 +172,8 @@ function DateRangeDropdown({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
         style={{
           display: "flex",
           alignItems: "center",
@@ -186,11 +197,12 @@ function DateRangeDropdown({
       </button>
       {open ? (
         <div
+          role="listbox"
           style={{
-            position: "absolute",
-            top: "calc(100% + 6px)",
-            right: 0,
-            left: isMobile ? 0 : "auto",
+            position: isMobile ? "fixed" : "absolute",
+            top: isMobile ? "72px" : "calc(100% + 6px)",
+            right: isMobile ? "16px" : 0,
+            left: isMobile ? "16px" : "auto",
             zIndex: 200,
             backgroundColor: "#fff",
             border: "1px solid #E5E5E5",
@@ -204,6 +216,8 @@ function DateRangeDropdown({
             <button
               key={option.value}
               type="button"
+              role="option"
+              aria-selected={option.value === value}
               onClick={() => {
                 onChange(option.value);
                 setOpen(false);
