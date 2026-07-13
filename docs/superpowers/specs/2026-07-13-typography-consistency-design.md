@@ -128,11 +128,11 @@ Fix:
 
 Do not change the brand-assignment checkbox labels (`fontSize: "14px", color: "#171717", fontWeight: 500`, `dealer-management/page.tsx:406,589`) — those are a distinct "checkbox option" style the research did not flag as inconsistent with the reference.
 
-### D.2 — Technicians create-modal shape
-**File:** `frontend/src/app/(protected)/technicians/page.tsx:285-355` (create technician modal)
-**Current:** Centered dialog — `alignItems: "center", justifyContent: "center"`, card `borderRadius: "16px"` on all four corners.
-**Reference:** Both `Technicians.tsx` and `DealerManagement.tsx` use one bottom-sheet form for add and edit, both entities.
-**Fix:** Convert the create-modal's overlay/card positioning to a bottom sheet — `alignItems: "flex-end"`, card `borderRadius: "16px 16px 0 0"` — matching the Technicians *edit* modal (lines 359-517) and both Dealer Management modals, which are already bottom sheets. This is a structural (not just typographic) change, but it's required to make D.1's font-level convergence actually land on a consistent modal shape — fixing the fonts on a differently-shaped dialog would leave the visual inconsistency the user is asking to close.
+### D.2 — Technicians create AND edit modal shape
+**Correction from initial scoping:** the original research claimed the Technicians *edit* modal was already a bottom sheet (matching Dealer Management) and only the *create* modal needed converting. Direct reading of both modals (`technicians/page.tsx:285-355` create, `:358-517` edit) shows **both** use `alignItems: "center", justifyContent: "center"` with the card at `borderRadius: "16px"` on all four corners — i.e. both are centered dialogs, not bottom sheets. Confirmed directly against the reference (`Technicians.tsx:188-189`): a single shared modal component reused for both add and edit uses `alignItems: 'flex-end'`, card `borderRadius: '16px 16px 0 0'` — a genuine bottom sheet. So both live modals need converting, not just create.
+**File:** `frontend/src/app/(protected)/technicians/page.tsx` — create modal overlay (`:288-296`) and card (`:298-310`); edit modal overlay (`:360-363`) and card (`:364-367`).
+**Current (both):** overlay `alignItems: 'center', justifyContent: 'center'`; card `borderRadius: '16px'` (all four corners).
+**Fix (both):** overlay `alignItems: 'flex-end'` (keep `justifyContent: 'center'`); card `borderRadius: '16px 16px 0 0'` — matching Dealer Management's existing bottom-sheet modals and the reference. This is a structural (not just typographic) change, but it's required to make D.1's font-level convergence actually land on a consistent modal shape — fixing the fonts on a differently-shaped dialog would leave the visual inconsistency the user is asking to close.
 
 ### D.3 — Payment Methods page consolidation
 Three modals on one page currently have three different label/input styles. Converge all three to the reference's actual shared convention (`PaymentMethods.tsx:12-23`'s `labelStyle`/`inputStyle(minH)` helper, itself reused across all three reference sections): **label `fontSize: "12px", fontWeight: 500, color: "#404040"`; input `fontSize: "13px", borderRadius: "8px", minHeight: "44px"`**.
