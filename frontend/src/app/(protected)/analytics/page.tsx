@@ -411,6 +411,56 @@ export default function AnalyticsPage() {
           {overviewQuery.isLoading ? <LoadingRow /> : null}
           {overviewQuery.isError ? <ErrorRow /> : null}
 
+          {overview && overview.totalJobs === 0 ? (
+            <div>
+              <div style={{ textAlign: "center", padding: "32px 12px", fontSize: "14px", color: "#737373" }}>
+                No analytics available for the selected period.
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "24px" : "32px" }}>
+                <div>
+                  <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#171717", marginBottom: "16px" }}>
+                    Daily Revenue (RS)
+                  </h3>
+                  <div
+                    style={{
+                      height: "240px",
+                      border: "1px dashed #E5E5E5",
+                      borderRadius: "12px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "13px",
+                      color: "#A3A3A3",
+                    }}
+                  >
+                    No data to display
+                  </div>
+                </div>
+                <div>
+                  <h3 style={{ fontSize: "14px", fontWeight: 500, color: "#171717", marginBottom: "16px" }}>
+                    Daily Jobs
+                  </h3>
+                  <div
+                    style={{
+                      height: "200px",
+                      border: "1px dashed #E5E5E5",
+                      borderRadius: "12px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "13px",
+                      color: "#A3A3A3",
+                    }}
+                  >
+                    No data to display
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {overview && overview.totalJobs > 0 ? (
+            <>
           {/* KPI cards */}
           {overview ? (
             <div
@@ -523,6 +573,8 @@ export default function AnalyticsPage() {
                 </ResponsiveContainer>
               </div>
             </div>
+          ) : null}
+            </>
           ) : null}
         </>
       ) : null}

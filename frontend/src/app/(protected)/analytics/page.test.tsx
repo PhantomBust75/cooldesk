@@ -163,4 +163,31 @@ describe("AnalyticsPage", () => {
     expect(await screen.findByRole("heading", { level: 3, name: "Daily Revenue (RS)" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 3, name: "Daily Jobs" })).toBeInTheDocument();
   });
+
+  it("shows a consolidated empty state when total_jobs is 0, instead of zero-value KPI cards", async () => {
+    vi.mocked(operationsApi.fetchAnalyticsOverview).mockResolvedValue({
+      totalRevenue: 0,
+      totalJobs: 0,
+      activeJobs: 0,
+      completedJobs: 0,
+      firstVisitResolutionRate: null,
+      revisitRate: null,
+    });
+    vi.mocked(analyticsDailyApi.fetchAnalyticsDaily).mockResolvedValue([]);
+
+    renderPage();
+    expect(await screen.findByText("No analytics available for the selected period.")).toBeInTheDocument();
+    expect(screen.getAllByText("No data to display")).toHaveLength(2);
+    // The chart section titles still render above the placeholder boxes (by design — see
+    // spec §6), so heading presence doesn't distinguish empty vs. non-empty. KPI card
+    // labels only render in the non-empty path, so their absence is the real signal here.
+    expect(screen.queryByText("Total Revenue (RS)")).not.toBeInTheDocument();
+    expect(screen.queryByText("1st Visit Resolution")).not.toBeInTheDocument();
+  });
+
+  it("still shows KPI cards and charts when total_jobs is greater than 0", async () => {
+    renderPage();
+    expect(await screen.findByText("42")).toBeInTheDocument();
+    expect(screen.queryByText("No analytics available for the selected period.")).not.toBeInTheDocument();
+  });
 });
