@@ -80,11 +80,11 @@ This is already the majority pattern (Technicians' "Add technician", Dealer Mana
 Fix in `frontend/src/components/jobs/job-detail.tsx`:
 - Lines 876-891 (technician "Advance Status") — currently `padding: "16px", borderRadius: "10px", fontSize: "15px", fontWeight: 600` → converge to canonical.
 - Lines 945-960 (owner "Advance Status") — currently `padding: "14px"` (uniform on all sides, not the canonical's asymmetric `12px 16px`), `borderRadius: "10px", fontSize: "14px", fontWeight: 600` → converge `padding` to `"12px 16px"` and `fontWeight` to `500` (radius and fontSize already match canonical).
-- Lines 1314-1320 (Collect Payment confirm) — currently `padding: "12px", borderRadius: "10px", fontSize: "14px", fontWeight: 600` → converge (`fontWeight` 600 → 500).
+- Lines 1314-1320 (Collect Payment confirm) — currently `padding: "12px"` (uniform, not canonical's `12px 16px`), `borderRadius: "10px", fontSize: "14px", fontWeight: 600` → converge `padding` to `"12px 16px"` and `fontWeight` to `500` (radius and fontSize already match canonical). Note this button's Cancel sibling (line 1288-1294) is a Secondary button (B.3 pattern) with the same `padding: "12px"` uniform issue and `fontWeight: 500` where canonical wants `400` and `fontSize: "14px"` where canonical wants `13px` — add this Cancel button to B.3's fix list too (not previously listed): converge to `padding: "9px 14px", fontSize: "13px", fontWeight: 400` (radius `10px`→`8px` also, matching B.3's canonical).
 
 ### B.3 — Secondary button (outlined)
 **Canonical:** `padding: "9px 14px", borderRadius: "8px", fontSize: "13px", fontWeight: 400, border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#404040"`
-Fix `frontend/src/components/jobs/job-detail.tsx:987-1001` ("Actions" trigger) — currently `padding: "10px 14px", borderRadius: "10px", fontSize: "14px", fontWeight: 600` → converge to canonical (matches the reference's `JobDetail.tsx:524-541` "Actions" trigger: `padding 9px 14px, radius 8px, fontSize 13px`).
+Fix `frontend/src/components/jobs/job-detail.tsx:987-1001` ("Actions" trigger) — direct file read confirms the actual current values (correcting the earlier research pass, which misreported `fontWeight` as 600): `border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#171717", padding: "10px 14px", fontSize: "14px", fontWeight: 500` → converge `color` to `#404040`, `padding` to `"9px 14px"`, `borderRadius` (currently `"10px"`, not shown as a literal above but present in the same style object) to `"8px"`, `fontSize` to `"13px"`, `fontWeight` to `400` — matching the reference's `JobDetail.tsx:524-541` "Actions" trigger (`padding 9px 14px, radius 8px, fontSize 13px`).
 
 ### B.4 — Danger (text-only) and B.5 — Icon-boxed danger
 No changes — both already consistent app-wide (`color: "#991B1B"` text-only danger actions; `32×32px, radius 7px, bg #FFF5F5, color #EF4444` icon-boxed danger buttons on `payment-methods/page.tsx` and `PaymentMethodsSection.tsx`).
@@ -141,16 +141,30 @@ Three modals on one page currently have three different label/input styles. Conv
 - **`frontend/src/components/payment-methods/PaymentMethodsSection.tsx`** `PaymentMethodModal` (~line 84 label, ~line 92 input) — currently label `13px/500/#404040`, input `14px`, `radius 10px` → converge to canonical.
 - **`frontend/src/app/(protected)/payment-methods/page.tsx`** `BrandModal` (~lines 474,490,511 labels; ~482,523 inputs) — already close (`12px/500/#404040`, `radius 8px`) — only add `minHeight: "44px"` if not already present; no other change.
 
-### D.4 — Reassign/Override reason field
-**File:** `frontend/src/components/jobs/job-detail.tsx` (Reassign modal ~line 1334, Override modal ~lines 1364,1377 — both use the shared `Modal` component from Part C)
-**Current:** Label `fontSize: "12px", color: "#737373"` with no `fontWeight` set (defaults to 400); the reason field itself is a plain single-line `<input>` (~line 1379-1384) with no character-count helper. Confirmed via grep: the live code has no `minChars`/minimum-length concept anywhere — `reason.trim() || undefined` (line 179) only strips whitespace, it doesn't gate submission on length.
-**Reference:** `JobDetail.tsx:159-183` `ReasonField` — label `fontSize: '12px', fontWeight: 500, color: '#404040'`; a `<textarea rows={3}>` with `minChars = 10` (default parameter); border color and the counter line's text color both switch from `#E5E5E5`/`#737373` to `#10B981` once `value.length >= minChars`; counter line `{value.length} / {minChars} minimum`, `fontSize: '11px'`. Confirmed this is a purely visual affordance in the reference — it recolors the textarea border and counter text, it does not gate the submit button's disabled state (which is unaffected by `met` in the surrounding code).
+### D.4 — Override modal's "Reason" field
+**Correction from initial scoping:** direct reading of `job-detail.tsx:1332-1408` (both the Reassign and Override modal bodies) shows there is only **one** actual free-text reason field in the whole file, not two as originally scoped. The Reassign modal (lines 1332-1359) has a single label, "New technician" (line 1334-1335), which is for a `<select>` dropdown — not a reason field, nothing to convert. The Override modal (lines 1362-1408) has two labels: "Target status" (line 1364-1365, also a `<select>`, not a reason field) and "Reason" (line 1377-1384, the genuine free-text field). Only the latter is in scope for this fix; the two select-dropdown labels are unaffected.
+
+**File:** `frontend/src/components/jobs/job-detail.tsx:1377-1384` (Override modal's "Reason" `<label>`/`<input>`, inside the shared `Modal` component from Part C)
+**Current:**
+```tsx
+<label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px", color: "#737373" }}>
+  Reason
+  <input
+    value={overrideReason}
+    onChange={(e) => setOverrideReason(e.target.value)}
+    placeholder="Reason is required"
+    style={{ borderRadius: "8px", border: "1px solid #E5E5E5", padding: "8px 10px", fontSize: "13px", color: "#171717" }}
+  />
+</label>
+```
+No `fontWeight` set on the label (defaults to 400); the field is a plain single-line `<input>`; no character-count helper. The submit button's `disabled` condition (line 1402) is `!overrideStatus || !overrideReason.trim() || ownerOverrideMutation.isPending` — i.e. it already only requires the trimmed reason to be non-empty, with no minimum-length gate.
+**Reference:** `JobDetail.tsx:159-183` `ReasonField` — label `fontSize: '12px', fontWeight: 500, color: '#404040'`; a `<textarea rows={3}>` with `minChars = 10` (default parameter); border color and the counter line's text color both switch from `#E5E5E5`/`#737373` to `#10B981` once `value.length >= minChars`; counter line `{value.length} / {minChars} minimum`, `fontSize: '11px'`. Confirmed this is a purely visual affordance in the reference — it recolors the textarea border and counter text, it does not gate the submit button's disabled state.
 **Fix — visual-only, no new validation/submission logic:**
-- Label: add `fontWeight: 500` and change `color` from `#737373` to `#404040` (matching D.1's label color, keeping this consistent with the rest of the app's dominant label convention rather than introducing a fourth label color).
-- Replace the `<input>` with a `<textarea rows={3}>`, keeping the same `onChange`/value wiring and the same `reason.trim() || undefined` submission behavior — the submit button's enabled/disabled logic does not change.
-- Add a local `minChars = 10` constant (matching the reference's default) used only to drive the two purely-visual effects below — it must not be wired into any `disabled`/submission check:
-  - Textarea border color: `#E5E5E5` while empty, `#10B981` once `value.length >= minChars`, else stays `#E5E5E5`.
-  - Counter line below the textarea: `fontSize: "11px"`, text `${value.length} / ${minChars} minimum`, color `#10B981` when the threshold is met, else `#737373` (matching this field's own existing muted-text color, rather than introducing the reference's `#A3A3A3` for this specific line — kept for internal consistency since every other piece of text in this exact modal already uses `#737373` for secondary text, per the modal's current styling).
+- Label: add `fontWeight: 500` and change `color` from `#737373` to `#404040` (matching D.1's label color, keeping this consistent with the rest of the app's dominant label convention rather than introducing a fourth label color). "Target status"/"New technician" labels are unchanged.
+- Replace the `<input>` with a `<textarea rows={3}>`, keeping the same `value={overrideReason}`/`onChange={(e) => setOverrideReason(e.target.value)}` wiring. Do NOT touch the submit button's `disabled` expression (line 1402) — it stays exactly `!overrideStatus || !overrideReason.trim() || ownerOverrideMutation.isPending`.
+- Add a local `minChars = 10` constant (matching the reference's default) used only to drive the two purely-visual effects below — it must not appear in the `disabled` expression or any other logic:
+  - Textarea border color: stays `#E5E5E5` while `overrideReason.length < minChars`, becomes `#10B981` once `overrideReason.length >= minChars`.
+  - A new counter line below the textarea: `fontSize: "11px"`, text `${overrideReason.length} / ${minChars} minimum`, color `#10B981` when the threshold is met, else `#737373` (matching this field's own existing muted-text color, rather than introducing the reference's `#A3A3A3` for this one line — kept for internal consistency since every other piece of secondary text in this exact modal already uses `#737373`).
 
 ---
 
