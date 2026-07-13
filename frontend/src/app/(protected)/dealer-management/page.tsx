@@ -334,62 +334,62 @@ export default function DealerManagementPage() {
                   )}
                   <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                     <div>
-                      <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 500, color: "#171717" }}>
+                      <label style={{ display: "block", marginBottom: "6px", fontSize: "12px", fontWeight: 500, color: "#404040" }}>
                         Business name <span style={{ color: "#EF4444" }}>*</span>
                       </label>
                       <input
                         value={name}
                         onChange={(event) => setName(event.target.value)}
-                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "14px", color: "#171717" }}
+                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#171717" }}
                         placeholder="E.g., CoolAir Solutions LLC"
                       />
                     </div>
 
                     <div>
-                      <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 500, color: "#171717" }}>
+                      <label style={{ display: "block", marginBottom: "6px", fontSize: "12px", fontWeight: 500, color: "#404040" }}>
                         Contact name
                       </label>
                       <input
                         value={contactName}
                         onChange={(event) => setContactName(event.target.value)}
-                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "14px", color: "#171717" }}
+                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#171717" }}
                         placeholder="E.g., Faisal Al-Harbi"
                       />
                     </div>
 
                     <div>
-                      <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 500, color: "#171717" }}>
+                      <label style={{ display: "block", marginBottom: "6px", fontSize: "12px", fontWeight: 500, color: "#404040" }}>
                         Email address <span style={{ color: "#EF4444" }}>*</span>
                       </label>
                       <input
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
-                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "14px", color: "#171717" }}
+                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#171717" }}
                         placeholder="faisal@coolair.sa"
                         type="email"
                       />
                     </div>
 
                     <div>
-                      <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 500, color: "#171717" }}>
+                      <label style={{ display: "block", marginBottom: "6px", fontSize: "12px", fontWeight: 500, color: "#404040" }}>
                         Region
                       </label>
                       <input
                         value={region}
                         onChange={(event) => setRegion(event.target.value)}
-                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "14px", color: "#171717" }}
+                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#171717" }}
                         placeholder="E.g., Riyadh"
                       />
                     </div>
 
                     <div>
-                      <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 500, color: "#171717" }}>
+                      <label style={{ display: "block", marginBottom: "6px", fontSize: "12px", fontWeight: 500, color: "#404040" }}>
                         Password <span style={{ color: "#EF4444" }}>*</span>
                       </label>
                       <input
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
-                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "14px", color: "#171717" }}
+                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#171717" }}
                         placeholder="Min 8 characters"
                         type="password"
                       />
@@ -474,47 +474,47 @@ export default function DealerManagementPage() {
                   )}
                   <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                     <div>
-                      <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 500, color: "#171717" }}>
+                      <label style={{ display: "block", marginBottom: "6px", fontSize: "12px", fontWeight: 500, color: "#404040" }}>
                         Business name <span style={{ color: "#EF4444" }}>*</span>
                       </label>
                       <input
                         value={name}
                         onChange={(event) => setName(event.target.value)}
-                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "14px", color: "#171717" }}
+                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#171717" }}
                       />
                     </div>
 
                     <div>
-                      <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 500, color: "#171717" }}>
+                      <label style={{ display: "block", marginBottom: "6px", fontSize: "12px", fontWeight: 500, color: "#404040" }}>
                         Contact name <span style={{ color: "#EF4444" }}>*</span>
                       </label>
                       <input
                         value={contactName}
                         onChange={(event) => setContactName(event.target.value)}
-                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "14px", color: "#171717" }}
+                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#171717" }}
                       />
                     </div>
 
                     <div>
-                      <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 500, color: "#171717" }}>
+                      <label style={{ display: "block", marginBottom: "6px", fontSize: "12px", fontWeight: 500, color: "#404040" }}>
                         Email address <span style={{ color: "#EF4444" }}>*</span>
                       </label>
                       <input
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
-                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "14px", color: "#171717" }}
+                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#171717" }}
                         type="email"
                       />
                     </div>
 
                     <div>
-                      <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 500, color: "#171717" }}>
+                      <label style={{ display: "block", marginBottom: "6px", fontSize: "12px", fontWeight: 500, color: "#404040" }}>
                         Region
                       </label>
                       <input
                         value={region}
                         onChange={(event) => setRegion(event.target.value)}
-                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "14px", color: "#171717" }}
+                        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#171717" }}
                       />
                     </div>
                   </div>
@@ -528,16 +528,16 @@ export default function DealerManagementPage() {
                         <label style={{ display: "block", marginBottom: "4px", fontSize: "11px", fontWeight: 600, color: "#737373", letterSpacing: "0.05em", textTransform: "uppercase" }}>
                           USERNAME
                         </label>
-                        <div style={{ position: "relative" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                           <input
                             value={email}
                             readOnly
-                            style={{ width: "100%", boxSizing: "border-box", padding: "10px 40px 10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "14px", color: "#737373", backgroundColor: "#FAFAFA" }}
+                            style={{ flex: 1, padding: "9px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#404040", backgroundColor: "#FAFAFA", outline: "none" }}
                           />
                           <button
                             type="button"
                             onClick={() => handleCopy(email)}
-                            style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#A3A3A3", display: "flex", alignItems: "center", justifyContent: "center" }}
+                            style={{ padding: "9px", border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", cursor: "pointer", color: "#737373", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
                           >
                             <Copy size={16} />
                           </button>
@@ -547,29 +547,27 @@ export default function DealerManagementPage() {
                         <label style={{ display: "block", marginBottom: "4px", fontSize: "11px", fontWeight: 600, color: "#737373", letterSpacing: "0.05em", textTransform: "uppercase" }}>
                           PASSWORD
                         </label>
-                        <div style={{ position: "relative" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                           <input
                             value="••••••••••••"
                             readOnly
                             type={showPassword ? "text" : "password"}
-                            style={{ width: "100%", boxSizing: "border-box", padding: "10px 72px 10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "14px", color: "#737373", backgroundColor: "#FAFAFA" }}
+                            style={{ flex: 1, padding: "9px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#404040", backgroundColor: "#FAFAFA", outline: "none" }}
                           />
-                          <div style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", display: "flex", gap: "8px", alignItems: "center" }}>
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              style={{ background: "none", border: "none", cursor: "pointer", color: "#A3A3A3", display: "flex", alignItems: "center", justifyContent: "center" }}
-                            >
-                              <Eye size={16} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleCopy("dummy-password")}
-                              style={{ background: "none", border: "none", cursor: "pointer", color: "#A3A3A3", display: "flex", alignItems: "center", justifyContent: "center" }}
-                            >
-                              <Copy size={16} />
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            style={{ padding: "9px", border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", cursor: "pointer", color: "#737373", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy("dummy-password")}
+                            style={{ padding: "9px", border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", cursor: "pointer", color: "#737373", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                          >
+                            <Copy size={16} />
+                          </button>
                         </div>
                         <p style={{ fontSize: "12px", color: "#737373", margin: "8px 0 0 0" }}>
                           To change the password, use the &ldquo;Reset password&rdquo; flow in system settings.
