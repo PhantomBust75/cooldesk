@@ -19,7 +19,9 @@ import {
 } from "@/lib/api/operations";
 import { fetchAnalyticsDaily } from "@/lib/api/analytics-daily";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Calendar, ChevronDown, Download } from "lucide-react";
+import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -131,31 +133,117 @@ function TabButton({
   );
 }
 
-function WindowSelect({
+const DAY_OPTIONS = [
+  { value: 7, label: "Last 7 days" },
+  { value: 30, label: "Last 30 days" },
+  { value: 90, label: "Last 90 days" },
+];
+
+function DateRangeDropdown({
   value,
   onChange,
+  isMobile,
 }: {
   value: number;
   onChange: (n: number) => void;
+  isMobile: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  const activeOption = DAY_OPTIONS.find((o) => o.value === value) ?? DAY_OPTIONS[1];
+
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(Number(e.target.value))}
-      style={{
-        borderRadius: "8px",
-        border: "1px solid #E5E5E5",
-        padding: "6px 10px",
-        fontSize: "12px",
-        color: "#171717",
-        backgroundColor: "#F9F9F9",
-        cursor: "pointer",
-      }}
-    >
-      <option value={7}>Last 7 days</option>
-      <option value={30}>Last 30 days</option>
-      <option value={90}>Last 90 days</option>
-    </select>
+    <div ref={containerRef} style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          padding: "7px 12px",
+          minHeight: "36px",
+          borderRadius: "8px",
+          border: "1px solid #E5E5E5",
+          backgroundColor: open ? "#F5F5F5" : "#fff",
+          fontSize: "13px",
+          color: "#404040",
+          cursor: "pointer",
+        }}
+      >
+        <Calendar size={13} color="#737373" />
+        {activeOption.label}
+        <ChevronDown
+          size={13}
+          style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 150ms" }}
+        />
+      </button>
+      {open ? (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            right: 0,
+            left: isMobile ? 0 : "auto",
+            zIndex: 200,
+            backgroundColor: "#fff",
+            border: "1px solid #E5E5E5",
+            borderRadius: "12px",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+            minWidth: isMobile ? undefined : "220px",
+            padding: "6px",
+          }}
+        >
+          {DAY_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                onChange(option.value);
+                setOpen(false);
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                width: "100%",
+                textAlign: "left",
+                padding: "8px 10px",
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: option.value === value ? "#F5F5F5" : "transparent",
+                fontSize: "13px",
+                color: "#171717",
+                cursor: "pointer",
+              }}
+            >
+              <span
+                style={{
+                  display: "inline-block",
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "9999px",
+                  backgroundColor: option.value === value ? "#0A0A0A" : "transparent",
+                }}
+              />
+              {option.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -165,19 +253,21 @@ function ExportButton({ onClick }: { onClick: () => void }) {
       type="button"
       onClick={onClick}
       style={{
-        borderRadius: "8px",
-        border: "1px solid #E5E5E5",
-        padding: "6px 12px",
-        fontSize: "12px",
-        color: "#404040",
-        backgroundColor: "#F9F9F9",
-        cursor: "pointer",
         display: "flex",
         alignItems: "center",
-        gap: "6px",
+        gap: "5px",
+        padding: "7px 12px",
+        minHeight: "36px",
+        borderRadius: "8px",
+        border: "1px solid #E5E5E5",
+        backgroundColor: "#fff",
+        cursor: "pointer",
+        fontSize: "13px",
+        color: "#404040",
       }}
     >
-      ↓ Export CSV
+      <Download size={13} strokeWidth={1.5} />
+      Export
     </button>
   );
 }
@@ -207,6 +297,7 @@ const axisTickStyle = { fontSize: 11, fill: "#737373" };
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
+  const isMobile = useMobileBreakpoint();
   const [tab, setTab] = useState<"business" | "technicians" | "brands" | "dealers">("business");
   const [days, setDays] = useState(30);
 
@@ -259,21 +350,22 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <section style={{ padding: "24px", maxWidth: "1400px" }}>
+    <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "1400px" }}>
       {/* Header */}
-      <header
+      <div
         style={{
           display: "flex",
-          alignItems: "flex-start",
           justifyContent: "space-between",
-          gap: "12px",
+          alignItems: "flex-start",
           marginBottom: "24px",
+          flexWrap: "wrap",
+          gap: "12px",
         }}
       >
         <div>
           <h1
             style={{
-              fontSize: "36px",
+              fontSize: isMobile ? "28px" : "36px",
               fontWeight: 600,
               color: "#0A0A0A",
               margin: 0,
@@ -287,8 +379,11 @@ export default function AnalyticsPage() {
             Last {days} days &middot; {monthLabel}
           </p>
         </div>
-        <ExportButton onClick={handleExport} />
-      </header>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+          <DateRangeDropdown value={days} onChange={setDays} isMobile={isMobile} />
+          <ExportButton onClick={handleExport} />
+        </div>
+      </div>
 
       <div style={{ backgroundColor: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", overflow: "hidden" }}>
         {/* Tab bar */}
@@ -318,17 +413,6 @@ export default function AnalyticsPage() {
       {/* ── Business Tab ── */}
       {tab === "business" ? (
         <>
-          {/* Tab toolbar */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginBottom: "16px",
-            }}
-          >
-            <WindowSelect value={days} onChange={setDays} />
-          </div>
-
           {overviewQuery.isLoading ? <LoadingRow /> : null}
           {overviewQuery.isError ? <ErrorRow /> : null}
 
@@ -452,15 +536,6 @@ export default function AnalyticsPage() {
       {/* ── Technicians Tab ── */}
       {tab === "technicians" ? (
         <>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginBottom: "16px",
-            }}
-          >
-            <WindowSelect value={days} onChange={setDays} />
-          </div>
           <section
             style={{
               borderRadius: "12px",
@@ -516,15 +591,6 @@ export default function AnalyticsPage() {
       {/* ── Brands Tab ── */}
       {tab === "brands" ? (
         <>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginBottom: "16px",
-            }}
-          >
-            <WindowSelect value={days} onChange={setDays} />
-          </div>
           <section
             style={{
               borderRadius: "12px",
@@ -573,15 +639,6 @@ export default function AnalyticsPage() {
       {/* ── Dealers Tab ── */}
       {tab === "dealers" ? (
         <>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginBottom: "16px",
-            }}
-          >
-            <WindowSelect value={days} onChange={setDays} />
-          </div>
           <section
             style={{
               borderRadius: "12px",

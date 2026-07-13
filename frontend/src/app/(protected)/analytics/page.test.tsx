@@ -76,4 +76,62 @@ describe("AnalyticsPage", () => {
     expect(screen.getByText("10")).toBeInTheDocument();
     expect(screen.getByText("32")).toBeInTheDocument();
   });
+
+  it("shows one shared date-range control and export button, not one per tab", async () => {
+    renderPage();
+    await screen.findByRole("heading", { name: "Analytics" });
+    expect(screen.getAllByRole("button", { name: /Last 30 days/i })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /Export/i })).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Technician scorecards" }));
+    expect(screen.getAllByRole("button", { name: /Last 30 days/i })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /Export/i })).toHaveLength(1);
+  });
+
+  it("opens the date-range dropdown, selects a new range, and closes it", async () => {
+    renderPage();
+    await screen.findByRole("heading", { name: "Analytics" });
+
+    fireEvent.click(screen.getByRole("button", { name: /Last 30 days/i }));
+    expect(screen.getByRole("button", { name: "Last 7 days" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Last 90 days" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Last 7 days" }));
+    expect(await screen.findByRole("button", { name: /Last 7 days/i })).toBeInTheDocument();
+    expect(operationsApi.fetchAnalyticsOverview).toHaveBeenCalledWith(7);
+    expect(screen.queryByRole("button", { name: "Last 90 days" })).not.toBeInTheDocument();
+  });
+
+  it("closes the date-range dropdown on outside click without changing the range", async () => {
+    renderPage();
+    await screen.findByRole("heading", { name: "Analytics" });
+
+    fireEvent.click(screen.getByRole("button", { name: /Last 30 days/i }));
+    expect(screen.getByRole("button", { name: "Last 7 days" })).toBeInTheDocument();
+
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole("button", { name: "Last 7 days" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Last 30 days/i })).toBeInTheDocument();
+  });
+
+  it("uses a 28px title on mobile and 36px on desktop", async () => {
+    renderPage();
+    const heading = await screen.findByRole("heading", { name: "Analytics" });
+    expect(heading).toHaveStyle({ fontSize: "36px" });
+    cleanup();
+
+    vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    renderPage();
+    const mobileHeading = await screen.findByRole("heading", { name: "Analytics" });
+    expect(mobileHeading).toHaveStyle({ fontSize: "28px" });
+  });
 });
