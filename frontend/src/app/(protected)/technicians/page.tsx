@@ -289,7 +289,7 @@ export default function TechniciansPage() {
                 inset: 0,
                 backgroundColor: 'rgba(0,0,0,0.35)',
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: 'flex-end',
                 justifyContent: 'center',
                 zIndex: 999,
               }}
@@ -298,10 +298,10 @@ export default function TechniciansPage() {
               <div
                 style={{
                   backgroundColor: '#fff',
-                  borderRadius: '16px',
+                  borderRadius: '16px 16px 0 0',
                   width: '100%',
                   maxWidth: '520px',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
+                  boxShadow: '0 -4px 24px rgba(0,0,0,0.10)',
                   overflow: 'hidden',
                   maxHeight: '90vh',
                   display: 'flex',
@@ -358,11 +358,11 @@ export default function TechniciansPage() {
         <RoleGate allowedRoles={["owner"]}>
           {editTarget && (
             <div
-              style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: '24px' }}
+              style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 999, padding: '24px' }}
               onClick={() => setEditTarget(null)}
             >
               <div
-                style={{ backgroundColor: '#fff', borderRadius: '16px', width: '100%', maxWidth: '520px', boxShadow: '0 8px 32px rgba(0,0,0,0.14)', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+                style={{ backgroundColor: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: '520px', boxShadow: '0 -4px 24px rgba(0,0,0,0.10)', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}
@@ -382,52 +382,52 @@ export default function TechniciansPage() {
 
                   {/* Full name */}
                   <div>
-                    <label style={{ fontSize: '13px', fontWeight: 500, color: '#171717', display: 'block', marginBottom: '6px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 500, color: '#404040', display: 'block', marginBottom: '6px' }}>
                       Full name <span style={{ color: '#EF4444' }}>*</span>
                     </label>
                     <input
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '14px', color: '#171717', outline: 'none' }}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '13px', color: '#171717', outline: 'none' }}
                     />
                   </div>
 
                   {/* Phone + Region side by side */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '13px', fontWeight: 500, color: '#171717', display: 'block', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '12px', fontWeight: 500, color: '#404040', display: 'block', marginBottom: '6px' }}>
                         Phone <span style={{ color: '#EF4444' }}>*</span>
                       </label>
                       <input
                         value={editPhone}
                         onChange={(e) => setEditPhone(e.target.value)}
                         placeholder="+966 50 111 2233"
-                        style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '14px', color: '#171717', outline: 'none' }}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '13px', color: '#171717', outline: 'none' }}
                       />
                     </div>
                     <div>
-                      <label style={{ fontSize: '13px', fontWeight: 500, color: '#171717', display: 'block', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '12px', fontWeight: 500, color: '#404040', display: 'block', marginBottom: '6px' }}>
                         Region / Area <span style={{ color: '#EF4444' }}>*</span>
                       </label>
                       <input
                         value={editRegion}
                         onChange={(e) => setEditRegion(e.target.value)}
                         placeholder="Riyadh"
-                        style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '14px', color: '#171717', outline: 'none' }}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '13px', color: '#171717', outline: 'none' }}
                       />
                     </div>
                   </div>
 
                   {/* Email */}
                   <div>
-                    <label style={{ fontSize: '13px', fontWeight: 500, color: '#171717', display: 'block', marginBottom: '6px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 500, color: '#404040', display: 'block', marginBottom: '6px' }}>
                       Email <span style={{ color: '#EF4444' }}>*</span>
                     </label>
                     <input
                       value={editEmail}
                       onChange={(e) => setEditEmail(e.target.value)}
                       type="email"
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '14px', color: '#171717', outline: 'none' }}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #E5E5E5', borderRadius: '8px', fontSize: '13px', color: '#171717', outline: 'none' }}
                     />
                   </div>
 
