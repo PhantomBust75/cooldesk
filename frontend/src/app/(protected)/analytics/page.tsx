@@ -296,6 +296,7 @@ export default function AnalyticsPage() {
   const [tab, setTab] = useState<"business" | "technicians" | "brands" | "dealers">("business");
   const [days, setDays] = useState(30);
   const [hoveredTechnicianId, setHoveredTechnicianId] = useState<string | null>(null);
+  const [hoveredBrandId, setHoveredBrandId] = useState<string | null>(null);
 
   const overviewQuery = useQuery({
     queryKey: ["analytics", "overview", days],
@@ -710,12 +711,12 @@ export default function AnalyticsPage() {
             {brandsQuery.isLoading ? <LoadingRow /> : null}
             {brandsQuery.isError ? <ErrorRow /> : null}
             {!brandsQuery.isLoading && !brandsQuery.isError ? (
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#F9F9F9", color: "#737373", textAlign: "left" }}>
                     {["BRAND", "TOTAL JOBS", "ACTIVE JOBS", "COMPLETED JOBS", "REVENUE (RS)", "REVISIT RATE"].map(
                       (h) => (
-                        <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5" }}>
+                        <th key={h} style={{ padding: "10px 12px", borderBottom: "1px solid #E5E5E5", fontSize: "13px", color: "#525252", fontWeight: 500 }}>
                           {h}
                         </th>
                       ),
@@ -723,20 +724,44 @@ export default function AnalyticsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(brandsQuery.data ?? []).map((item) => (
-                    <tr key={item.brandId} style={{ borderBottom: "1px solid #E5E5E5" }}>
-                      <td style={{ padding: "10px 12px", color: "#171717" }}>{item.brandName || "—"}</td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.totalJobs}</td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.activeJobs}</td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>{item.completedJobs}</td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>
-                        {item.revenueCollected.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td style={{ padding: "10px 12px", color: "#404040" }}>
-                        {nullFmt(item.revisitRate, 1, "%")}
+                  {(brandsQuery.data ?? []).length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ padding: "24px 12px", textAlign: "center", fontSize: "14px", color: "#737373" }}>
+                        No brand data for this period.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    (brandsQuery.data ?? []).map((item) => (
+                      <tr
+                        key={item.brandId}
+                        onMouseEnter={() => setHoveredBrandId(item.brandId)}
+                        onMouseLeave={() => setHoveredBrandId(null)}
+                        style={{
+                          borderBottom: "1px solid #F5F5F5",
+                          backgroundColor: hoveredBrandId === item.brandId ? "#FAFAFA" : "transparent",
+                        }}
+                      >
+                        <td style={{ padding: "10px 12px", fontWeight: 500, color: "#171717", fontSize: "14px" }}>
+                          {item.brandName || "—"}
+                        </td>
+                        <td style={{ padding: "10px 12px", color: "#404040", fontVariantNumeric: "tabular-nums" }}>{item.totalJobs}</td>
+                        <td style={{ padding: "10px 12px", color: "#404040", fontVariantNumeric: "tabular-nums" }}>{item.activeJobs}</td>
+                        <td style={{ padding: "10px 12px", color: "#404040", fontVariantNumeric: "tabular-nums" }}>{item.completedJobs}</td>
+                        <td style={{ padding: "10px 12px", color: "#065F46", fontVariantNumeric: "tabular-nums" }}>
+                          {item.revenueCollected.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 12px",
+                            color: item.revisitRate != null && item.revisitRate > 20 ? "#92400E" : "#404040",
+                            fontVariantNumeric: "tabular-nums",
+                          }}
+                        >
+                          {nullFmt(item.revisitRate, 1, "%")}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             ) : null}

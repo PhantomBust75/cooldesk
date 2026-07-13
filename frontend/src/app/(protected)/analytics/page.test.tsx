@@ -261,4 +261,37 @@ describe("AnalyticsPage", () => {
     fireEvent.mouseLeave(row);
     expect(row).toHaveStyle({ backgroundColor: "rgba(0, 0, 0, 0)" });
   });
+
+  it("shows a 'no data' row in the brands table and colors revisit-rate amber above 20%", async () => {
+    vi.mocked(operationsApi.fetchAnalyticsBrands).mockResolvedValue([
+      { brandId: "b1", brandName: "Daikin", totalJobs: 20, activeJobs: 4, completedJobs: 16, revenueCollected: 8000, revisitRate: 25 },
+      { brandId: "b2", brandName: "Samsung", totalJobs: 10, activeJobs: 2, completedJobs: 8, revenueCollected: 3000, revisitRate: 5 },
+    ]);
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Brand" }));
+
+    const highRevisit = await screen.findByText("25.0%");
+    expect(highRevisit).toHaveStyle({ color: "#92400E" });
+    const lowRevisit = screen.getByText("5.0%");
+    expect(lowRevisit).toHaveStyle({ color: "#404040" });
+
+    cleanup();
+    vi.mocked(operationsApi.fetchAnalyticsBrands).mockResolvedValue([]);
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Brand" }));
+    expect(await screen.findByText("No brand data for this period.")).toBeInTheDocument();
+  });
+
+  it("highlights a brand table row on hover", async () => {
+    vi.mocked(operationsApi.fetchAnalyticsBrands).mockResolvedValue([
+      { brandId: "b1", brandName: "Daikin", totalJobs: 20, activeJobs: 4, completedJobs: 16, revenueCollected: 8000, revisitRate: 5 },
+    ]);
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Brand" }));
+    const row = (await screen.findByText("Daikin")).closest("tr")!;
+    fireEvent.mouseEnter(row);
+    expect(row).toHaveStyle({ backgroundColor: "#FAFAFA" });
+    fireEvent.mouseLeave(row);
+    expect(row).toHaveStyle({ backgroundColor: "rgba(0, 0, 0, 0)" });
+  });
 });
