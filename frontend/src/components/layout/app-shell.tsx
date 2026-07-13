@@ -177,7 +177,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div style={{ fontSize: "13px", fontWeight: notif.isRead ? 400 : 500, color: "#171717", lineHeight: 1.4 }}>
                 {formatEventType(notif.eventType)}
               </div>
-              <div style={{ fontSize: "12px", color: "#737373", marginTop: "2px", lineHeight: 1.4 }}>
+              <div style={{ fontSize: "13px", color: "#525252", marginTop: "2px", lineHeight: 1.5 }}>
                 Tap to view details
               </div>
               <div style={{ fontSize: "11px", color: "#A3A3A3", marginTop: "4px" }}>
