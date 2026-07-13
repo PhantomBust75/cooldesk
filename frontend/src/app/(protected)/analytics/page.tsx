@@ -77,7 +77,15 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
   );
 }
 
-function KpiCard({ title, value }: { title: string; value: string }) {
+function KpiCard({
+  title,
+  value,
+  trend,
+}: {
+  title: string;
+  value: string;
+  trend?: { label: string; isPositive: boolean };
+}) {
   return (
     <div
       style={{
@@ -87,18 +95,29 @@ function KpiCard({ title, value }: { title: string; value: string }) {
         padding: "20px",
       }}
     >
-      <p style={{ margin: "0 0 6px", fontSize: "12px", color: "#737373" }}>{title}</p>
-      <p
+      <div style={{ fontSize: "12px", fontWeight: 500, color: "#737373", marginBottom: "6px" }}>{title}</div>
+      <div
         style={{
-          margin: 0,
           fontSize: "24px",
           fontWeight: 600,
-          color: "#171717",
-          letterSpacing: "-0.02em",
+          color: "#0A0A0A",
+          fontVariantNumeric: "tabular-nums",
         }}
       >
         {value}
-      </p>
+      </div>
+      {trend ? (
+        <div
+          style={{
+            fontSize: "12px",
+            color: trend.isPositive ? "#10B981" : "#EF4444",
+            marginTop: "4px",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {trend.label} <span style={{ color: "#737373" }}>vs prev period</span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -416,12 +435,12 @@ export default function AnalyticsPage() {
           {overviewQuery.isLoading ? <LoadingRow /> : null}
           {overviewQuery.isError ? <ErrorRow /> : null}
 
-          {/* KPI cards — 3 columns, 2 rows */}
+          {/* KPI cards */}
           {overview ? (
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(4, 1fr)",
+                gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
                 gap: "12px",
                 marginBottom: "20px",
               }}

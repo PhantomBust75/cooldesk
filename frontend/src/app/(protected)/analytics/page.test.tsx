@@ -134,4 +134,27 @@ describe("AnalyticsPage", () => {
     const mobileHeading = await screen.findByRole("heading", { name: "Analytics" });
     expect(mobileHeading).toHaveStyle({ fontSize: "28px" });
   });
+
+  it("does not show a trend/comparison row on any KPI card (no backend data for it yet)", async () => {
+    renderPage();
+    await screen.findByText("42");
+    expect(screen.queryByText(/vs prev period/i)).not.toBeInTheDocument();
+  });
+
+  it("uses a 2-column KPI grid on mobile and 4-column on desktop", async () => {
+    vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    renderPage();
+    const value = await screen.findByText("42");
+    const grid = value.closest("div")?.parentElement?.parentElement;
+    expect(grid).toHaveStyle({ gridTemplateColumns: "repeat(2, 1fr)" });
+  });
 });
