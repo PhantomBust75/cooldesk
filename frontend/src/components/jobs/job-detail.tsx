@@ -374,7 +374,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
               border: "none",
               cursor: "pointer",
               padding: "2px",
-              color: "#737373",
+              color: "#A3A3A3",
               display: "inline-flex",
               alignItems: "center",
             }}
@@ -553,7 +553,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
               <button
                 type="button"
                 onClick={() => setShowTechnicalDetails((v) => !v)}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "13px", color: "#737373", padding: 0, display: "inline-flex", alignItems: "center", gap: "5px" }}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", color: "#A3A3A3", padding: 0, display: "inline-flex", alignItems: "center", gap: "5px" }}
               >
                 {showTechnicalDetails ? <ChevronUp size={13} strokeWidth={1.5} /> : <ChevronDown size={13} strokeWidth={1.5} />}
                 Show more details
@@ -879,9 +879,9 @@ export function JobDetail({ jobId }: { jobId: string }) {
                       borderRadius: "10px",
                       backgroundColor: "#0A0A0A",
                       color: "#fff",
-                      padding: "16px",
-                      fontSize: "15px",
-                      fontWeight: 600,
+                      padding: "12px 16px",
+                      fontSize: "14px",
+                      fontWeight: 500,
                       cursor: transitionMutation.isPending ? "not-allowed" : "pointer",
                       opacity: transitionMutation.isPending ? 0.6 : 1,
                       display: "flex",
@@ -948,9 +948,9 @@ export function JobDetail({ jobId }: { jobId: string }) {
                     borderRadius: "10px",
                     backgroundColor: "#0A0A0A",
                     color: "#fff",
-                    padding: "14px",
+                    padding: "12px 16px",
                     fontSize: "14px",
-                    fontWeight: 600,
+                    fontWeight: 500,
                     cursor: nextStatuses.length === 0 ? "not-allowed" : "pointer",
                     opacity: nextStatuses.length === 0 ? 0.4 : 1,
                     display: "flex",
@@ -987,12 +987,12 @@ export function JobDetail({ jobId }: { jobId: string }) {
               style={{
                 width: "100%",
                 border: "1px solid #E5E5E5",
-                borderRadius: "10px",
+                borderRadius: "8px",
                 backgroundColor: "#fff",
-                color: "#171717",
-                padding: "10px 14px",
-                fontSize: "14px",
-                fontWeight: 500,
+                color: "#404040",
+                padding: "9px 14px",
+                fontSize: "13px",
+                fontWeight: 400,
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -1140,7 +1140,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
               {/* Modal header */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 20px 16px", borderBottom: "1px solid #F5F5F5" }}>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "#0A0A0A" }}>Collect Payment</h2>
+                  <h2 style={{ margin: 0, fontSize: "14px", fontWeight: 500, color: "#171717" }}>Collect Payment</h2>
                   <p style={{ margin: "3px 0 0", fontSize: "13px", color: "#737373" }}>{detail.customerName}</p>
                 </div>
                 <button
@@ -1288,7 +1288,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                   <button
                     type="button"
                     onClick={() => setCollectPaymentOpen(false)}
-                    style={{ flex: 1, border: "1px solid #E5E5E5", borderRadius: "10px", backgroundColor: "#fff", color: "#525252", padding: "12px", fontSize: "14px", fontWeight: 500, cursor: "pointer" }}
+                    style={{ flex: 1, border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", color: "#404040", padding: "9px 14px", fontSize: "13px", fontWeight: 400, cursor: "pointer" }}
                   >
                     Cancel
                   </button>
@@ -1315,7 +1315,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                       flex: 2, border: "none", borderRadius: "10px",
                       backgroundColor: canConfirm ? "#0A0A0A" : "#E5E5E5",
                       color: canConfirm ? "#fff" : "#A3A3A3",
-                      padding: "12px", fontSize: "14px", fontWeight: 600,
+                      padding: "12px 16px", fontSize: "14px", fontWeight: 500,
                       cursor: canConfirm ? "pointer" : "not-allowed",
                     }}
                   >
