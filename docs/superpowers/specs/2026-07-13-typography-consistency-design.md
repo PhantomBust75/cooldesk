@@ -99,9 +99,18 @@ Covered by A.5 above (job-detail.tsx "Show more details" toggle).
 **Canonical:** `fontSize: "13px", fontWeight: 500`
 Fix `frontend/src/app/(protected)/payment-methods/page.tsx:143-162` (`ServiceItemModal` fixed/variable pricing-type toggle) — currently `fontSize: "14px", fontWeight: 700` → converge to canonical (`13px/500`), matching both the reference's own source for this exact component (`PaymentMethods.tsx:364`) and every other pill-toggle in the app (jobs-list technician-status pills, notifications filter pills).
 
-### B.9 — Icon-boxed credential button (copy/reveal)
-**Canonical:** `width: "34px", height: "34px", borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#fff"`
-Fix `frontend/src/app/(protected)/dealer-management/page.tsx:540,561-571` (edit-modal copy/reveal buttons) — currently borderless (`background: none, border: none`) → add the boxed style, matching `frontend/src/app/(protected)/technicians/page.tsx:447-454,467-482`'s equivalent buttons for the identical credential-row affordance, and matching the reference's `Technicians.tsx:90-117` / `DealerManagement.tsx:101-129` `CredentialsSection`, which keeps this boxed in both forms.
+### B.9 — Credential row copy/reveal buttons — structural correction
+**Correction from initial scoping:** this was originally described as "borderless vs. boxed" — a simple style difference. Direct reading shows the two pages actually use different DOM *structures* for the same affordance, not just different button styling:
+- **`technicians/page.tsx:439-487`** (edit modal, Username/Password rows): input and button(s) are **flex siblings** in a row (`display: 'flex', alignItems: 'center', gap: '8px'`) — input has `flex: 1, padding: '9px 12px'`; each button is a separate element after it, `padding: '9px', border: '1px solid #E5E5E5', borderRadius: '8px', backgroundColor: '#fff', color: '#737373'`.
+- **`dealer-management/page.tsx:527-577`** (edit modal, USERNAME/PASSWORD rows): the copy/reveal icon(s) are `position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)"`, laid **inside** the input itself, `background: "none", border: "none", color: "#A3A3A3"` — with the input's own `padding` widened (`"10px 40px 10px 12px"` for the single-icon username row, `"10px 72px 10px 12px"` for the two-icon password row) to leave room for the overlaid icon(s).
+
+**Reference confirms the flex-sibling structure** (`Technicians.tsx:88-117` `CredentialsSection`) is the intended pattern — not an absolutely-positioned overlay.
+
+**Fix:** restructure `dealer-management/page.tsx`'s two credential rows (username `:527-545`, password `:546-577`) from the absolute-overlay layout to the flex-sibling layout, matching `technicians/page.tsx:439-487` exactly:
+- Wrap each input + its button(s) in `display: 'flex', alignItems: 'center', gap: '8px'`.
+- Input: remove the wide asymmetric padding and `position: relative` wrapper; use `flex: 1, padding: '9px 12px'` (matching technicians' input padding — technicians uses `color: '#404040'` on these read-only inputs, dealer-management currently uses `#737373`; converge to `#404040` for consistency).
+- Buttons: become normal flex-row siblings (no more `position: absolute`), each `padding: '9px', border: '1px solid #E5E5E5', borderRadius: '8px', backgroundColor: '#fff', color: '#737373'` (converging from dealer-management's current borderless `color: '#A3A3A3'` icon-only style to match technicians' boxed style and color).
+- Keep the existing `onClick` handlers (`handleCopy(email)`, `setShowPassword`, `handleCopy("dummy-password")`) and all other logic unchanged — this is a layout/style restructure only, no behavior change.
 
 ---
 
