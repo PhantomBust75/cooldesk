@@ -73,6 +73,7 @@ No shared `Button` component exists (confirmed, zero exports named `Button` anyw
 **Canonical:** `padding: "8px 14px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, backgroundColor: "#0A0A0A", color: "#fff"`
 This is already the majority pattern (Technicians' "Add technician", Dealer Management's "Add dealer", Log New Job's "Next"/"Create job", System Config's "Save configuration"). Fix outliers:
 - `frontend/src/app/(protected)/payment-methods/page.tsx:224-233` (`ServiceItemModal` Save) — currently `padding: "12px 20px", borderRadius: "10px", fontSize: "14px"` → converge to canonical.
+- `frontend/src/components/payment-methods/PaymentMethodsSection.tsx:106-119` (`PaymentMethodModal` submit button) — currently `padding: "10px 18px", borderRadius: "9px", fontSize: "13px", fontWeight: 500` → converge `padding` to `"8px 14px"`, `borderRadius` to `"8px"` (`fontSize`/`fontWeight` already match canonical).
 
 ### B.2 — Primary button (large CTA)
 **Canonical:** `padding: "12px 16px", borderRadius: "10px", fontSize: "14px", fontWeight: 500, backgroundColor: "#0A0A0A", color: "#fff"`
@@ -86,6 +87,14 @@ Fix in `frontend/src/components/jobs/job-detail.tsx`:
 **Canonical:** `padding: "9px 14px", borderRadius: "8px", fontSize: "13px", fontWeight: 400, border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#404040"`
 Fix `frontend/src/components/jobs/job-detail.tsx:987-1001` ("Actions" trigger) — direct file read confirms the actual current values (correcting the earlier research pass, which misreported `fontWeight` as 600): `border: "1px solid #E5E5E5", backgroundColor: "#fff", color: "#171717", padding: "10px 14px", fontSize: "14px", fontWeight: 500` → converge `color` to `#404040`, `padding` to `"9px 14px"`, `borderRadius` (currently `"10px"`, not shown as a literal above but present in the same style object) to `"8px"`, `fontSize` to `"13px"`, `fontWeight` to `400` — matching the reference's `JobDetail.tsx:524-541` "Actions" trigger (`padding 9px 14px, radius 8px, fontSize 13px`).
 
+Also fix `frontend/src/components/jobs/job-detail.tsx:1288-1294` (Collect Payment modal's "Cancel" button, found via direct reading, not in the original research pass) — currently `padding: "12px", borderRadius: "10px", fontSize: "14px", fontWeight: 500, color: "#525252"` → converge `padding` to `"9px 14px"`, `borderRadius` to `"8px"`, `fontSize` to `"13px"`, `fontWeight` to `400`, `color` to `"#404040"`.
+
+Also fix `frontend/src/app/(protected)/payment-methods/page.tsx:216-222` (`ServiceItemModal`'s "Cancel" button, also found via direct reading) — currently `padding: "12px 20px", borderRadius: "10px", fontSize: "14px", fontWeight: 500, color: "#404040"` → converge `padding` to `"9px 14px"`, `borderRadius` to `"8px"`, `fontSize` to `"13px"`, `fontWeight` to `400` (`color` already matches canonical).
+
+Also fix `frontend/src/components/payment-methods/PaymentMethodsSection.tsx:99-105` (`PaymentMethodModal`'s "Cancel" button) — currently `padding: "10px 18px", borderRadius: "9px", fontSize: "13px", fontWeight: 500, color: "#404040"` → converge `padding` to `"9px 14px"`, `borderRadius` to `"8px"`, `fontWeight` to `400` (`fontSize`/`color` already match canonical).
+
+**As with Part C above, treat every button-pattern fix list in this Part B as a verified starting point, not exhaustive** — direct reads keep surfacing additional instances of the same 7 patterns beyond what either research pass caught. Whoever implements a Part B task should scan their assigned file for any other button matching the pattern's general shape (rounded, bordered/filled, similar padding scale) before considering the task done.
+
 ### B.4 — Danger (text-only) and B.5 — Icon-boxed danger
 No changes — both already consistent app-wide (`color: "#991B1B"` text-only danger actions; `32×32px, radius 7px, bg #FFF5F5, color #EF4444` icon-boxed danger buttons on `payment-methods/page.tsx` and `PaymentMethodsSection.tsx`).
 
@@ -96,8 +105,9 @@ Covered by A.4 above (job-detail.tsx copy button `#737373` → `#A3A3A3`). Do NO
 Covered by A.5 above (job-detail.tsx "Show more details" toggle).
 
 ### B.8 — Pill/segmented toggle
-**Canonical:** `fontSize: "13px", fontWeight: 500`
-Fix `frontend/src/app/(protected)/payment-methods/page.tsx:143-162` (`ServiceItemModal` fixed/variable pricing-type toggle) — currently `fontSize: "14px", fontWeight: 700` → converge to canonical (`13px/500`), matching both the reference's own source for this exact component (`PaymentMethods.tsx:364`) and every other pill-toggle in the app (jobs-list technician-status pills, notifications filter pills).
+**Canonical:** `fontSize: "13px"`, `fontWeight`: `500` active / `400` inactive, `padding: "6px 16px"`, `border: "none"`.
+**Correction from initial scoping:** direct reading of the reference (`PaymentMethods.tsx:364`) shows more differences than originally flagged — not just font size/weight. Reference: `padding: '6px 16px', border: 'none', backgroundColor: pt===active ? '#fff' : 'transparent', fontSize: '13px', fontWeight: active ? 500 : 400, color: active ? '#0A0A0A' : '#737373'`.
+Fix `frontend/src/app/(protected)/payment-methods/page.tsx:140-163` (`ServiceItemModal` fixed/variable pricing-type toggle) — currently `padding: "8px 22px"`, `border: pricingType === t ? "2px solid #0A0A0A" : "2px solid transparent"`, `fontSize: "14px"`, `fontWeight: pricingType === t ? 700 : 400` → converge: `padding` to `"6px 16px"`, `border` to `"none"`, `fontSize` to `"13px"`, active `fontWeight` to `500` (inactive `400` already matches, no change needed there). This also matches every other pill-toggle in the app (jobs-list technician-status pills, notifications filter pills), which already use `13px`/`500`-active without a border.
 
 ### B.9 — Credential row copy/reveal buttons — structural correction
 **Correction from initial scoping:** this was originally described as "borderless vs. boxed" — a simple style difference. Direct reading shows the two pages actually use different DOM *structures* for the same affordance, not just different button styling:
@@ -118,9 +128,13 @@ Fix `frontend/src/app/(protected)/payment-methods/page.tsx:143-162` (`ServiceIte
 
 **Canonical modal title:** `fontSize: "14px", fontWeight: 500, color: "#171717"` — the dominant existing pattern, from the shared `Modal` component (`frontend/src/components/ui/modal.tsx:53`), already matched by Technicians' edit modal and Dealer Management's bottom sheets, and confirmed structurally identical to the reference's own local `Modal` component (`JobDetail.tsx:105-156`, byte-for-byte the same shape as the live shared primitive).
 
-Fix the two outliers:
+Fix the three outliers (a third was found via direct file reading while verifying Part D — `ServiceItemModal` was not caught by the original modal-title research pass since that pass scoped it under "Forms," not "Modals"):
 - **`frontend/src/components/jobs/job-detail.tsx:1143`** — "Collect Payment" hand-rolled modal title, currently `fontSize: "18px", fontWeight: 600, color: "#0A0A0A"` → `fontSize: "14px", fontWeight: 500, color: "#171717"`.
 - **`frontend/src/app/(protected)/pending-schedule/page.tsx:115`** — `BatchModal` title, currently `fontSize: "18px", fontWeight: 600` → `fontSize: "14px", fontWeight: 500, color: "#171717"`.
+- **`frontend/src/app/(protected)/payment-methods/page.tsx:114`** — `ServiceItemModal` title ("Edit service item"/"Add service item"), currently `fontSize: "18px", fontWeight: 600, color: "#0A0A0A"` → `fontSize: "14px", fontWeight: 500, color: "#171717"`.
+- **`frontend/src/components/payment-methods/PaymentMethodsSection.tsx:72`** — `PaymentMethodModal` title ("Edit payment method"/"Add payment method"), currently `fontSize: "17px", fontWeight: 600, color: "#0A0A0A"` → `fontSize: "14px", fontWeight: 500, color: "#171717"`.
+
+**Given how consistently direct file reads have turned up additional instances beyond the original two research passes (this section alone grew from 2 to 4 outliers), treat the list above as a verified starting point, not an exhaustive one.** Whoever implements Part C should grep each touched file for any other `fontSize: "1[5-8]px"` modal/dialog title before considering the task done — do not assume the enumeration above is complete.
 
 Do not change the modal card's shadow/border-radius/elevation in this pass — that's a structural/visual-weight decision beyond "typography," and neither modal's overall shape was flagged as a typography concern.
 
