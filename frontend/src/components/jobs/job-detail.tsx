@@ -78,6 +78,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [overrideStatus, setOverrideStatus] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
+  const OVERRIDE_REASON_MIN_CHARS = 10;
   const [paymentDecision, setPaymentDecision] = useState<"retain" | "void">("retain");
 
   const [activeTab, setActiveTab] = useState<"details" | "timeline" | "payment" | "review">("details");
@@ -1374,14 +1375,26 @@ export function JobDetail({ jobId }: { jobId: string }) {
               ))}
             </select>
           </label>
-          <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px", color: "#737373" }}>
+          <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px", fontWeight: 500, color: "#404040" }}>
             Reason
-            <input
+            <textarea
               value={overrideReason}
               onChange={(e) => setOverrideReason(e.target.value)}
               placeholder="Reason is required"
-              style={{ borderRadius: "8px", border: "1px solid #E5E5E5", padding: "8px 10px", fontSize: "13px", color: "#171717" }}
+              rows={3}
+              style={{
+                borderRadius: "8px",
+                border: `1px solid ${overrideReason.length >= OVERRIDE_REASON_MIN_CHARS ? "#10B981" : "#E5E5E5"}`,
+                padding: "8px 10px",
+                fontSize: "13px",
+                color: "#171717",
+                resize: "vertical",
+                fontFamily: "inherit",
+              }}
             />
+            <span style={{ fontSize: "11px", color: overrideReason.length >= OVERRIDE_REASON_MIN_CHARS ? "#10B981" : "#737373" }}>
+              {overrideReason.length} / {OVERRIDE_REASON_MIN_CHARS} minimum
+            </span>
           </label>
           {requiresPaymentDecision ? (
             <div style={{ borderRadius: "8px", border: "1px solid #FDE68A", backgroundColor: "#FFFBEB", padding: "10px", fontSize: "12px", color: "#92400E", display: "grid", gap: "8px" }}>
