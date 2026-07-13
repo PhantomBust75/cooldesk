@@ -112,7 +112,7 @@ function BatchModal({ jobs, technicians, onClose, onSuccess }: BatchModalProps) 
     >
       <div style={{ backgroundColor: "#FAFAFA", borderRadius: "14px", border: "1px solid #E5E5E5", padding: "28px", width: "560px", maxWidth: "calc(100vw - 32px)", maxHeight: "90vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "#0A0A0A" }}>Batch Schedule</h2>
+          <h2 style={{ margin: 0, fontSize: "14px", fontWeight: 500, color: "#171717" }}>Batch Schedule</h2>
           <button type="button" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#737373" }}>
             <X size={18} strokeWidth={1.5} />
           </button>
