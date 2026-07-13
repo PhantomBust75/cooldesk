@@ -422,6 +422,7 @@ export default function AnalyticsPage() {
         </TabButton>
       </div>
 
+      <div style={{ padding: isMobile ? "16px" : "24px" }}>
       {/* ── Business Tab ── */}
       {tab === "business" ? (
         <>
@@ -854,6 +855,7 @@ export default function AnalyticsPage() {
           </section>
         </>
       ) : null}
+      </div>
       </div>
     </section>
   );
