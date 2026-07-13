@@ -57,11 +57,11 @@ These were flagged by prior specs but never fully applied, or found freshly in t
 **Reference:** `JobDetail.tsx:413-428` ("Show technical details") — `fontSize: '12px', color: '#A3A3A3'`
 **Fix:** `13px/#737373` → `12px/#A3A3A3`.
 
-### A.6 — Notification card missing description text
-**File:** `frontend/src/components/layout/app-shell.tsx` (popover item body, ~line 180) and `frontend/src/app/(protected)/notifications/page.tsx`
-**Current:** Both render a generic fallback body line ("Tap to view details") — no real per-notification description.
+### A.6 — Notification popover fallback-text styling
+**File:** `frontend/src/components/layout/app-shell.tsx:180` (bell popover item body) only. **Correction from initial scoping:** `frontend/src/app/(protected)/notifications/page.tsx` was originally believed to have an equivalent fallback line too, but direct inspection (lines 202-227) confirms it has no body/description element at all — only a title span, an optional job-link chip, and a timestamp. There is nothing to restyle there for this item; it's dropped from this section's scope.
+**Current (app-shell.tsx:180):** `<div style={{ fontSize: "12px", color: "#737373", marginTop: "2px", lineHeight: 1.4 }}>Tap to view details</div>` — a generic fallback body line, no real per-notification description.
 **Reference:** `Notifications.tsx:35,42` — real body/description text per notification, `fontSize: '13px', color: '#525252', lineHeight: 1.5`.
-**Fix (typography-only, no new data)**: apply the reference's body-text style (`13px/#525252/lineHeight:1.5`) to the existing fallback text. Do NOT attempt to generate real per-notification descriptions — that requires the `notification-meta.ts` concept from the paused drawer spec, which is out of scope here (a content/data gap, not a typography gap). Just bring the existing fallback line's *styling* in line with the reference; its *content* stays the generic fallback for now.
+**Fix (typography-only, no new data)**: change the fallback line's style to `fontSize: "13px", color: "#525252", lineHeight: 1.5` (keep `marginTop: "2px"` unchanged). Do NOT attempt to generate real per-notification descriptions — that requires the `notification-meta.ts` concept from the paused drawer spec, which is out of scope here (a content/data gap, not a typography gap). Just bring the existing fallback line's *styling* in line with the reference; its *content* stays the generic "Tap to view details" text for now.
 
 ---
 
@@ -163,7 +163,6 @@ Three modals on one page currently have three different label/input styles. Conv
 | `frontend/src/components/layout/sidebar.tsx` | A.3 |
 | `frontend/src/components/jobs/job-detail.tsx` | A.4, A.5, B.2, B.3, C, D.4 |
 | `frontend/src/components/layout/app-shell.tsx` | A.6 |
-| `frontend/src/app/(protected)/notifications/page.tsx` | A.6 |
 | `frontend/src/app/(protected)/payment-methods/page.tsx` | B.1, B.8, D.3 |
 | `frontend/src/app/(protected)/dealer-management/page.tsx` | B.9, D.1 |
 | `frontend/src/app/(protected)/technicians/page.tsx` | D.1, D.2 |
@@ -176,7 +175,7 @@ No backend files change. No new files, no new shared components/tokens.
 
 ## Testing
 
-**Confirmed existing test coverage of touched files** (checked directly, not assumed): `frontend/src/components/layout/sidebar.test.tsx` exists (covers A.3) but does not assert on the logo's `fontSize` anywhere, so it needs no update — it will keep passing unchanged. No test file exists at all for `jobs-list.tsx`, `job-detail.tsx`, `technicians/page.tsx`, `dealer-management/page.tsx`, `payment-methods/page.tsx`, `PaymentMethodsSection.tsx`, `pending-schedule/page.tsx`, `log-new-job/page.tsx`, `app-shell.tsx`, or `notifications/page.tsx` — every other section of this spec (A.1, A.2, A.4-A.6, B, C, D.1, D.3) is a pure style-value change with no existing test to update or break.
+**Confirmed existing test coverage of touched files** (checked directly, not assumed): `frontend/src/components/layout/sidebar.test.tsx` exists (covers A.3) but does not assert on the logo's `fontSize` anywhere, so it needs no update — it will keep passing unchanged. No test file exists at all for `jobs-list.tsx`, `job-detail.tsx`, `technicians/page.tsx`, `dealer-management/page.tsx`, `payment-methods/page.tsx`, `PaymentMethodsSection.tsx`, `pending-schedule/page.tsx`, `log-new-job/page.tsx`, or `app-shell.tsx` — every other section of this spec (A.1, A.2, A.4-A.6, B, C, D.1, D.3) is a pure style-value change with no existing test to update or break.
 
 Two exceptions still warrant new tests, since they change rendering structure rather than just style values:
 - **D.2** (Technicians create-modal shape change) — add a test confirming the create-modal's overlay uses `alignItems: "flex-end"` (bottom-sheet position) rather than `"center"`.
