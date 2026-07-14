@@ -106,4 +106,51 @@ describeIfDb('Notifications DB integration', () => {
 
     expect(retry.rowCount).toBe(0);
   });
+
+  it('bulk mark-all-read flips only the calling org+user unread rows and is idempotent', async () => {
+    const orgId = '66666666-6666-6666-6666-666666666666';
+    const otherOrg = '77777777-7777-7777-7777-777777777777';
+    const userId = '88888888-8888-8888-8888-888888888888';
+    const otherUser = '99999999-9999-9999-9999-999999999999';
+
+    await client.query(
+      `
+      INSERT INTO notifications_it (organization_id, event_type, recipient_user_id, is_read, read_at)
+      VALUES
+        ($1, 'job_assigned', $2, FALSE, NULL),
+        ($1, 'no_show_flagged', $2, FALSE, NULL),
+        ($1, 'low_rating_received', $2, TRUE, NOW()),
+        ($1, 'job_assigned', $3, FALSE, NULL),
+        ($4, 'job_assigned', $2, FALSE, NULL)
+      `,
+      [orgId, userId, otherUser, otherOrg],
+    );
+
+    // Same statement the service issues for markAllUserNotificationsRead.
+    const bulkSql = `
+      UPDATE notifications_it
+      SET is_read = TRUE, read_at = NOW()
+      WHERE organization_id = $1 AND recipient_user_id = $2 AND is_read = FALSE
+    `;
+
+    const first = await client.query(bulkSql, [orgId, userId]);
+    expect(first.rowCount).toBe(2);
+
+    // Second run is a no-op — nothing left unread for this org+user.
+    const second = await client.query(bulkSql, [orgId, userId]);
+    expect(second.rowCount).toBe(0);
+
+    // Other recipients / orgs are untouched.
+    const otherUserUnread = await client.query(
+      `SELECT COUNT(*)::int AS c FROM notifications_it WHERE organization_id = $1 AND recipient_user_id = $2 AND is_read = FALSE`,
+      [orgId, otherUser],
+    );
+    expect(otherUserUnread.rows[0].c).toBe(1);
+
+    const otherOrgUnread = await client.query(
+      `SELECT COUNT(*)::int AS c FROM notifications_it WHERE organization_id = $1 AND recipient_user_id = $2 AND is_read = FALSE`,
+      [otherOrg, userId],
+    );
+    expect(otherOrgUnread.rows[0].c).toBe(1);
+  });
 });

@@ -71,3 +71,8 @@ export function fetchUnreadNotificationCount(audience: Audience): Promise<Notifi
 export function markNotificationRead(audience: Audience, notificationId: string): Promise<{ ok: true }> {
   return apiClient.patch<{ ok: true }>(markReadPath(audience, notificationId));
 }
+
+export function markAllNotificationsRead(audience: Audience): Promise<{ ok: true; count: number }> {
+  const base = audience === "dealer" ? "/dealer/notifications" : "/notifications";
+  return apiClient.patch<{ ok: true; count: number }>(`${base}/read-all`);
+}

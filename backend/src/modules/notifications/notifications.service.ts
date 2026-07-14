@@ -66,6 +66,22 @@ export class NotificationsService {
     return { ok: true };
   }
 
+  async markAllUserNotificationsRead(ctx: RequestContext): Promise<{ ok: true; count: number }> {
+    const update = await this.db.query(
+      `
+      UPDATE notifications
+      SET is_read = TRUE,
+          read_at = NOW()
+      WHERE organization_id = $1
+        AND recipient_user_id = $2
+        AND is_read = FALSE
+      `,
+      [ctx.organizationId, ctx.userId],
+    );
+
+    return { ok: true, count: update.rowCount ?? 0 };
+  }
+
   async listDealerNotifications(
     query: ListNotificationsQueryDto,
     ctx: DealerRequestContext,

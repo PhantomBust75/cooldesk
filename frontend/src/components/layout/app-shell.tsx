@@ -1,41 +1,29 @@
 "use client";
 
-import { fetchUnreadNotificationCount, fetchNotifications } from "@/lib/api/notifications";
-import type { NotificationItem } from "@/types/notifications";
+import { fetchUnreadNotificationCount } from "@/lib/api/notifications";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, ChevronRight, LogOut, Menu, Plus, Search, Zap } from "lucide-react";
+import { Bell, LogOut, Menu, Plus, Search, Zap } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import { Sidebar } from "./sidebar";
 import { SearchModal } from "./search-modal";
+import { NotificationDrawer } from "@/components/notifications/notification-drawer";
 
 function userInitials(name: string | undefined): string {
   if (!name) return "?";
   return name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 }
 
-function formatEventType(eventType: string): string {
-  const withoutPrefix = eventType.includes(".")
-    ? eventType.slice(eventType.indexOf(".") + 1)
-    : eventType;
-  return withoutPrefix
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const { session, logout } = useAuth();
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const notifRef = useRef<HTMLDivElement | null>(null);
   const isSmallScreen = useMobileBreakpoint();
 
   useEffect(() => {
@@ -48,17 +36,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
-
-  // Close notification popover on outside click
-  useEffect(() => {
-    function onMouseDown(e: MouseEvent) {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setNotifOpen(false);
-      }
-    }
-    if (notifOpen) document.addEventListener("mousedown", onMouseDown);
-    return () => document.removeEventListener("mousedown", onMouseDown);
-  }, [notifOpen]);
 
   // Close user menu on outside click
   useEffect(() => {
@@ -86,142 +63,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     enabled: !isPlatformAdmin,
   });
 
-  const notifsQuery = useQuery({
-    queryKey: ["notifications", audience, "preview"],
-    queryFn: () => fetchNotifications(audience, { limit: 4 }),
-    staleTime: 30_000,
-    enabled: !isPlatformAdmin,
-  });
-
   const unreadCount = unreadCountQuery.data?.count ?? 0;
   const collapsed = isSmallScreen ? !mobileOpen : desktopCollapsed;
   const sidebarWidth = desktopCollapsed ? 56 : 240;
-
-  // ── Notification popover ─────────────────────────────
-  const notifPopover = notifOpen ? (
-    <div
-      style={{
-        position: "absolute",
-        top: "calc(100% + 8px)",
-        right: 0,
-        width: "360px",
-        backgroundColor: "#fff",
-        border: "1px solid #E5E5E5",
-        borderRadius: "12px",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
-        zIndex: 9999,
-        overflow: "hidden",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: "14px 16px",
-          borderBottom: "1px solid #E5E5E5",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <span style={{ fontSize: "14px", fontWeight: 500, color: "#0A0A0A" }}>Notifications</span>
-        {unreadCount > 0 && (
-          <span
-            style={{
-              backgroundColor: "#9F1239",
-              color: "#fff",
-              borderRadius: "9999px",
-              fontSize: "11px",
-              fontWeight: 600,
-              padding: "1px 7px",
-            }}
-          >
-            {unreadCount}
-          </span>
-        )}
-      </div>
-      {/* Body */}
-      <div>
-        {(notifsQuery.data ?? []).map((notif: NotificationItem, i: number) => (
-          <div
-            key={notif.id}
-            style={{
-              padding: "12px 16px",
-              borderBottom: i < (notifsQuery.data?.length ?? 0) - 1 ? "1px solid #F5F5F5" : "none",
-              display: "flex",
-              gap: "10px",
-              alignItems: "flex-start",
-              backgroundColor: notif.isRead ? "#fff" : "#FAFAFA",
-              cursor: "pointer",
-            }}
-            onClick={() => {
-              setNotifOpen(false);
-              router.push("/notifications");
-            }}
-          >
-            {!notif.isRead ? (
-              <span
-                style={{
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "50%",
-                  backgroundColor: "#2563EB",
-                  marginTop: "5px",
-                  flexShrink: 0,
-                  display: "block",
-                }}
-              />
-            ) : (
-              <span style={{ width: "6px", flexShrink: 0 }} />
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: "13px", fontWeight: notif.isRead ? 400 : 500, color: "#171717", lineHeight: 1.4 }}>
-                {formatEventType(notif.eventType)}
-              </div>
-              <div style={{ fontSize: "13px", color: "#525252", marginTop: "2px", lineHeight: 1.5 }}>
-                Tap to view details
-              </div>
-              <div style={{ fontSize: "11px", color: "#A3A3A3", marginTop: "4px" }}>
-                {new Date(notif.createdAt).toLocaleString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </div>
-            </div>
-          </div>
-        ))}
-        {!notifsQuery.data?.length && (
-          <div style={{ padding: "20px 16px", textAlign: "center", fontSize: "13px", color: "#737373" }}>
-            No notifications
-          </div>
-        )}
-      </div>
-      {/* Footer */}
-      <div style={{ borderTop: "1px solid #E5E5E5" }}>
-        <button
-          type="button"
-          onClick={() => { setNotifOpen(false); router.push("/notifications"); }}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "5px",
-            width: "100%",
-            padding: "13px 16px",
-            fontSize: "13px",
-            fontWeight: 500,
-            color: "#0A0A0A",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          View all notifications <ChevronRight size={13} strokeWidth={1.5} />
-        </button>
-      </div>
-    </div>
-  ) : null;
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#FAFAFA", color: "#171717" }}>
@@ -320,46 +164,43 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               )}
               {/* Bell button — hidden for technicians */}
               {!isTechnician && (
-                <div ref={notifRef} style={{ position: "relative" }}>
-                  <button
-                    type="button"
-                    onClick={() => setNotifOpen((prev) => !prev)}
-                    style={{
-                      position: "relative",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "40px",
-                      height: "40px",
-                      borderRadius: "8px",
-                      backgroundColor: notifOpen ? "#F5F5F5" : "transparent",
-                      color: notifOpen ? "#0A0A0A" : "#737373",
-                      transition: "background-color 120ms",
-                      padding: 0,
-                    }}
-                    aria-label="Open notifications"
-                  >
-                    <Bell size={18} strokeWidth={1.5} />
-                    {unreadCount > 0 && (
-                      <span
-                        style={{
-                          position: "absolute",
-                          top: "8px",
-                          right: "8px",
-                          width: "7px",
-                          height: "7px",
-                          backgroundColor: "#9F1239",
-                          borderRadius: "9999px",
-                          border: "1.5px solid #fff",
-                        }}
-                      />
-                    )}
-                  </button>
-                  {notifPopover}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setDrawerOpen(true)}
+                  style={{
+                    position: "relative",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "8px",
+                    backgroundColor: drawerOpen ? "#F5F5F5" : "transparent",
+                    color: drawerOpen ? "#0A0A0A" : "#737373",
+                    transition: "background-color 120ms",
+                    padding: 0,
+                  }}
+                  aria-label="Open notifications"
+                >
+                  <Bell size={18} strokeWidth={1.5} />
+                  {unreadCount > 0 && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "8px",
+                        right: "8px",
+                        width: "7px",
+                        height: "7px",
+                        backgroundColor: "#9F1239",
+                        borderRadius: "9999px",
+                        border: "1.5px solid #fff",
+                      }}
+                    />
+                  )}
+                </button>
               )}
               {/* Avatar button */}
               <div style={{ position: "relative" }} ref={menuRef}>
@@ -539,46 +380,43 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               )}
               {/* Bell button — hidden for technicians */}
               {!isTechnician && (
-                <div ref={notifRef} style={{ position: "relative" }}>
-                  <button
-                    type="button"
-                    onClick={() => setNotifOpen((prev) => !prev)}
-                    style={{
-                      position: "relative",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "40px",
-                      height: "40px",
-                      borderRadius: "8px",
-                      backgroundColor: notifOpen ? "#F5F5F5" : "transparent",
-                      color: notifOpen ? "#0A0A0A" : "#737373",
-                      transition: "background-color 120ms",
-                      padding: 0,
-                    }}
-                    aria-label="Open notifications"
-                  >
-                    <Bell size={18} strokeWidth={1.5} />
-                    {unreadCount > 0 && (
-                      <span
-                        style={{
-                          position: "absolute",
-                          top: "8px",
-                          right: "8px",
-                          width: "7px",
-                          height: "7px",
-                          backgroundColor: "#9F1239",
-                          borderRadius: "9999px",
-                          border: "1.5px solid #fff",
-                        }}
-                      />
-                    )}
-                  </button>
-                  {notifPopover}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setDrawerOpen(true)}
+                  style={{
+                    position: "relative",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "8px",
+                    backgroundColor: drawerOpen ? "#F5F5F5" : "transparent",
+                    color: drawerOpen ? "#0A0A0A" : "#737373",
+                    transition: "background-color 120ms",
+                    padding: 0,
+                  }}
+                  aria-label="Open notifications"
+                >
+                  <Bell size={18} strokeWidth={1.5} />
+                  {unreadCount > 0 && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "8px",
+                        right: "8px",
+                        width: "7px",
+                        height: "7px",
+                        backgroundColor: "#9F1239",
+                        borderRadius: "9999px",
+                        border: "1.5px solid #fff",
+                      }}
+                    />
+                  )}
+                </button>
               )}
               {/* Avatar button */}
               <div style={{ position: "relative" }} ref={menuRef}>
@@ -676,6 +514,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <NotificationDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
   );
 }

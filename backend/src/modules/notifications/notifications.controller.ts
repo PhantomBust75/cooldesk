@@ -33,6 +33,13 @@ export class NotificationsController {
     return this.notificationsService.getUserUnreadCount(req.context);
   }
 
+  @Patch('notifications/read-all')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff', 'technician')
+  markAllUserNotificationsRead(@Req() req: UserRequest) {
+    return this.notificationsService.markAllUserNotificationsRead(req.context);
+  }
+
   @Patch('notifications/:id/read')
   @UseGuards(TenantGuard, RolesGuard)
   @Roles('owner', 'office_staff', 'technician')

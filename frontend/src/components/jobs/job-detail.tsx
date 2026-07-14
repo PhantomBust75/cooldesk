@@ -777,7 +777,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                       <div>
                         <p style={{ margin: "0 0 4px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Amount Collected</p>
                         <p style={{ margin: 0, fontSize: "28px", fontWeight: 700, color: "#171717", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
-                          SAR {pmt.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          RS {pmt.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                       </div>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "9999px", backgroundColor: s.bg, color: s.color, fontSize: "13px", fontWeight: 600 }}>
@@ -806,7 +806,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                               <span style={{ fontSize: "13px", color: "#171717" }}>
                                 Brand installation{pmt.installedBrandName ? ` (${pmt.installedBrandName})` : ""}
                               </span>
-                              <span style={{ fontSize: "13px", color: "#171717", fontWeight: 500, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>SAR {money(brandFee)}</span>
+                              <span style={{ fontSize: "13px", color: "#171717", fontWeight: 500, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>RS {money(brandFee)}</span>
                             </div>
                           )}
                           {pmt.items.map((item, i) => (
@@ -826,14 +826,14 @@ export function JobDetail({ jobId }: { jobId: string }) {
                                 )}
                               </div>
                               <span style={{ fontSize: "13px", color: "#171717", fontWeight: 500, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
-                                SAR {money(item.total)}
+                                RS {money(item.total)}
                               </span>
                             </div>
                           ))}
                           {showExtra && (
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", backgroundColor: "#fff" }}>
                               <span style={{ fontSize: "13px", color: "#737373" }}>Additional charges</span>
-                              <span style={{ fontSize: "13px", color: "#171717", fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>SAR {money(extra)}</span>
+                              <span style={{ fontSize: "13px", color: "#171717", fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>RS {money(extra)}</span>
                             </div>
                           )}
                         </div>
@@ -1110,7 +1110,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
               <p style={{ margin: 0, fontSize: "13px", color: "#737373" }}>No payment recorded</p>
             ) : (
               <div style={{ display: "grid", gap: "4px" }}>
-                <p style={{ margin: 0, fontSize: "13px", color: "#171717", fontWeight: 500 }}>SAR {detail.payment.amount.toFixed(2)}</p>
+                <p style={{ margin: 0, fontSize: "13px", color: "#171717", fontWeight: 500 }}>RS {detail.payment.amount.toFixed(2)}</p>
                 <p style={{ margin: 0, fontSize: "12px", color: "#737373" }}>{detail.payment.paymentMethodName ?? "—"}</p>
               </div>
             )}
@@ -1265,7 +1265,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                     >
                       <option value="">Select brand…</option>
                       {brands.filter((b) => b.isActive).map((b) => (
-                        <option key={b.id} value={b.id}>{b.name} — SAR {b.installationCharge}</option>
+                        <option key={b.id} value={b.id}>{b.name} — RS {b.installationCharge}</option>
                       ))}
                     </select>
                   </div>
@@ -1284,10 +1284,10 @@ export function JobDetail({ jobId }: { jobId: string }) {
                         const qty = payItemQuantities.get(si.id) ?? 1;
                         const lineTotal = si.unitPrice * (isVariable ? qty : 1);
                         const priceLabel = checked
-                          ? `SAR ${fmt(lineTotal)}`
+                          ? `RS ${fmt(lineTotal)}`
                           : isVariable
-                            ? `SAR ${si.unitPrice}/${si.unitLabel ?? "unit"}`
-                            : `SAR ${si.unitPrice}`;
+                            ? `RS ${si.unitPrice}/${si.unitLabel ?? "unit"}`
+                            : `RS ${si.unitPrice}`;
                         return (
                           <div
                             key={si.id}
@@ -1330,7 +1330,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                                 />
                                 <span style={{ fontSize: "12px", color: "#737373" }}>{si.unitLabel ?? "unit"}</span>
                                 <span style={{ marginLeft: "auto", fontSize: "12px", color: "#737373", whiteSpace: "nowrap" }}>
-                                  × SAR {si.unitPrice} = <span style={{ color: "#065F46", fontWeight: 600 }}>SAR {fmt(lineTotal)}</span>
+                                  × RS {si.unitPrice} = <span style={{ color: "#065F46", fontWeight: 600 }}>RS {fmt(lineTotal)}</span>
                                 </span>
                               </div>
                             )}
@@ -1359,7 +1359,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                           style={{ flex: 1, minWidth: 0, border: "1px solid #E5E5E5", borderRadius: "8px", padding: "10px 12px", fontSize: "14px", color: "#171717", outline: "none", boxSizing: "border-box" }}
                         />
                         <div style={{ position: "relative", width: "104px", flexShrink: 0 }}>
-                          <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "12px", color: "#A3A3A3", pointerEvents: "none" }}>SAR</span>
+                          <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "12px", color: "#A3A3A3", pointerEvents: "none" }}>RS</span>
                           <input
                             type="number"
                             min="0"
@@ -1456,7 +1456,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", gap: "12px" }}>
                   <span style={{ fontSize: "13px", color: "#737373" }}>{summaryText}</span>
                   <span style={{ fontSize: "20px", fontWeight: 700, color: grandTotal > 0 ? "#065F46" : "#A3A3A3", whiteSpace: "nowrap" }}>
-                    SAR {grandTotal > 0 ? fmt(grandTotal) : "—"}
+                    RS {grandTotal > 0 ? fmt(grandTotal) : "—"}
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: "8px" }}>

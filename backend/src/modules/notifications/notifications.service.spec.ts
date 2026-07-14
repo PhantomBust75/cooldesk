@@ -51,4 +51,28 @@ describe('NotificationsService org-scoped access', () => {
     const service = new NotificationsService(db as never);
     await expect(service.markDealerNotificationRead('notif-x', dealerCtx)).rejects.toBeInstanceOf(NotFoundException);
   });
+
+  it('marks all unread user notifications read within org+user scope and returns the affected count', async () => {
+    const db = {
+      query: jest.fn(async () => ({ rows: [], rowCount: 3 })),
+    };
+
+    const service = new NotificationsService(db as never);
+    await expect(service.markAllUserNotificationsRead(userCtx)).resolves.toEqual({ ok: true, count: 3 });
+
+    const sql = (db.query as jest.Mock).mock.calls[0][0] as string;
+    const params = (db.query as jest.Mock).mock.calls[0][1] as unknown[];
+    expect(sql).toContain('read_at = NOW()');
+    expect(sql).toContain('is_read = FALSE');
+    expect(params).toEqual(['org-1', 'user-1']);
+  });
+
+  it('is idempotent: reports count 0 without throwing when nothing is unread', async () => {
+    const db = {
+      query: jest.fn(async () => ({ rows: [], rowCount: 0 })),
+    };
+
+    const service = new NotificationsService(db as never);
+    await expect(service.markAllUserNotificationsRead(userCtx)).resolves.toEqual({ ok: true, count: 0 });
+  });
 });

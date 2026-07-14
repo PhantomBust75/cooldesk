@@ -102,7 +102,7 @@ export default function DealerJobsPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, job ID, brand…"
+            placeholder="Search your jobs by customer, job ID, or brand…"
             style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px 8px 32px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#171717", outline: "none", backgroundColor: "#fff" }}
           />
         </div>
