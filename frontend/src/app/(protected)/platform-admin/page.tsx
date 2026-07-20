@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Building2, CheckCircle, XCircle, LogOut, Menu, Shield } from "lucide-react";
 import { useSnackbar } from "notistack";
 import { useState, useSyncExternalStore } from "react";
+import { formatDate } from "@/lib/format-date";
 
 type OrgRow = {
   id: string;
@@ -317,7 +318,7 @@ export default function PlatformAdminPage() {
                           </span>
                         </td>
                         <td style={{ padding: "14px 16px", fontSize: "13px", color: "#737373" }}>
-                          {new Date(org.createdAt).toLocaleDateString()}
+                          {formatDate(org.createdAt)}
                         </td>
                         <td style={{ padding: "14px 16px" }}>
                           <button

@@ -75,7 +75,7 @@ try {
     VALUES ($1, 'Dev Dealer', TRUE, FALSE)
     ON CONFLICT DO NOTHING
     RETURNING id
-  `);
+  `, [orgId]);
 
   let dealerId;
   if (dealerRes.rows.length > 0) {

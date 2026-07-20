@@ -3,6 +3,7 @@
 import { fetchDealerJobs } from "@/lib/api/dealer";
 import { useQuery } from "@tanstack/react-query";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
+import { formatDate } from "@/lib/format-date";
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
   resolved:  { label: "Resolved",  color: "#065F46", bg: "#D1FAE5" },
@@ -13,11 +14,6 @@ const TYPE_MAP: Record<string, { label: string; color: string; bg: string }> = {
   installation: { label: "Installation", color: "#065F46", bg: "#D1FAE5" },
   complaint:    { label: "Complaint",    color: "#B45309", bg: "#FEF3C7" },
 };
-
-function formatDate(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-}
 
 function shortId(id: string): string {
   return "DL-" + id.slice(0, 6).toUpperCase();

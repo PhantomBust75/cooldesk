@@ -11,6 +11,7 @@ import {
   Bar, BarChart, CartesianGrid, Line, LineChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
+import { currentZonedYearMonth, formatDate, formatWeekdayDateTime, getZonedYearMonth } from "@/lib/format-date";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -66,9 +67,7 @@ function StatusChip({ status }: { status: string }) {
 }
 
 function formatScheduled(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short" })
-    + ", " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return formatWeekdayDateTime(iso);
 }
 
 // ─── Ongoing card ─────────────────────────────────────────────────────────────
@@ -190,15 +189,15 @@ export function DealerDetailPanel({ dealer, onClose }: Props) {
 
   // Monthly chart data (last 6 months)
   const monthlyData = useMemo(() => {
-    const now = new Date();
+    const nowYm = currentZonedYearMonth();
     return Array.from({ length: 6 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-      const y = d.getFullYear();
-      const m = d.getMonth();
-      const label = d.toLocaleString("en-GB", { month: "short" });
+      const d = new Date(Date.UTC(nowYm.year, nowYm.month - (5 - i), 1));
+      const y = d.getUTCFullYear();
+      const m = d.getUTCMonth();
+      const label = d.toLocaleString("en-GB", { month: "short", timeZone: "UTC" });
       const monthJobs = allJobs.filter((j) => {
-        const jd = new Date(j.createdAt);
-        return jd.getFullYear() === y && jd.getMonth() === m;
+        const jm = getZonedYearMonth(j.createdAt);
+        return jm?.year === y && jm.month === m;
       });
       const submitted = monthJobs.length;
       const completed = monthJobs.filter((j) =>
@@ -223,9 +222,7 @@ export function DealerDetailPanel({ dealer, onClose }: Props) {
 
   const av = avatarColors(dealer.name);
 
-  const sinceDate = dealer.createdAt
-    ? new Date(dealer.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
-    : null;
+  const sinceDate = dealer.createdAt ? formatDate(dealer.createdAt) : null;
 
   const tabStyle = (t: Tab): React.CSSProperties => ({
     padding: "14px 4px",

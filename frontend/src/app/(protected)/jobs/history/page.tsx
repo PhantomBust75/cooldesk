@@ -10,6 +10,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ChevronRight } from "lucide-react";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
+import { formatDate } from "@/lib/format-date";
 
 const PAGE_SIZE = 20;
 
@@ -28,15 +29,6 @@ const HISTORY_TABS = [
   { label: "Resolved on Revisit", value: "resolved_on_revisit" },
   { label: "Needs Revisit", value: "needs_revisit" },
 ];
-
-function formatDate(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 function formatAmount(amount: number | null | undefined): string {
   if (amount == null) return "—";

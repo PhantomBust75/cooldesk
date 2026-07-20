@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useMobileBreakpoint } from '@/hooks/use-mobile-breakpoint';
+import { formatDayMonth, formatShortDateTime } from '@/lib/format-date';
 import { useEffect } from 'react';
 import type { CSSProperties } from 'react';
 
@@ -222,7 +223,7 @@ export default function DashboardPage() {
                         </td>
                         <td style={bodyCellStyle}>{job.brandName ?? '—'}</td>
                         <td style={bodyCellStyle}>{job.assignedTechnicianName ?? <em style={{ color: '#9CA3AF', fontStyle: 'italic' }}>Unassigned</em>}</td>
-                        <td style={{ ...bodyCellStyle, color: '#7E93B2' }}>{new Date(job.createdAt).toLocaleDateString([], { month: 'short', day: '2-digit' })}</td>
+                        <td style={{ ...bodyCellStyle, color: '#7E93B2' }}>{formatDayMonth(job.createdAt)}</td>
                         <td style={{ ...bodyCellStyle, color: '#9F1239', fontWeight: 500 }}>#{index + 2}</td>
                         <td style={bodyCellStyle}>
                           <div style={{ display: 'flex', gap: '4px' }}>
@@ -290,7 +291,7 @@ export default function DashboardPage() {
                           {job.assignedTechnicianName ?? 'Unassigned'}
                         </td>
                         <td style={{ ...bodyCellStyle, color: '#7E93B2' }}>
-                          {job.scheduledAt ? new Date(job.scheduledAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                          {formatShortDateTime(job.scheduledAt)}
                         </td>
                         <td style={bodyCellStyle}><StatusChip status={job.status} /></td>
                         <td style={bodyCellStyle}>

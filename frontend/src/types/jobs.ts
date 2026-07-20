@@ -93,6 +93,16 @@ export type JobPaymentInfo = {
   items: JobPaymentItem[];
 };
 
+export type JobUnitDetail = {
+  id: string;
+  model: string | null;
+  unitType: string | null;
+  tonnage: number | null;
+  serialOuter: string | null;
+  serialInner: string | null;
+  label: string;
+};
+
 export type JobDetail = {
   id: string;
   type: "installation" | "complaint";
@@ -111,6 +121,7 @@ export type JobDetail = {
   issueDescription: string | null;
   installationNotes: string | null;
   payment: JobPaymentInfo | null;
+  units: JobUnitDetail[];
   createdAt: string;
   updatedAt: string;
   version: number;

@@ -21,12 +21,12 @@ import { getAllowedNextStatuses } from "@/lib/jobs-state-machine";
 import { canProgressInstallation } from "@/lib/job-status-groups";
 import { Modal } from "@/components/ui/modal";
 import { StatusChip } from "@/components/ui/status-chip";
-import { BrandSwatch } from "@/components/ui/job-type-chip";
 import { fetchOfficeBrands, fetchPaymentMethods } from "@/lib/api/operations";
 import { fetchServiceItems } from "@/lib/api/service-items";
 import {
   ArrowLeft,
   Check,
+  CheckCircle2,
   ChevronDown,
   ChevronUp,
   Copy,
@@ -40,10 +40,67 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { CSSProperties, useEffect, useMemo, useState } from "react";
 import type { TransitionJobStatusInput } from "@/types/jobs";
+import { formatDateTime, formatDateTimeWithZone, formatShortDateTime, formatWeekdayDateTime } from "@/lib/format-date";
 
 const TERMINAL_OR_CLOSED = new Set(["completed", "resolved", "resolved_on_revisit", "cancelled"]);
+
+/** Primary-button copy: name the step being taken, not the mechanism. */
+const STATUS_ACTION_LABELS: Record<string, string> = {
+  assigned: "Assign Technician",
+  acknowledged: "Acknowledge Job",
+  in_transit: "Start Travel",
+  in_process: "Start Job",
+  completed: "Complete Job",
+  resolved: "Resolve Job",
+  resolved_on_revisit: "Resolve Job",
+  needs_revisit: "Mark Needs Revisit",
+  revisit_scheduled: "Schedule Revisit",
+  scheduled: "Schedule Job",
+  cancelled: "Cancel Job",
+};
+
+const metaLabelStyle: CSSProperties = {
+  margin: "0 0 4px",
+  fontSize: "10px",
+  fontWeight: 600,
+  color: "#A3A3A3",
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+};
+
+const metaTagStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  borderRadius: "9999px",
+  padding: "3px 10px",
+  fontSize: "12px",
+  fontWeight: 500,
+};
+
+const sectionCardStyle: CSSProperties = {
+  border: "1px solid #E5E5E5",
+  borderRadius: "12px",
+  padding: "18px 20px",
+};
+
+const fieldRowStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "96px 1fr",
+  alignItems: "start",
+  gap: "8px",
+};
+
+const fieldLabelStyle: CSSProperties = {
+  fontSize: "14px",
+  color: "#A3A3A3",
+};
+
+const fieldValueStyle: CSSProperties = {
+  fontSize: "14px",
+  color: "#171717",
+};
 const INSTALLATION_STATUSES = [
   "pending_schedule",
   "scheduled",
@@ -343,6 +400,30 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
   const detail = detailQuery.data;
   const nextStatuses = getAllowedNextStatuses(detail);
+  const shortJobId = detail.id.slice(0, 8).toUpperCase();
+  const jobNotes = detail.type === "complaint" ? detail.issueDescription : detail.installationNotes;
+  // The single next step, when there is exactly one — lets the primary button
+  // say what it actually does instead of a generic "Advance Status".
+  const soleNextStatus = nextStatuses.length === 1 ? nextStatuses[0] : null;
+  const primaryActionLabel = soleNextStatus ? STATUS_ACTION_LABELS[soleNextStatus] ?? "Advance Status →" : "Advance Status →";
+  const primaryActionCompletes = soleNextStatus ? TERMINAL_OR_CLOSED.has(soleNextStatus) && soleNextStatus !== "cancelled" : false;
+
+  function handleCopyDetails() {
+    const lines = [
+      `Job ${shortJobId}`,
+      `Customer: ${detail.customerName}`,
+      `Phone: ${detail.phone}`,
+      `Address: ${detail.address}`,
+      `Brand: ${detail.brandName ?? "—"}`,
+      `Type: ${detail.type === "installation" ? "Installation" : "Complaint"}`,
+      `Status: ${detail.status.replace(/_/g, " ")}`,
+      `Technician: ${detail.assignedTechnicianName ?? "Unassigned"}`,
+      `Scheduled: ${detail.scheduledAt ? formatWeekdayDateTime(detail.scheduledAt) : "—"}`,
+      `Created: ${formatDateTimeWithZone(detail.createdAt)}`,
+    ];
+    navigator.clipboard.writeText(lines.join("\n"));
+    enqueueSnackbar("Job details copied", { variant: "success" });
+  }
   const canRollbackOneStep = isOfficeStaff && !TERMINAL_OR_CLOSED.has(detail.status);
   const hasPayment = Boolean(detail.payment);
   const isPaidCompletion = detail.status === "completed" || detail.status === "resolved" || detail.status === "resolved_on_revisit";
@@ -370,71 +451,48 @@ export function JobDetail({ jobId }: { jobId: string }) {
     <section style={{ padding: isMobile ? "16px" : "24px", maxWidth: "1200px" }}>
 
       {/* ── Breadcrumb ─────────────────────────────────────── */}
-      <div style={{ marginBottom: "16px" }}>
-        <Link
-          href="/jobs"
+      <div style={{ marginBottom: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+        <div>
+          <Link
+            href="/jobs"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              fontSize: "13px",
+              color: "#A3A3A3",
+              textDecoration: "none",
+            }}
+          >
+            <ArrowLeft size={12} strokeWidth={1.5} /> All jobs
+          </Link>
+          <span style={{ fontSize: "13px", color: "#A3A3A3" }}> / {shortJobId}</span>
+        </div>
+        <button
+          type="button"
+          onClick={handleCopyDetails}
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: "4px",
+            gap: "6px",
+            padding: "8px 14px",
+            borderRadius: "8px",
+            border: "1px solid #E5E5E5",
+            backgroundColor: "#fff",
+            color: "#404040",
             fontSize: "13px",
-            color: "#A3A3A3",
-            textDecoration: "none",
+            cursor: "pointer",
           }}
         >
-          <ArrowLeft size={12} strokeWidth={1.5} /> All jobs
-        </Link>
-        <span style={{ fontSize: "13px", color: "#A3A3A3" }}> / {detail.id.slice(0, 8)}</span>
+          <Copy size={13} strokeWidth={1.5} /> Copy details
+        </button>
       </div>
 
       {/* ── Header ─────────────────────────────────────────── */}
       <div style={{ marginBottom: "20px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-          <h1 style={{ margin: 0, fontSize: "24px", fontWeight: 600, color: "#0A0A0A", letterSpacing: "-0.01em", fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace" }}>
-            {detail.id.slice(0, 8).toUpperCase()}
-          </h1>
-          <button
-            type="button"
-            title="Copy job ID"
-            onClick={() => navigator.clipboard.writeText(detail.id)}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "2px",
-              color: "#A3A3A3",
-              display: "inline-flex",
-              alignItems: "center",
-            }}
-          >
-            <Copy size={14} strokeWidth={1.5} />
-          </button>
-          <StatusChip status={detail.status} />
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", fontSize: "13px", color: "#525252" }}>
-          {detail.brandName ? <span>{detail.brandName}</span> : null}
-          {detail.brandName ? <span>·</span> : null}
-          <span>{detail.type === "installation" ? "Installation" : "Complaint"}</span>
-          {revisitCount > 0 ? <span>·</span> : null}
-          {revisitCount > 0 ? <span>Revisit #{revisitCount}</span> : null}
-          {detail.tags.map((tag) => (
-            <span
-              key={tag}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                borderRadius: "9999px",
-                padding: "2px 8px",
-                fontSize: "11px",
-                fontWeight: 500,
-                backgroundColor: tag === "chronic" ? "#FFF1F2" : tag === "frequent" ? "#FFFBEB" : "#F1F5F9",
-                color: tag === "chronic" ? "#9F1239" : tag === "frequent" ? "#92400E" : "#1E293B",
-              }}
-            >
-              {tag.charAt(0).toUpperCase() + tag.slice(1)}
-            </span>
-          ))}
-        </div>
+        <h1 style={{ margin: 0, fontSize: "30px", fontWeight: 700, color: "#0A0A0A", letterSpacing: "-0.02em" }}>
+          {detail.customerName}
+        </h1>
       </div>
 
       {/* ── Main grid ──────────────────────────────────────── */}
@@ -470,112 +528,188 @@ export function JobDetail({ jobId }: { jobId: string }) {
           {/* Details tab */}
           {activeTab === "details" ? (
             <div>
+              {/* ── Meta strip: id / brand / type / tags ── */}
+              <div style={{ border: "1px solid #E5E5E5", borderRadius: "12px", padding: "14px 18px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "18px", flexWrap: "wrap" }}>
+                <div>
+                  <p style={metaLabelStyle}>Job ID</p>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "14px", fontWeight: 500, color: "#171717", fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}>
+                    {shortJobId}
+                    <button
+                      type="button"
+                      title="Copy job ID"
+                      onClick={() => navigator.clipboard.writeText(detail.id)}
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "#A3A3A3", display: "inline-flex" }}
+                    >
+                      <Copy size={13} strokeWidth={1.5} />
+                    </button>
+                  </span>
+                </div>
+                <div style={{ width: "1px", alignSelf: "stretch", backgroundColor: "#E5E5E5" }} />
+                <div>
+                  <p style={metaLabelStyle}>Brand</p>
+                  <span style={{ fontSize: "14px", color: detail.brandName ? "#2563EB" : "#A3A3A3" }}>{detail.brandName ?? "—"}</span>
+                </div>
+                <div style={{ width: "1px", alignSelf: "stretch", backgroundColor: "#E5E5E5" }} />
+                <div>
+                  <p style={metaLabelStyle}>Type</p>
+                  <span style={{ fontSize: "14px", color: "#171717" }}>{detail.type === "installation" ? "Installation" : "Complaint"}</span>
+                </div>
+                <div style={{ width: "1px", alignSelf: "stretch", backgroundColor: "#E5E5E5" }} />
+                <div>
+                  <p style={metaLabelStyle}>Status</p>
+                  <StatusChip status={detail.status} />
+                </div>
+                {revisitCount > 0 || detail.tags.length > 0 ? (
+                  <div style={{ width: "1px", alignSelf: "stretch", backgroundColor: "#E5E5E5" }} />
+                ) : null}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", alignSelf: "flex-end", paddingBottom: "2px" }}>
+                  {revisitCount > 0 ? (
+                    <span style={{ ...metaTagStyle, backgroundColor: "#EFF6FF", color: "#2563EB" }}>Revisit #{revisitCount}</span>
+                  ) : null}
+                  {detail.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      style={{
+                        ...metaTagStyle,
+                        backgroundColor: tag === "chronic" ? "#FEF3C7" : tag === "frequent" ? "#FFFBEB" : "#F1F5F9",
+                        color: tag === "chronic" ? "#92400E" : tag === "frequent" ? "#92400E" : "#1E293B",
+                      }}
+                    >
+                      {tag.charAt(0).toUpperCase() + tag.slice(1)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
               {/* Two-column: Customer | Job Details */}
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "40px", marginBottom: "28px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
 
                 {/* ── CUSTOMER ── */}
-                <div>
+                <div style={sectionCardStyle}>
                   <p style={{ margin: "0 0 16px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Customer</p>
                   <div style={{ display: "grid", gap: "18px" }}>
 
                     {/* Name */}
-                    <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", alignItems: "start", gap: "8px" }}>
-                      <span style={{ fontSize: "13px", color: "#737373", paddingTop: "1px" }}>Name</span>
-                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#0A0A0A" }}>{detail.customerName}</span>
+                    <div style={fieldRowStyle}>
+                      <span style={fieldLabelStyle}>Name</span>
+                      <span style={fieldValueStyle}>{detail.customerName}</span>
                     </div>
 
                     {/* Phone */}
-                    <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", alignItems: "start", gap: "8px" }}>
-                      <span style={{ fontSize: "13px", color: "#737373", paddingTop: "8px" }}>Phone</span>
+                    <div style={fieldRowStyle}>
+                      <span style={fieldLabelStyle}>Phone</span>
                       <a
                         href={`tel:${detail.phone}`}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "7px",
-                          padding: "6px 14px",
-                          borderRadius: "9999px",
-                          border: "1px solid #E5E5E5",
-                          fontSize: "13px",
-                          fontWeight: 500,
-                          color: "#171717",
-                          textDecoration: "none",
-                          backgroundColor: "#fff",
-                          width: "fit-content",
-                        }}
+                        title="Call customer"
+                        style={{ ...fieldValueStyle, display: "inline-flex", alignItems: "center", gap: "8px", textDecoration: "none", width: "fit-content" }}
                       >
-                        <Phone size={13} strokeWidth={1.5} color="#525252" />
                         {detail.phone}
+                        <Phone size={14} strokeWidth={1.5} color="#A3A3A3" />
                       </a>
                     </div>
 
                     {/* Address */}
-                    <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", alignItems: "start", gap: "8px" }}>
-                      <span style={{ fontSize: "13px", color: "#737373", paddingTop: "1px" }}>Address</span>
-                      <div>
-                        <p style={{ margin: "0 0 8px", fontSize: "13px", fontWeight: 600, color: "#0A0A0A", lineHeight: 1.4 }}>{detail.address}</p>
-                        <a
-                          href={`https://maps.google.com/?q=${encodeURIComponent(detail.address)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "6px",
-                            padding: "5px 12px",
-                            borderRadius: "9999px",
-                            border: "1px solid #E5E5E5",
-                            fontSize: "12px",
-                            color: "#525252",
-                            textDecoration: "none",
-                            backgroundColor: "#fff",
-                            width: "fit-content",
-                          }}
-                        >
-                          <MapPin size={12} strokeWidth={1.5} />
-                          Open in Google Maps
-                        </a>
-                      </div>
+                    <div style={fieldRowStyle}>
+                      <span style={fieldLabelStyle}>Address</span>
+                      <a
+                        href={`https://maps.google.com/?q=${encodeURIComponent(detail.address)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Open in Google Maps"
+                        style={{ ...fieldValueStyle, display: "inline-flex", alignItems: "center", gap: "8px", textDecoration: "none", lineHeight: 1.4 }}
+                      >
+                        {detail.address}
+                        <MapPin size={14} strokeWidth={1.5} color="#A3A3A3" style={{ flexShrink: 0 }} />
+                      </a>
                     </div>
 
                   </div>
                 </div>
 
-                {/* ── JOB DETAILS ── */}
-                <div>
-                  <p style={{ margin: "0 0 16px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Job Details</p>
+                {/* ── SCHEDULING ── */}
+                <div style={sectionCardStyle}>
+                  <p style={{ margin: "0 0 16px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>Scheduling</p>
                   <div style={{ display: "grid", gap: "18px" }}>
 
-                    {/* Brand */}
-                    <div style={{ display: "grid", gridTemplateColumns: "90px 1fr", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "13px", color: "#737373" }}>Brand</span>
-                      {detail.brandName
-                        ? <BrandSwatch name={detail.brandName} />
-                        : <span style={{ fontSize: "13px", color: "#737373" }}>—</span>
-                      }
-                    </div>
-
-                    {/* Unit */}
-                    <div style={{ display: "grid", gridTemplateColumns: "90px 1fr", alignItems: "start", gap: "8px" }}>
-                      <span style={{ fontSize: "13px", color: "#737373", paddingTop: "1px" }}>Unit</span>
-                      <span style={{ fontSize: "13px", color: "#0A0A0A", lineHeight: 1.4 }}>
-                        {detail.installationNotes ?? detail.issueDescription ?? "—"}
+                    {/* Technician */}
+                    <div style={fieldRowStyle}>
+                      <span style={fieldLabelStyle}>Technician</span>
+                      <span style={{ ...fieldValueStyle, color: detail.assignedTechnicianName ? "#171717" : "#A3A3A3" }}>
+                        {detail.assignedTechnicianName ?? "Unassigned"}
                       </span>
                     </div>
 
                     {/* Scheduled */}
-                    <div style={{ display: "grid", gridTemplateColumns: "90px 1fr", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "13px", color: "#737373" }}>Scheduled</span>
-                      <span style={{ fontSize: "13px", color: "#0A0A0A" }}>
-                        {detail.scheduledAt
-                          ? new Date(detail.scheduledAt).toLocaleString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })
-                          : "—"}
+                    <div style={fieldRowStyle}>
+                      <span style={fieldLabelStyle}>Scheduled</span>
+                      <span style={fieldValueStyle}>
+                        {detail.scheduledAt ? formatWeekdayDateTime(detail.scheduledAt) : "—"}
                       </span>
+                    </div>
+
+                    {/* Created */}
+                    <div style={fieldRowStyle}>
+                      <span style={fieldLabelStyle}>Created</span>
+                      <span style={fieldValueStyle}>{formatDateTimeWithZone(detail.createdAt)}</span>
                     </div>
 
                   </div>
                 </div>
               </div>
+
+              {/* ── Notes ── */}
+              {jobNotes ? (
+                <div role="note" style={{ border: "1px solid #FDE68A", backgroundColor: "#FEFCE8", borderRadius: "12px", padding: "16px 20px", marginBottom: "20px" }}>
+                  <p style={{ margin: "0 0 8px", display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 600, color: "#92400E", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    <AlertTriangle size={12} strokeWidth={2} />
+                    Notes
+                  </p>
+                  <p style={{ margin: 0, fontSize: "14px", color: "#171717", lineHeight: 1.5 }}>{jobNotes}</p>
+                </div>
+              ) : null}
+
+              {/* ── Unit details ── */}
+              {detail.units.length > 0 ? (
+                <div>
+                  <p style={{ margin: "0 0 10px", fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    Unit details
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {detail.units.map((unit) => (
+                      <div
+                        key={unit.id}
+                        style={{
+                          backgroundColor: "#FAFAFA",
+                          border: "1px solid #F0F0F0",
+                          borderRadius: "10px",
+                          padding: "14px 18px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "8px",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                          <span style={{ fontSize: "14px", fontWeight: 600, color: "#171717", fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}>
+                            {unit.model ?? unit.label}
+                          </span>
+                          {unit.unitType ? (
+                            <span style={{ ...metaTagStyle, backgroundColor: "#F0F0F0", color: "#404040" }}>{unit.unitType}</span>
+                          ) : null}
+                          {unit.tonnage != null ? (
+                            <span style={{ ...metaTagStyle, backgroundColor: "#EFF6FF", color: "#2563EB" }}>{unit.tonnage} ton</span>
+                          ) : null}
+                        </div>
+                        {unit.serialOuter || unit.serialInner ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "12px", color: "#A3A3A3", fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}>
+                            {unit.serialOuter ? <span>Outer SN: {unit.serialOuter}</span> : null}
+                            {unit.serialInner ? <span>Inner SN: {unit.serialInner}</span> : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               {/* ── Show more details accordion ── */}
               <button
@@ -687,9 +821,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                       const isDone = Boolean(doneAt[status]);
                       const isLast = idx === steps.length - 1;
                       const ts = doneAt[status];
-                      const formatted = ts
-                        ? new Date(ts).toLocaleString("en-US", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })
-                        : null;
+                      const formatted = ts ? formatShortDateTime(ts) : null;
 
                       // Determine state: past (green ✓), current (black #), future (gray)
                       const isCurrent = status === detail.status;
@@ -767,9 +899,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                   pending:   { bg: "#F5F5F5", color: "#525252", dot: "#A3A3A3", label: "Pending"   },
                 };
                 const s = STATUS_STYLE[pmt.status] ?? STATUS_STYLE["pending"];
-                const recordedDate = new Date(pmt.recordedAt).toLocaleString("en-US", {
-                  day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false,
-                });
+                const recordedDate = formatDateTime(pmt.recordedAt);
                 return (
                   <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                     {/* Amount + status */}
@@ -984,20 +1114,26 @@ export function JobDetail({ jobId }: { jobId: string }) {
                     width: "100%",
                     border: "none",
                     borderRadius: "10px",
-                    backgroundColor: "#0A0A0A",
+                    // Green is reserved for the step that actually finishes the job.
+                    backgroundColor: primaryActionCompletes ? "rgb(5, 150, 105)" : "#0A0A0A",
                     color: "#fff",
-                    padding: "12px 16px",
-                    fontSize: "14px",
-                    fontWeight: 500,
+                    padding: "18px 16px",
+                    fontSize: "15px",
+                    fontWeight: 600,
                     cursor: nextStatuses.length === 0 ? "not-allowed" : "pointer",
                     opacity: nextStatuses.length === 0 ? 0.4 : 1,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "6px",
+                    gap: "8px",
                   }}
                 >
-                  {transitionMutation.isPending ? "Updating..." : "Advance Status →"}
+                  {transitionMutation.isPending ? "Updating..." : (
+                    <>
+                      {primaryActionCompletes ? <CheckCircle2 size={17} strokeWidth={2} /> : null}
+                      {primaryActionLabel}
+                    </>
+                  )}
                 </button>
               )}
             </>

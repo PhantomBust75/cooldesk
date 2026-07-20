@@ -15,6 +15,8 @@ import type { PendingScheduleJob, SchedulePendingJobInput } from "@/types/office
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Calendar, ChevronRight, Users, X } from "lucide-react";
 import { useSnackbar } from "notistack";
+import { formatDayMonth } from "@/lib/format-date";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { useState } from "react";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -145,13 +147,7 @@ function BatchModal({ jobs, technicians, onClose, onSuccess }: BatchModalProps) 
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <div>
             <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "#404040", marginBottom: "6px" }}>Scheduled date &amp; time</label>
-            <input
-              type="datetime-local"
-              value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
-              style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px" }}
-              required
-            />
+            <DateTimePicker value={scheduledAt || null} onChange={(next) => setScheduledAt(next ?? "")} />
           </div>
           <div>
             <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "#404040", marginBottom: "6px" }}>Technician (optional)</label>
@@ -337,7 +333,7 @@ export default function PendingSchedulePage() {
 
                       {/* SUBMITTED */}
                       <td style={{ padding: "14px 16px", fontSize: "13px", color: "#404040", whiteSpace: "nowrap" }}>
-                        {new Date(job.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                        {formatDayMonth(job.createdAt)}
                       </td>
 
                       {/* DAYS WAITING */}
@@ -353,11 +349,10 @@ export default function PendingSchedulePage() {
                       {/* SCHEDULE & ASSIGN — inline inputs */}
                       <td style={{ padding: "12px 16px" }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: "200px" }}>
-                          <input
-                            type="datetime-local"
-                            value={dateVal}
-                            onChange={(e) => setScheduling((s) => ({ ...s, [job.id]: e.target.value }))}
-                            style={{ padding: "5px 8px", fontSize: "12px", border: "1px solid #E5E5E5", borderRadius: "6px", outline: "none", color: dateVal ? "#171717" : "#A3A3A3", fontFamily: "inherit", width: "100%", boxSizing: "border-box" }}
+                          <DateTimePicker
+                            value={dateVal || null}
+                            onChange={(next) => setScheduling((s) => ({ ...s, [job.id]: next ?? "" }))}
+                            placeholder="Set date & time"
                           />
                           <select
                             value={techVal}

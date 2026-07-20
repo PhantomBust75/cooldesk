@@ -23,6 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Calendar, ChevronDown, Download, Star } from "lucide-react";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
+import { formatDayMonth, formatMonthYear } from "@/lib/format-date";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -43,7 +44,7 @@ function exportToCsv(data: unknown[], filename: string) {
 }
 
 function fmt(d: string) {
-  return new Date(d).toLocaleDateString([], { month: "short", day: "numeric" });
+  return formatDayMonth(d);
 }
 
 function nullFmt(v: number | null, decimals = 1, suffix = "") {
@@ -346,8 +347,7 @@ export default function AnalyticsPage() {
   const dailyData = dailyQuery.data ?? [];
 
   // Month label for subtitle
-  const now = new Date();
-  const monthLabel = now.toLocaleDateString([], { month: "long", year: "numeric" });
+  const monthLabel = formatMonthYear(new Date().toISOString());
 
   function handleExport() {
     if (tab === "business") {

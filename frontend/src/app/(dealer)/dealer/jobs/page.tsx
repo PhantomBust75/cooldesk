@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Search, Plus } from "lucide-react";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
+import { formatShortDateTime } from "@/lib/format-date";
 
 const STATUS_FILTERS = ["All", "Pending Schedule", "Scheduled", "In Progress", "Needs Revisit"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
@@ -38,11 +39,7 @@ function jobMatchesFilter(job: DealerJob, filter: StatusFilter): boolean {
 
 function formatScheduled(iso: string | null): { text: string; italic: boolean } {
   if (!iso) return { text: "Pending", italic: true };
-  const d = new Date(iso);
-  const day = d.getDate();
-  const mon = d.toLocaleDateString("en-GB", { month: "short" });
-  const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-  return { text: `${day} ${mon}, ${time}`, italic: false };
+  return { text: formatShortDateTime(iso), italic: false };
 }
 
 function shortId(id: string): string {

@@ -14,6 +14,7 @@ import { AlertTriangle, CheckCheck, CheckCircle, ChevronRight, X } from "lucide-
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useSnackbar } from "notistack";
+import { formatShortDateTime } from "@/lib/format-date";
 
 type Filter = "all" | "unread" | "cancellations" | "assignments";
 
@@ -25,12 +26,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 ];
 
 function formatTimestamp(iso: string): string {
-  return new Date(iso).toLocaleString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatShortDateTime(iso);
 }
 
 function NotifCard({ item, onViewJob }: { item: NotificationItem; onViewJob: (item: NotificationItem) => void }) {

@@ -3071,17 +3071,40 @@ export class JobsService {
 
   private async insertUnits(
     client: PoolClient,
-    units: Array<{ label: string; notes?: string }>,
+    units: Array<{
+      model: string;
+      unitType: string;
+      tonnage: number;
+      serialOuter?: string;
+      serialInner?: string;
+      notes?: string;
+    }>,
     jobId: string,
     organizationId: string,
   ): Promise<void> {
     for (const unit of units) {
+      // label stays NOT NULL from the original schema — derive it so the row
+      // still reads sensibly alongside pre-existing rows.
+      const label = `${unit.model} – ${unit.unitType} – ${unit.tonnage} ton`;
       await client.query(
         `
-        INSERT INTO job_units (organization_id, job_id, label, notes)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO job_units (
+          organization_id, job_id, label, model, unit_type,
+          tonnage, serial_outer, serial_inner, notes
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         `,
-        [organizationId, jobId, unit.label, unit.notes ?? null],
+        [
+          organizationId,
+          jobId,
+          label,
+          unit.model,
+          unit.unitType,
+          unit.tonnage,
+          unit.serialOuter ?? null,
+          unit.serialInner ?? null,
+          unit.notes ?? null,
+        ],
       );
     }
   }
@@ -3902,7 +3925,23 @@ export class JobsService {
              WHERE jpi.payment_id = p.id),
             '[]'::jsonb
           )
-        ) END AS payment
+        ) END AS payment,
+        COALESCE(
+          (SELECT jsonb_agg(jsonb_build_object(
+            'id',           ju.id,
+            'model',        ju.model,
+            'unit_type',    ju.unit_type,
+            'tonnage',      ju.tonnage,
+            'serial_outer', ju.serial_outer,
+            'serial_inner', ju.serial_inner,
+            'label',        ju.label
+          ) ORDER BY ju.created_at ASC)
+           FROM job_units ju
+           WHERE ju.job_id = j.id
+             AND ju.organization_id = j.organization_id
+             AND ju.is_deleted = FALSE),
+          '[]'::jsonb
+        ) AS units
       FROM jobs j
       LEFT JOIN brands b ON b.id = j.brand_id
       LEFT JOIN dealers d ON d.id = j.dealer_id

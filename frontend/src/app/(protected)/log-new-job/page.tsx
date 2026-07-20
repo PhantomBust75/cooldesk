@@ -7,18 +7,40 @@ import { ApiError } from "@/lib/api/client";
 import { fetchOfficeTechnicians } from "@/lib/api/office";
 import { createQuickJob, fetchDealers, fetchOfficeBrands } from "@/lib/api/operations";
 import type { QuickCreateJobInput } from "@/types/operations";
+import { UNIT_TONNAGE_VALUES } from "@/types/operations";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { formatDateTimeWithZone } from "@/lib/format-date";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, CheckCircle, Minus, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useSnackbar } from "notistack";
-import { FormEvent, useMemo, useState } from "react";
+import { CSSProperties, FormEvent, useMemo, useState } from "react";
 
 type Step = 1 | 2 | 3 | 4;
 
 type UnitRow = {
   model: string;
-  unit_type: string;
-  num_units: number;
+  unitType: string;
+  tonnage: number;
+  serialOuter: string;
+  serialInner: string;
+};
+
+const unitInputStyle: CSSProperties = {
+  padding: "7px 8px",
+  border: "1px solid #E5E5E5",
+  borderRadius: "6px",
+  fontSize: "13px",
+  outline: "none",
+  color: "#171717",
+};
+
+const unitFieldLabelStyle: CSSProperties = {
+  fontSize: "12px",
+  fontWeight: 500,
+  color: "#404040",
+  display: "block",
+  marginBottom: "5px",
 };
 
 const INITIAL_FORM: QuickCreateJobInput = {
@@ -33,7 +55,9 @@ const INITIAL_FORM: QuickCreateJobInput = {
   dealerId: "",
 };
 
-const INITIAL_UNITS: UnitRow[] = [{ model: "", unit_type: "", num_units: 1 }];
+const INITIAL_UNITS: UnitRow[] = [
+  { model: "", unitType: "", tonnage: 1, serialOuter: "", serialInner: "" },
+];
 
 function StepHeader({ current, total }: { current: Step; total: number }) {
   return (
@@ -123,7 +147,9 @@ export default function LogNewJobPage() {
     ["Phone", form.phone || "—"],
     ["Address", form.address || "—"],
     ["Brand", form.brandId ? (brandsQuery.data ?? []).find((brand) => brand.id === form.brandId)?.name ?? "—" : "—"],
-    !isDealer && form.type === "installation" ? ["Scheduled at", scheduledAt || "Pending schedule"] : null,
+    !isDealer && form.type === "installation"
+      ? ["Scheduled at", scheduledAt ? formatDateTimeWithZone(scheduledAt) : "Pending schedule"]
+      : null,
     canAssign && technicianId ? ["Technician", (techniciansQuery.data ?? []).find((t) => t.id === technicianId)?.name ?? "—"] : null,
     form.type === "complaint" ? ["Issue", form.issueDescription || "—"] : null,
   ];
@@ -134,7 +160,7 @@ export default function LogNewJobPage() {
   const step3Valid = Boolean(
     form.brandId &&
       (form.type === "complaint" ? form.issueDescription?.trim() : true) &&
-      units.every((unit) => unit.model.trim() && unit.unit_type.trim()),
+      units.every((unit) => unit.model.trim() && unit.unitType.trim() && unit.tonnage > 0),
   );
 
   const canSubmit = useMemo(() => {
@@ -156,7 +182,10 @@ export default function LogNewJobPage() {
   }
 
   function addUnit() {
-    setUnits((current) => [...current, { model: "", unit_type: "", num_units: 1 }]);
+    setUnits((current) => [
+      ...current,
+      { model: "", unitType: "", tonnage: 1, serialOuter: "", serialInner: "" },
+    ]);
   }
 
   function removeUnit(index: number) {
@@ -188,12 +217,14 @@ export default function LogNewJobPage() {
       scheduledAt: !isDealer && form.type === "installation" && scheduledAt ? scheduledAt : undefined,
       technicianId: !isDealer && technicianId ? technicianId : undefined,
       units: units
-        .filter((u) => u.model.trim())
-        .flatMap((u) =>
-          Array.from({ length: Math.max(1, u.num_units) }, () => ({
-            label: [u.model.trim(), u.unit_type.trim()].filter(Boolean).join(" – "),
-          })),
-        ),
+        .filter((u) => u.model.trim() && u.unitType.trim())
+        .map((u) => ({
+          model: u.model.trim(),
+          unitType: u.unitType.trim(),
+          tonnage: u.tonnage,
+          serialOuter: u.serialOuter.trim() || undefined,
+          serialInner: u.serialInner.trim() || undefined,
+        })),
     };
 
     createMutation.mutate(payload);
@@ -400,12 +431,19 @@ export default function LogNewJobPage() {
 
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>Customer name <span style={{ color: "#EF4444" }}>*</span></label>
-                  <input value={form.customerName} onChange={(event) => setForm((prev) => ({ ...prev, customerName: event.target.value }))} style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box", color: "#171717", fontFamily: "inherit" }} />
+                  <input
+                    placeholder="Enter customer name"
+                    value={form.customerName} onChange={(event) => setForm((prev) => ({ ...prev, customerName: event.target.value }))} style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box", color: "#171717", fontFamily: "inherit" }} />
                 </div>
 
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>Address <span style={{ color: "#EF4444" }}>*</span></label>
-                  <input value={form.address} onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))} style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box", color: "#171717", fontFamily: "inherit" }} />
+                  <input
+                    placeholder="Enter address"
+                    value={form.address}
+                    onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))}
+                    style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", boxSizing: "border-box", color: "#171717", fontFamily: "inherit" }}
+                  />
                 </div>
               </div>
             </div>
@@ -430,7 +468,7 @@ export default function LogNewJobPage() {
                     <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>
                       Scheduled at <span style={{ color: "#A3A3A3", fontWeight: 400 }}>(optional)</span>
                     </label>
-                    <input type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", outline: "none", color: "#171717" }} />
+                    <DateTimePicker value={scheduledAt || null} onChange={(next) => setScheduledAt(next ?? "")} />
                   </div>
                 ) : null}
 
@@ -475,15 +513,43 @@ export default function LogNewJobPage() {
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 500, color: "#404040", display: "block", marginBottom: "5px" }}>Unit details <span style={{ color: "#EF4444" }}>*</span></label>
                   {units.map((unit, index) => (
-                    <div key={`${index}-${unit.model}`} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 56px 28px" : "1fr 1fr 80px 32px", gap: "8px", marginBottom: "8px", alignItems: "center" }}>
-                      <input placeholder="Model" value={unit.model} onChange={(event) => updateUnit(index, "model", event.target.value)} style={{ padding: "7px 8px", border: "1px solid #E5E5E5", borderRadius: "6px", fontSize: "13px", outline: "none", color: "#171717" }} />
-                      <input placeholder="Unit type" value={unit.unit_type} onChange={(event) => updateUnit(index, "unit_type", event.target.value)} style={{ padding: "7px 8px", border: "1px solid #E5E5E5", borderRadius: "6px", fontSize: "13px", outline: "none", color: "#171717" }} />
-                      <input type="number" min={1} value={unit.num_units} onChange={(event) => updateUnit(index, "num_units", Number(event.target.value))} style={{ padding: "7px 8px", border: "1px solid #E5E5E5", borderRadius: "6px", fontSize: "13px", outline: "none", color: "#171717" }} />
-                      {units.length > 1 ? (
-                        <button type="button" onClick={() => removeUnit(index)} style={{ padding: "6px", borderRadius: "6px", backgroundColor: "#fff", border: "1px solid #E5E5E5", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#991B1B" }}>
-                          <Minus size={13} strokeWidth={1.5} />
-                        </button>
-                      ) : <div />}
+                    <div key={index} style={{ backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "10px", padding: "14px", marginBottom: "8px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "8px", alignItems: "center" }}>
+                        <input placeholder="Model" value={unit.model} onChange={(event) => updateUnit(index, "model", event.target.value)} style={unitInputStyle} />
+                        <div style={{ display: "grid", gridTemplateColumns: units.length > 1 ? "1fr 32px" : "1fr", gap: "8px", alignItems: "center" }}>
+                          <input placeholder="Unit type" value={unit.unitType} onChange={(event) => updateUnit(index, "unitType", event.target.value)} style={unitInputStyle} />
+                          {units.length > 1 ? (
+                            <button type="button" aria-label={`Remove unit ${index + 1}`} onClick={() => removeUnit(index)} style={{ padding: "6px", borderRadius: "6px", backgroundColor: "#fff", border: "1px solid #E5E5E5", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#991B1B" }}>
+                              <Minus size={13} strokeWidth={1.5} />
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor={`tonnage-${index}`} style={unitFieldLabelStyle}>Tonnage <span style={{ color: "#EF4444" }}>*</span></label>
+                        <select
+                          id={`tonnage-${index}`}
+                          value={unit.tonnage}
+                          onChange={(event) => updateUnit(index, "tonnage", Number(event.target.value))}
+                          style={{ ...unitInputStyle, width: isMobile ? "100%" : "140px", backgroundColor: "#fff", cursor: "pointer" }}
+                        >
+                          {UNIT_TONNAGE_VALUES.map((value) => (
+                            <option key={value} value={value}>{value} ton</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "8px" }}>
+                        <div>
+                          <label htmlFor={`serial-outer-${index}`} style={unitFieldLabelStyle}>Serial No. (Outer) <span style={{ color: "#A3A3A3", fontWeight: 400 }}>optional</span></label>
+                          <input id={`serial-outer-${index}`} placeholder="e.g. SN-OUT-12345" value={unit.serialOuter} onChange={(event) => updateUnit(index, "serialOuter", event.target.value)} style={{ ...unitInputStyle, width: "100%", boxSizing: "border-box" }} />
+                        </div>
+                        <div>
+                          <label htmlFor={`serial-inner-${index}`} style={unitFieldLabelStyle}>Serial No. (Inner) <span style={{ color: "#A3A3A3", fontWeight: 400 }}>optional</span></label>
+                          <input id={`serial-inner-${index}`} placeholder="e.g. SN-IN-67890" value={unit.serialInner} onChange={(event) => updateUnit(index, "serialInner", event.target.value)} style={{ ...unitInputStyle, width: "100%", boxSizing: "border-box" }} />
+                        </div>
+                      </div>
                     </div>
                   ))}
                   <button type="button" onClick={addUnit} style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 10px", borderRadius: "6px", backgroundColor: "#fff", border: "1px dashed #E5E5E5", cursor: "pointer", fontSize: "13px", color: "#525252" }}>

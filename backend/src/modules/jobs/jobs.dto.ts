@@ -4,6 +4,7 @@ import {
   IsBoolean,
   IsEnum,
   IsISO8601,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -42,11 +43,31 @@ export type RevisitReason =
   | 'further_diagnosis_required'
   | 'custom';
 
+export const UNIT_TONNAGE_VALUES = [1, 1.5, 2, 2.5, 3, 3.5, 4] as const;
+
 export class CreateJobUnitDto {
   @IsString()
   @IsNotEmpty()
   @Length(1, 120)
-  label!: string;
+  model!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 120)
+  unitType!: string;
+
+  @IsIn(UNIT_TONNAGE_VALUES as unknown as number[])
+  tonnage!: number;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 120)
+  serialOuter?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 120)
+  serialInner?: string;
 
   @IsOptional()
   @IsString()

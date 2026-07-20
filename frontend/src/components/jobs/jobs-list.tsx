@@ -23,6 +23,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { formatShortDateTime } from "@/lib/format-date";
 
 const PAGE_SIZE = 10;
 
@@ -47,17 +48,7 @@ function formatStatusLabel(status: string): string {
 }
 
 function formatScheduled(scheduledAt: string | null): string {
-  if (!scheduledAt) return "—";
-  try {
-    return new Date(scheduledAt).toLocaleString([], {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "—";
-  }
+  return formatShortDateTime(scheduledAt);
 }
 
 export function JobsList() {

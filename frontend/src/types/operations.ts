@@ -18,7 +18,19 @@ export type QuickCreateJobInput = {
   dealerId?: string;
   scheduledAt?: string;
   technicianId?: string;
-  units?: Array<{ label: string; notes?: string }>;
+  units?: JobUnitInput[];
+};
+
+/** Tonnage is a fixed catalogue, enforced by a CHECK constraint on job_units. */
+export const UNIT_TONNAGE_VALUES = [1, 1.5, 2, 2.5, 3, 3.5, 4] as const;
+
+export type JobUnitInput = {
+  model: string;
+  unitType: string;
+  tonnage: number;
+  serialOuter?: string;
+  serialInner?: string;
+  notes?: string;
 };
 
 export type QuickCreateJobResult = {

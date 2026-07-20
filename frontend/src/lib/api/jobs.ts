@@ -117,6 +117,18 @@ function mapJobDetail(row: UnknownRecord): JobDetail {
             : [],
         }
       : null,
+    units: Array.isArray(row.units)
+      ? (row.units as UnknownRecord[]).map((unit) => ({
+          id: asString(unit.id),
+          model: asNullableString(unit.model),
+          unitType: asNullableString(unit.unit_type),
+          // NUMERIC arrives from pg as a string.
+          tonnage: unit.tonnage == null ? null : asNumber(unit.tonnage),
+          serialOuter: asNullableString(unit.serial_outer),
+          serialInner: asNullableString(unit.serial_inner),
+          label: asString(unit.label),
+        }))
+      : [],
   };
 }
 

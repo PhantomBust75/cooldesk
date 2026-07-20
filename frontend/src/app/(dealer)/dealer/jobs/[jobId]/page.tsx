@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Copy, MapPin, Phone, Info, XCircle } from "lucide-react";
 import { useSnackbar } from "notistack";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
+import { formatShortDateTime } from "@/lib/format-date";
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
   new:                  { label: "New",                  color: "#D97706", bg: "#FEF3C7" },
@@ -26,8 +27,7 @@ function shortId(id: string): string {
 }
 
 function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  return formatShortDateTime(iso);
 }
 
 function formatScheduled(iso: string | null): string {
