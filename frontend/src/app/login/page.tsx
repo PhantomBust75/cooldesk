@@ -47,6 +47,14 @@ export default function LoginPage() {
     }
   }, [isReady, isAuthenticated, router, nextPath]);
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("expired") === "1") {
+      enqueueSnackbar("Your session has expired. Please log in again.", { variant: "warning" });
+    }
+    // Run once on mount only — this reflects how the user arrived at the page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const isRedirecting = useMemo(
     () => isReady && isAuthenticated,
     [isReady, isAuthenticated],

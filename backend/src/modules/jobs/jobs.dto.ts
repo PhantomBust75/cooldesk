@@ -551,6 +551,14 @@ export class OfficeJobsQueryDto {
   dateTo?: string;
 
   @IsOptional()
+  @IsISO8601()
+  scheduledFrom?: string;
+
+  @IsOptional()
+  @IsISO8601()
+  scheduledTo?: string;
+
+  @IsOptional()
   @IsString()
   search?: string;
 
@@ -565,6 +573,49 @@ export class OfficeJobsQueryDto {
   @IsInt()
   @Min(1)
   limit?: number;
+
+  @IsOptional()
+  @IsUUID()
+  brandId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  chronicOnly?: boolean;
+}
+
+export class ExportOfficeJobsQueryDto {
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsEnum(['installation', 'complaint'])
+  type?: JobType;
+
+  @IsOptional()
+  @IsUUID()
+  technicianId?: string;
+
+  @IsOptional()
+  @IsISO8601()
+  dateFrom?: string;
+
+  @IsOptional()
+  @IsISO8601()
+  dateTo?: string;
+
+  @IsOptional()
+  @IsISO8601()
+  scheduledFrom?: string;
+
+  @IsOptional()
+  @IsISO8601()
+  scheduledTo?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
 
   @IsOptional()
   @IsUUID()

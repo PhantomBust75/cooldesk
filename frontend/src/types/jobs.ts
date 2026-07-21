@@ -28,6 +28,8 @@ export type JobListFilter = {
   brandId?: string;
   dateFrom?: string;
   dateTo?: string;
+  scheduledFrom?: string;
+  scheduledTo?: string;
   chronicOnly?: boolean;
 };
 
@@ -162,4 +164,46 @@ export type OwnerOverrideInput = {
   expectedVersion: number;
   reason: string;
   paymentDecision?: "retain" | "void";
+};
+
+export type JobExportUnit = {
+  model: string | null;
+  unitType: string | null;
+  tonnage: number | null;
+  serialOuter: string | null;
+  serialInner: string | null;
+  label: string;
+};
+
+export type JobExportPaymentItem = {
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  total: number;
+};
+
+export type JobExportPayment = {
+  installationCharge: number | null;
+  paymentMethodName: string | null;
+  items: JobExportPaymentItem[];
+};
+
+export type JobExportRow = {
+  id: string;
+  type: "installation" | "complaint";
+  status: string;
+  brandName: string | null;
+  dealerName: string | null;
+  assignedTechnicianName: string | null;
+  customerName: string;
+  phone: string;
+  address: string;
+  issueDescription: string | null;
+  installationNotes: string | null;
+  isRepeat: boolean;
+  isFrequent: boolean;
+  isChronic: boolean;
+  createdAt: string;
+  payment: JobExportPayment | null;
+  units: JobExportUnit[];
 };

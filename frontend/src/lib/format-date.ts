@@ -27,6 +27,14 @@ export function formatDate(iso: string | null | undefined, fallback = FALLBACK):
   return format(iso, { day: "numeric", month: "short", year: "numeric" }, fallback);
 }
 
+/** "20/07/2026" — matching how the system stores/filters dates, for exports. */
+export function formatDateNumeric(iso: string | null | undefined, fallback = FALLBACK): string {
+  const parts = getZonedParts(iso);
+  if (!parts) return fallback;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(parts.day)}/${pad(parts.month + 1)}/${parts.year}`;
+}
+
 /** "20 Jul" */
 export function formatDayMonth(iso: string | null | undefined, fallback = FALLBACK): string {
   return format(iso, { day: "2-digit", month: "short" }, fallback);

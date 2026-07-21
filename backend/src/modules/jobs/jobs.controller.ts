@@ -27,6 +27,7 @@ import {
   DealerCancellationRequestDto,
   ListJobsQueryDto,
   MobileSyncActionDto,
+  ExportOfficeJobsQueryDto,
   OfficeJobsQueryDto,
   OfficeOverrideJobDto,
   OfficeRollbackJobDto,
@@ -330,6 +331,14 @@ export class JobsController {
   @Roles('owner', 'office_staff', 'technician')
   listOfficeJobs(@Query() query: OfficeJobsQueryDto, @Req() req: UserRequest) {
     return this.jobsService.listOfficeJobs(query, req.context);
+  }
+
+  // Registered before 'office/jobs/:id' so Nest doesn't match "export" as an id param.
+  @Get('office/jobs/export')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner', 'office_staff')
+  exportOfficeJobs(@Query() query: ExportOfficeJobsQueryDto, @Req() req: UserRequest) {
+    return this.jobsService.exportOfficeJobs(query, req.context);
   }
 
   @Get('office/jobs/:id/timeline')

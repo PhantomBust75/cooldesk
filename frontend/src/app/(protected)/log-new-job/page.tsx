@@ -35,6 +35,8 @@ const unitInputStyle: CSSProperties = {
   color: "#171717",
 };
 
+const UNIT_TYPE_VALUES = ["Split", "Floor"] as const;
+
 const unitFieldLabelStyle: CSSProperties = {
   fontSize: "12px",
   fontWeight: 500,
@@ -517,7 +519,16 @@ export default function LogNewJobPage() {
                       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "8px", alignItems: "center" }}>
                         <input placeholder="Model" value={unit.model} onChange={(event) => updateUnit(index, "model", event.target.value)} style={unitInputStyle} />
                         <div style={{ display: "grid", gridTemplateColumns: units.length > 1 ? "1fr 32px" : "1fr", gap: "8px", alignItems: "center" }}>
-                          <input placeholder="Unit type" value={unit.unitType} onChange={(event) => updateUnit(index, "unitType", event.target.value)} style={unitInputStyle} />
+                          <select
+                            value={unit.unitType}
+                            onChange={(event) => updateUnit(index, "unitType", event.target.value)}
+                            style={{ ...unitInputStyle, backgroundColor: "#fff", cursor: "pointer", color: unit.unitType ? "#171717" : "#A3A3A3" }}
+                          >
+                            <option value="" disabled>Unit type</option>
+                            {UNIT_TYPE_VALUES.map((value) => (
+                              <option key={value} value={value}>{value}</option>
+                            ))}
+                          </select>
                           {units.length > 1 ? (
                             <button type="button" aria-label={`Remove unit ${index + 1}`} onClick={() => removeUnit(index)} style={{ padding: "6px", borderRadius: "6px", backgroundColor: "#fff", border: "1px solid #E5E5E5", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#991B1B" }}>
                               <Minus size={13} strokeWidth={1.5} />

@@ -3779,6 +3779,8 @@ export class JobsService {
       technicianId?: string;
       dateFrom?: string;
       dateTo?: string;
+      scheduledFrom?: string;
+      scheduledTo?: string;
       search?: string;
       page?: number;
       limit?: number;
@@ -3809,6 +3811,11 @@ export class JobsService {
     if (query.technicianId) add('j.technician_id = :p', query.technicianId);
     if (query.dateFrom) add('j.created_at >= :p::timestamptz', query.dateFrom);
     if (query.dateTo) add('j.created_at <= :p::timestamptz', query.dateTo);
+    // scheduled_at is nullable — the >= /<= comparison naturally excludes
+    // unscheduled jobs when a scheduled-date filter is active (NULL >= x is
+    // NULL, not TRUE, so those rows drop out of the WHERE with no extra check).
+    if (query.scheduledFrom) add('j.scheduled_at >= :p::timestamptz', query.scheduledFrom);
+    if (query.scheduledTo) add('j.scheduled_at <= :p::timestamptz', query.scheduledTo);
     if (query.search) {
       params.push(`%${query.search}%`);
       conditions.push(
@@ -3874,6 +3881,117 @@ export class JobsService {
       limit,
       totalPages: Math.ceil(total / limit) || 1,
     };
+  }
+
+  /**
+   * CSV export data source. Unlike listOfficeJobs, this is not paginated —
+   * the caller needs every job matching the current filters in one shot —
+   * and it includes the full unit + payment-log breakdown per job so the
+   * export can produce one row per unit with frozen financial snapshots.
+   */
+  async exportOfficeJobs(
+    query: {
+      status?: string;
+      type?: string;
+      technicianId?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      scheduledFrom?: string;
+      scheduledTo?: string;
+      search?: string;
+      brandId?: string;
+      chronicOnly?: boolean;
+    },
+    ctx: RequestContext,
+  ): Promise<Record<string, unknown>[]> {
+    const conditions: string[] = ['j.organization_id = $1', 'j.is_deleted = FALSE'];
+    const params: unknown[] = [ctx.organizationId];
+
+    const add = (sql: string, value: unknown): void => {
+      params.push(value);
+      conditions.push(sql.replace(':p', `$${params.length}`));
+    };
+
+    if (query.status) add('j.status = :p', query.status);
+    if (query.type) add('j.type = :p', query.type);
+    if (query.technicianId) add('j.technician_id = :p', query.technicianId);
+    if (query.dateFrom) add('j.created_at >= :p::timestamptz', query.dateFrom);
+    if (query.dateTo) add('j.created_at <= :p::timestamptz', query.dateTo);
+    if (query.scheduledFrom) add('j.scheduled_at >= :p::timestamptz', query.scheduledFrom);
+    if (query.scheduledTo) add('j.scheduled_at <= :p::timestamptz', query.scheduledTo);
+    if (query.search) {
+      params.push(`%${query.search}%`);
+      conditions.push(
+        `(j.customer_name ILIKE $${params.length} OR j.phone ILIKE $${params.length} OR j.address ILIKE $${params.length} OR j.id::text ILIKE $${params.length} OR b.name ILIKE $${params.length})`,
+      );
+    }
+    if (query.brandId) add('j.brand_id = :p', query.brandId);
+    if (query.chronicOnly) conditions.push('j.is_chronic = TRUE');
+
+    const where = conditions.join(' AND ');
+
+    const result = await this.db.query(
+      `
+      SELECT
+        j.id,
+        j.type,
+        j.status,
+        j.brand_id,
+        b.name AS brand_name,
+        d.name AS dealer_name,
+        u.full_name AS assigned_technician_name,
+        j.customer_name,
+        j.phone,
+        j.address,
+        j.issue_description,
+        j.installation_notes,
+        j.is_repeat,
+        j.is_frequent,
+        j.is_chronic,
+        j.created_at,
+        CASE WHEN p.id IS NULL THEN NULL ELSE jsonb_build_object(
+          'installation_charge', p.installation_charge,
+          'payment_method_name', pm.name,
+          'items', COALESCE(
+            (SELECT jsonb_agg(jsonb_build_object(
+              'name',       jpi.name,
+              'unit_price', jpi.unit_price,
+              'quantity',   jpi.quantity,
+              'total',      jpi.total
+            ) ORDER BY jpi.created_at ASC)
+             FROM job_payment_items jpi
+             WHERE jpi.payment_id = p.id),
+            '[]'::jsonb
+          )
+        ) END AS payment,
+        COALESCE(
+          (SELECT jsonb_agg(jsonb_build_object(
+            'model',        ju.model,
+            'unit_type',    ju.unit_type,
+            'tonnage',      ju.tonnage,
+            'serial_outer', ju.serial_outer,
+            'serial_inner', ju.serial_inner,
+            'label',        ju.label
+          ) ORDER BY ju.created_at ASC)
+           FROM job_units ju
+           WHERE ju.job_id = j.id
+             AND ju.organization_id = j.organization_id
+             AND ju.is_deleted = FALSE),
+          '[]'::jsonb
+        ) AS units
+      FROM jobs j
+      LEFT JOIN brands b ON b.id = j.brand_id
+      LEFT JOIN dealers d ON d.id = j.dealer_id
+      LEFT JOIN users u ON u.id = j.technician_id
+      LEFT JOIN payments p ON p.job_id = j.id AND p.organization_id = j.organization_id AND p.is_deleted = FALSE
+      LEFT JOIN payment_methods pm ON pm.id = p.payment_method_id
+      WHERE ${where}
+      ORDER BY j.created_at ASC, j.id ASC
+      `,
+      params,
+    );
+
+    return result.rows as Record<string, unknown>[];
   }
 
   async findByIdForOffice(jobId: string, ctx: RequestContext): Promise<Record<string, unknown>> {

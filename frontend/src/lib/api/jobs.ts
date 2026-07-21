@@ -1,7 +1,9 @@
 import { apiClient } from "@/lib/api/client";
 import type {
   JobDetail,
+  JobExportRow,
   JobListItem,
+  JobListFilter,
   JobListQuery,
   JobRevisitItem,
   JobListResult,
@@ -174,6 +176,8 @@ export async function fetchJobs(filter: JobListQuery = {}): Promise<JobListResul
   if (filter.brandId) params.set("brandId", filter.brandId);
   if (filter.dateFrom) params.set("dateFrom", filter.dateFrom);
   if (filter.dateTo) params.set("dateTo", filter.dateTo);
+  if (filter.scheduledFrom) params.set("scheduledFrom", filter.scheduledFrom);
+  if (filter.scheduledTo) params.set("scheduledTo", filter.scheduledTo);
   if (filter.search) params.set("search", filter.search);
   if (filter.chronicOnly) params.set("chronicOnly", "true");
   params.set("page", String(filter.page ?? 1));
@@ -206,6 +210,72 @@ export async function fetchJobs(filter: JobListQuery = {}): Promise<JobListResul
       totalPages: Math.max(1, totalPages),
     },
   };
+}
+
+function mapJobExportRow(row: UnknownRecord): JobExportRow {
+  const paymentRow = row.payment as UnknownRecord | null;
+  return {
+    id: asString(row.id),
+    type: (asString(row.type) as JobExportRow["type"]) || "installation",
+    status: asString(row.status),
+    brandName: asNullableString(row.brand_name),
+    dealerName: asNullableString(row.dealer_name),
+    assignedTechnicianName: asNullableString(row.assigned_technician_name),
+    customerName: asString(row.customer_name),
+    phone: asString(row.phone),
+    address: asString(row.address),
+    issueDescription: asNullableString(row.issue_description),
+    installationNotes: asNullableString(row.installation_notes),
+    isRepeat: row.is_repeat === true,
+    isFrequent: row.is_frequent === true,
+    isChronic: row.is_chronic === true,
+    createdAt: asString(row.created_at),
+    payment: paymentRow
+      ? {
+          installationCharge:
+            paymentRow.installation_charge == null ? null : asNumber(paymentRow.installation_charge),
+          paymentMethodName: asNullableString(paymentRow.payment_method_name),
+          items: Array.isArray(paymentRow.items)
+            ? (paymentRow.items as UnknownRecord[]).map((it) => ({
+                name: asString(it.name),
+                unitPrice: asNumber(it.unit_price),
+                quantity: asNumber(it.quantity, 1),
+                total: asNumber(it.total),
+              }))
+            : [],
+        }
+      : null,
+    units: Array.isArray(row.units)
+      ? (row.units as UnknownRecord[]).map((unit) => ({
+          model: asNullableString(unit.model),
+          unitType: asNullableString(unit.unit_type),
+          tonnage: unit.tonnage == null ? null : asNumber(unit.tonnage),
+          serialOuter: asNullableString(unit.serial_outer),
+          serialInner: asNullableString(unit.serial_inner),
+          label: asString(unit.label),
+        }))
+      : [],
+  };
+}
+
+/** Non-paginated — every job matching the filters, for CSV export. */
+export async function fetchJobsExport(filter: JobListFilter & { search?: string } = {}): Promise<JobExportRow[]> {
+  const params = new URLSearchParams();
+  if (filter.status) params.set("status", filter.status);
+  if (filter.type) params.set("type", filter.type);
+  if (filter.technicianId) params.set("technicianId", filter.technicianId);
+  if (filter.brandId) params.set("brandId", filter.brandId);
+  if (filter.dateFrom) params.set("dateFrom", filter.dateFrom);
+  if (filter.dateTo) params.set("dateTo", filter.dateTo);
+  if (filter.scheduledFrom) params.set("scheduledFrom", filter.scheduledFrom);
+  if (filter.scheduledTo) params.set("scheduledTo", filter.scheduledTo);
+  if (filter.search) params.set("search", filter.search);
+  if (filter.chronicOnly) params.set("chronicOnly", "true");
+  const query = params.toString();
+  const path = query ? `/office/jobs/export?${query}` : "/office/jobs/export";
+
+  const rows = await apiClient.get<UnknownRecord[]>(path);
+  return rows.map(mapJobExportRow);
 }
 
 export async function fetchJobDetail(jobId: string): Promise<JobDetail> {

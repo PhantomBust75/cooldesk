@@ -33,6 +33,26 @@ function readSessionFromStorage(): SessionState | null {
   }
 }
 
+// Guards against every in-flight request redirecting at once when a token
+// expires (a page can easily have several queries in flight together).
+let isRedirectingToLogin = false;
+
+function redirectToExpiredLogin(): void {
+  if (typeof window === "undefined" || isRedirectingToLogin) {
+    return;
+  }
+  // Login itself calls apiClient with `auth: false`, so this only ever runs
+  // for requests that carried a token — never for a failed login attempt.
+  if (window.location.pathname === "/login") {
+    return;
+  }
+
+  isRedirectingToLogin = true;
+  window.localStorage.removeItem(SESSION_STORAGE_KEY);
+  const next = encodeURIComponent(window.location.pathname || "/dashboard");
+  window.location.assign(`/login?next=${next}&expired=1`);
+}
+
 type RequestOptions = {
   auth?: boolean;
   body?: unknown;
@@ -79,6 +99,13 @@ async function request<T>(
   const payload = textPayload ? safelyParseJson(textPayload) : null;
 
   if (!response.ok) {
+    // 401 on an authenticated request means the token is missing/expired/invalid
+    // (all three guards throw UnauthorizedException for that) — not a bad
+    // password, since login always calls this with `auth: false`.
+    if (response.status === 401 && auth) {
+      redirectToExpiredLogin();
+    }
+
     const message =
       typeof payload === "object" &&
       payload !== null &&

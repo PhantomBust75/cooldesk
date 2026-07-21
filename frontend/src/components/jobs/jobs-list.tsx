@@ -1,6 +1,7 @@
 "use client";
 
 import { StatusChip } from "@/components/ui/status-chip";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   JobTypeChip,
   BrandSwatch,
@@ -9,21 +10,25 @@ import {
 } from "@/components/ui/job-type-chip";
 import { useAuth } from "@/contexts/auth-context";
 import { isTerminalStatus } from "@/lib/job-status-groups";
-import { fetchJobs } from "@/lib/api/jobs";
+import { fetchJobs, fetchJobsExport } from "@/lib/api/jobs";
 import { fetchOfficeBrands } from "@/lib/api/operations";
+import { fetchServiceItems } from "@/lib/api/service-items";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
 import type { JobListFilter, JobListQuery } from "@/types/jobs";
 import {
   Briefcase,
   ChevronRight,
+  Download,
   Filter,
   Search,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { CSSProperties, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSnackbar } from "notistack";
 import { formatShortDateTime } from "@/lib/format-date";
+import { buildJobsExportCsvText, buildJobsExportFilename, downloadJobsExportCsv } from "@/lib/jobs-export";
 
 const PAGE_SIZE = 10;
 
@@ -51,11 +56,62 @@ function formatScheduled(scheduledAt: string | null): string {
   return formatShortDateTime(scheduledAt);
 }
 
+const filterControlStyle: CSSProperties = {
+  padding: "6px 10px",
+  fontSize: "13px",
+  height: "34px",
+  border: "1px solid #E5E5E5",
+  borderRadius: "8px",
+  outline: "none",
+  backgroundColor: "#fff",
+  color: "#404040",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  boxSizing: "border-box",
+};
+
+const filterLabelStyle: CSSProperties = {
+  fontSize: "10px",
+  fontWeight: 600,
+  color: "#A3A3A3",
+  display: "block",
+  marginBottom: "6px",
+  letterSpacing: "0.07em",
+  textTransform: "uppercase",
+};
+
+/** Measures real content height so the expand/collapse never clips a taller filter row. */
+function FilterPanel({ open, children }: { open: boolean; children: ReactNode }) {
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    if (innerRef.current) setHeight(innerRef.current.scrollHeight);
+  }, [open, children]);
+
+  return (
+    <div
+      style={{
+        overflow: "hidden",
+        maxHeight: open ? `${height}px` : "0px",
+        opacity: open ? 1 : 0,
+        transition: "max-height 300ms cubic-bezier(0.4,0,0.2,1), opacity 200ms ease",
+      }}
+    >
+      <div ref={innerRef} style={{ transform: open ? "translateY(0)" : "translateY(-6px)", transition: "transform 300ms cubic-bezier(0.4,0,0.2,1)" }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function JobsList() {
   const { session } = useAuth();
   const router = useRouter();
   const isMobile = useMobileBreakpoint();
   const isTechnician = session?.user.role === "technician";
+  const { enqueueSnackbar } = useSnackbar();
+  const [isExporting, setIsExporting] = useState(false);
 
   // Applied filter state (what actually goes to the API)
   const [filter, setFilter] = useState<JobListFilter>({});
@@ -77,6 +133,18 @@ export function JobsList() {
   const [inlineType, setInlineType] = useState<"" | "installation" | "complaint">("");
   const [inlineBrandId, setInlineBrandId] = useState("");
   const [inlineChronic, setInlineChronic] = useState(false);
+  // Raw "YYYY-MM-DD" from DatePicker, converted to PKT day boundaries below.
+  // "Created" filters j.created_at; "Scheduled" filters j.scheduled_at — two
+  // independent date ranges, matching the reference filter panel.
+  const [inlineCreatedFrom, setInlineCreatedFrom] = useState("");
+  const [inlineCreatedTo, setInlineCreatedTo] = useState("");
+  const [inlineScheduledFrom, setInlineScheduledFrom] = useState("");
+  const [inlineScheduledTo, setInlineScheduledTo] = useState("");
+
+  const createdFromIso = inlineCreatedFrom ? `${inlineCreatedFrom}T00:00:00+05:00` : undefined;
+  const createdToIso = inlineCreatedTo ? `${inlineCreatedTo}T23:59:59+05:00` : undefined;
+  const scheduledFromIso = inlineScheduledFrom ? `${inlineScheduledFrom}T00:00:00+05:00` : undefined;
+  const scheduledToIso = inlineScheduledTo ? `${inlineScheduledTo}T23:59:59+05:00` : undefined;
 
   const queryInput = useMemo<JobListQuery>(
     () => ({
@@ -85,12 +153,30 @@ export function JobsList() {
       type: (inlineType || filter.type) as JobListQuery["type"],
       brandId: inlineBrandId || filter.brandId,
       chronicOnly: inlineChronic || undefined,
+      dateFrom: createdFromIso ?? filter.dateFrom,
+      dateTo: createdToIso ?? filter.dateTo,
+      scheduledFrom: scheduledFromIso ?? filter.scheduledFrom,
+      scheduledTo: scheduledToIso ?? filter.scheduledTo,
       search: search.trim() || undefined,
       technicianId: isTechnician ? session?.user.userId : filter.technicianId,
       page,
       limit: PAGE_SIZE,
     }),
-    [filter, inlineStatus, inlineType, inlineBrandId, inlineChronic, search, page, isTechnician, session?.user.userId]
+    [
+      filter,
+      inlineStatus,
+      inlineType,
+      inlineBrandId,
+      inlineChronic,
+      createdFromIso,
+      createdToIso,
+      scheduledFromIso,
+      scheduledToIso,
+      search,
+      page,
+      isTechnician,
+      session?.user.userId,
+    ]
   );
 
   const { data, isLoading, error } = useQuery({
@@ -118,13 +204,57 @@ export function JobsList() {
     setInlineType("");
     setInlineBrandId("");
     setInlineChronic(false);
+    setInlineCreatedFrom("");
+    setInlineCreatedTo("");
+    setInlineScheduledFrom("");
+    setInlineScheduledTo("");
     setFilter({});
     setSearchInput("");
     setSearch("");
     setPage(1);
   }
 
-  const activeFilterCount = [inlineStatus, inlineType, inlineBrandId, inlineChronic ? "chronic" : ""].filter(Boolean).length;
+  const activeFilterCount = [
+    inlineStatus,
+    inlineType,
+    inlineBrandId,
+    inlineChronic ? "chronic" : "",
+    inlineCreatedFrom,
+    inlineCreatedTo,
+    inlineScheduledFrom,
+    inlineScheduledTo,
+  ].filter(Boolean).length;
+
+  async function handleExportCsv() {
+    setIsExporting(true);
+    try {
+      const [jobs, serviceItems] = await Promise.all([
+        fetchJobsExport({
+          status: queryInput.status,
+          type: queryInput.type,
+          technicianId: queryInput.technicianId,
+          brandId: queryInput.brandId,
+          dateFrom: queryInput.dateFrom,
+          dateTo: queryInput.dateTo,
+          scheduledFrom: queryInput.scheduledFrom,
+          scheduledTo: queryInput.scheduledTo,
+          chronicOnly: queryInput.chronicOnly,
+          search: queryInput.search,
+        }),
+        fetchServiceItems(),
+      ]);
+      const csvText = buildJobsExportCsvText(jobs, serviceItems);
+      // Filename reflects the Created range specifically — that's the field
+      // the export's own "Date" column and default row order are built on.
+      const filename = buildJobsExportFilename(inlineCreatedFrom || undefined, inlineCreatedTo || undefined);
+      downloadJobsExportCsv(csvText, filename);
+      enqueueSnackbar(`Exported ${jobs.length} job${jobs.length === 1 ? "" : "s"} to ${filename}`, { variant: "success" });
+    } catch {
+      enqueueSnackbar("Unable to export jobs to CSV.", { variant: "error" });
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -265,6 +395,15 @@ export function JobsList() {
                 </span>
               )}
             </button>
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={isExporting}
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 14px", minHeight: "44px", border: "1px solid #E5E5E5", borderRadius: "8px", backgroundColor: "#fff", color: "#404040", fontSize: "13px", fontWeight: 500, cursor: isExporting ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: isExporting ? 0.6 : 1 }}
+            >
+              <Download size={14} strokeWidth={1.5} />
+              {isExporting ? "Exporting…" : "Export CSV"}
+            </button>
           </div>
         )}
       </div>
@@ -321,40 +460,63 @@ export function JobsList() {
         </div>
       ) : (
         /* ── Owner/staff: collapsible filter panel ────────── */
-        <div style={{ overflow: "hidden", maxHeight: inlineFiltersOpen ? "300px" : "0px", opacity: inlineFiltersOpen ? 1 : 0, transition: "max-height 300ms cubic-bezier(0.4,0,0.2,1), opacity 200ms ease" }}>
-            <div style={{ transform: inlineFiltersOpen ? "translateY(0)" : "translateY(-6px)", transition: "transform 300ms cubic-bezier(0.4,0,0.2,1)", padding: "0 24px 12px" }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", padding: "14px 16px", flexWrap: "wrap", backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "8px" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>STATUS</span>
-                  <select value={inlineStatus} onChange={(e) => { setInlineStatus(e.target.value); setPage(1); }} style={{ border: "1px solid #E5E5E5", borderRadius: "8px", padding: "6px 10px", fontSize: "13px", color: inlineStatus ? "#171717" : "#737373", backgroundColor: "#fff", outline: "none", cursor: "pointer" }}>
-                    <option value="">All statuses</option>
-                    {STATUS_OPTIONS.map((s) => (<option key={s} value={s}>{formatStatusLabel(s)}</option>))}
-                  </select>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>TYPE</span>
-                  <select value={inlineType} onChange={(e) => { setInlineType(e.target.value as "" | "installation" | "complaint"); setPage(1); }} style={{ border: "1px solid #E5E5E5", borderRadius: "8px", padding: "6px 10px", fontSize: "13px", color: inlineType ? "#171717" : "#737373", backgroundColor: "#fff", outline: "none", cursor: "pointer" }}>
-                    <option value="">All types</option>
-                    <option value="installation">Installation</option>
-                    <option value="complaint">Complaint</option>
-                  </select>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>BRAND</span>
-                  <select value={inlineBrandId} onChange={(e) => { setInlineBrandId(e.target.value); setPage(1); }} style={{ border: "1px solid #E5E5E5", borderRadius: "8px", padding: "6px 10px", fontSize: "13px", color: inlineBrandId ? "#171717" : "#737373", backgroundColor: "#fff", outline: "none", cursor: "pointer" }}>
-                    <option value="">All brands</option>
-                    {(brandsQuery.data ?? []).map((brand) => (<option key={brand.id} value={brand.id}>{brand.name}</option>))}
-                  </select>
-                </div>
-                <label style={{ display: "flex", flexDirection: "column", gap: "4px", cursor: "pointer" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>FILTER</span>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#737373", userSelect: "none", paddingTop: "6px" }}>
-                    <input type="checkbox" checked={inlineChronic} onChange={(e) => { setInlineChronic(e.target.checked); setPage(1); }} style={{ width: "14px", height: "14px", cursor: "pointer" }} />
-                    Chronic only
-                  </span>
-                </label>
+        <div style={{ padding: "0 24px 12px" }}>
+          <FilterPanel open={inlineFiltersOpen}>
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "flex-end", padding: "16px", backgroundColor: "#FAFAFA", borderRadius: "10px", border: "1px solid #E5E5E5" }}>
+              <div>
+                <label style={filterLabelStyle}>Status</label>
+                <select value={inlineStatus} onChange={(e) => { setInlineStatus(e.target.value); setPage(1); }} style={filterControlStyle}>
+                  <option value="">All statuses</option>
+                  {STATUS_OPTIONS.map((s) => (<option key={s} value={s}>{formatStatusLabel(s)}</option>))}
+                </select>
               </div>
+
+              <div>
+                <label style={filterLabelStyle}>Type</label>
+                <select value={inlineType} onChange={(e) => { setInlineType(e.target.value as "" | "installation" | "complaint"); setPage(1); }} style={filterControlStyle}>
+                  <option value="">All types</option>
+                  <option value="installation">Installation</option>
+                  <option value="complaint">Complaint</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={filterLabelStyle}>Brand</label>
+                <select value={inlineBrandId} onChange={(e) => { setInlineBrandId(e.target.value); setPage(1); }} style={filterControlStyle}>
+                  <option value="">All brands</option>
+                  {(brandsQuery.data ?? []).map((brand) => (<option key={brand.id} value={brand.id}>{brand.name}</option>))}
+                </select>
+              </div>
+
+              <div style={{ width: "1px", height: "34px", backgroundColor: "#E5E5E5", alignSelf: "flex-end", flexShrink: 0 }} />
+
+              <div>
+                <label style={filterLabelStyle}>Scheduled</label>
+                <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                  <DatePicker value={inlineScheduledFrom} onChange={(v) => { setInlineScheduledFrom(v); setPage(1); }} placeholder="From" />
+                  <span style={{ fontSize: "12px", color: "#C4C4C4", flexShrink: 0 }}>→</span>
+                  <DatePicker value={inlineScheduledTo} onChange={(v) => { setInlineScheduledTo(v); setPage(1); }} placeholder="To" min={inlineScheduledFrom || undefined} />
+                </div>
+              </div>
+
+              <div>
+                <label style={filterLabelStyle}>Created</label>
+                <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                  <DatePicker value={inlineCreatedFrom} onChange={(v) => { setInlineCreatedFrom(v); setPage(1); }} placeholder="From" />
+                  <span style={{ fontSize: "12px", color: "#C4C4C4", flexShrink: 0 }}>→</span>
+                  <DatePicker value={inlineCreatedTo} onChange={(v) => { setInlineCreatedTo(v); setPage(1); }} placeholder="To" min={inlineCreatedFrom || undefined} />
+                </div>
+              </div>
+
+              <label style={{ display: "flex", flexDirection: "column", cursor: "pointer" }}>
+                <span style={filterLabelStyle}>Filter</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#737373", userSelect: "none", height: "34px" }}>
+                  <input type="checkbox" checked={inlineChronic} onChange={(e) => { setInlineChronic(e.target.checked); setPage(1); }} style={{ width: "14px", height: "14px", cursor: "pointer" }} />
+                  Chronic only
+                </span>
+              </label>
             </div>
+          </FilterPanel>
         </div>
       )}
 

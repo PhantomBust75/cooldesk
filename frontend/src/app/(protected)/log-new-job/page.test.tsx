@@ -120,7 +120,7 @@ describe("LogNewJobPage - Success Screen", () => {
       target: { value: "brand-1" },
     });
     fireEvent.change(screen.getByPlaceholderText("Model"), { target: { value: "AC-1000" } });
-    fireEvent.change(screen.getByPlaceholderText("Unit type"), { target: { value: "Split" } });
+    fireEvent.change(screen.getByDisplayValue("Unit type"), { target: { value: "Split" } });
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
 
     // Step 4: review and submit
