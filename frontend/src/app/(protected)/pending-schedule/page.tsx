@@ -13,7 +13,7 @@ import {
 } from "@/lib/api/office";
 import type { PendingScheduleJob, SchedulePendingJobInput } from "@/types/office";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar, ChevronRight, Users, X } from "lucide-react";
+import { Calendar, ChevronRight, X } from "lucide-react";
 import { useSnackbar } from "notistack";
 import { formatDayMonth } from "@/lib/format-date";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
@@ -177,7 +177,8 @@ export default function PendingSchedulePage() {
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
 
-  const [showBatchModal, setShowBatchModal] = useState(false);
+  // Batch schedule disabled for now — see BatchModal below.
+  // const [showBatchModal, setShowBatchModal] = useState(false);
   // Inline state: per-job date and technician
   const [scheduling, setScheduling] = useState<Record<string, string>>({});
   const [assigning, setAssigning]   = useState<Record<string, string>>({});
@@ -228,10 +229,11 @@ export default function PendingSchedulePage() {
     });
   }
 
-  function handleBatchSuccess() {
-    queryClient.invalidateQueries({ queryKey: ["office", "pending-schedule"] });
-    queryClient.invalidateQueries({ queryKey: ["office", "technicians"] });
-  }
+  // Only used by the batch-schedule modal, disabled for now.
+  // function handleBatchSuccess() {
+  //   queryClient.invalidateQueries({ queryKey: ["office", "pending-schedule"] });
+  //   queryClient.invalidateQueries({ queryKey: ["office", "technicians"] });
+  // }
 
   const TABLE_HEADERS = ["JOB ID", "CUSTOMER", "TYPE", "BRAND", "DEALER", "SUBMITTED", "DAYS WAITING", "SCHEDULE & ASSIGN", ""];
 
@@ -260,6 +262,7 @@ export default function PendingSchedulePage() {
           </p>
         </div>
 
+        {/* Batch schedule disabled for now.
         <button
           type="button"
           onClick={() => setShowBatchModal(true)}
@@ -268,6 +271,7 @@ export default function PendingSchedulePage() {
           <Users size={14} strokeWidth={1.5} />
           Batch schedule
         </button>
+        */}
       </div>
 
       {/* Table card */}
@@ -391,6 +395,7 @@ export default function PendingSchedulePage() {
         )}
       </div>
 
+      {/* Batch schedule disabled for now.
       {showBatchModal ? (
         <BatchModal
           jobs={queue}
@@ -399,6 +404,7 @@ export default function PendingSchedulePage() {
           onSuccess={() => { handleBatchSuccess(); setShowBatchModal(false); }}
         />
       ) : null}
+      */}
     </section>
   );
 }

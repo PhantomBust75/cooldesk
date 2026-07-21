@@ -115,6 +115,32 @@ enqueueSnackbar(error.message, { variant: "error" });
 
 Never use `alert()`, `window.confirm()`, or custom modal dialogs for feedback.
 
+## Code Conventions
+
+**Always give `useState` an explicit type argument** — never rely on inference, even for an obvious primitive:
+
+```ts
+// ❌ Don't
+const [isOpen, setIsOpen] = useState(false);
+const [name, setName] = useState("");
+const [count, setCount] = useState(0);
+const [selected, setSelected] = useState(null);
+
+// ✅ Do
+const [isOpen, setIsOpen] = useState<boolean>(false);
+const [name, setName] = useState<string>("");
+const [count, setCount] = useState<number>(0);
+const [selected, setSelected] = useState<string | null>(null);
+```
+
+This applies even when TypeScript would infer the same type from the initial value (`useState(false)` already infers `boolean`) — the explicit argument makes the intended type visible at the call site without hovering, and it's the only way to get a correct type at all once the initial value doesn't fully describe it: `useState(null)` infers `null` (not `string | null`), `useState("")` for a field that will hold one of several literal strings infers plain `string` (not the union), and `useState([])` infers `never[]`. Write out the real type every time:
+
+```ts
+const [inlineType, setInlineType] = useState<"" | "installation" | "complaint">("");
+const [scheduling, setScheduling] = useState<Record<string, string>>({});
+const [selectedIds, setSelectedIds] = useState<string[]>([]);
+```
+
 ## Gotchas
 
 - **`--webpack` flag**: The dev command is `next dev --webpack`. Turbopack is not used.

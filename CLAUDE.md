@@ -151,3 +151,4 @@ Each token type has its own JWT secret and guard:
 - **API types**: Keep in `frontend/src/types/`. One file per domain. Import from there — don't inline types in components.
 - **API clients**: One file per domain in `frontend/src/lib/api/`. Don't call `fetch`/`apiClient` directly from components.
 - **No `any`**: No TypeScript `any` casts. Use proper types or `unknown` with narrowing.
+- **`useState` always gets an explicit type argument**: `useState<boolean>(false)`, `useState<string>("")`, not `useState(false)`. See `frontend/CLAUDE.md` for the full rule and examples.
