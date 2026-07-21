@@ -23,7 +23,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Calendar, ChevronDown, Download, Star } from "lucide-react";
 import { useMobileBreakpoint } from "@/hooks/use-mobile-breakpoint";
-import { formatDayMonth, formatMonthYear } from "@/lib/format-date";
+import { formatDayMonth } from "@/lib/format-date";
+import {
+  computeDateRange,
+  PRESETS,
+  presetShortLabel,
+  timeframeSubtitle,
+  type Preset,
+} from "@/lib/analytics-timeframe";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -128,22 +135,36 @@ function TabButton({
   );
 }
 
-const DAY_OPTIONS = [
-  { value: 7, label: "Last 7 days" },
-  { value: 30, label: "Last 30 days" },
-  { value: 90, label: "Last 90 days" },
-];
+const dateInputStyle: React.CSSProperties = {
+  padding: "9px 10px",
+  border: "1px solid #E5E5E5",
+  borderRadius: "8px",
+  fontSize: "14px",
+  outline: "none",
+  color: "#171717",
+  fontFamily: "inherit",
+  width: "100%",
+  boxSizing: "border-box",
+  minHeight: "44px",
+};
 
-function DateRangeDropdown({
-  value,
+function TimeframeSelector({
+  preset,
+  customFrom,
+  customTo,
   onChange,
   isMobile,
 }: {
-  value: number;
-  onChange: (n: number) => void;
+  preset: Preset;
+  customFrom: string;
+  customTo: string;
+  onChange: (preset: Preset, customFrom: string, customTo: string) => void;
   isMobile: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [localFrom, setLocalFrom] = useState(customFrom);
+  const [localTo, setLocalTo] = useState(customTo);
+  const [localPreset, setLocalPreset] = useState<Preset>(preset);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -154,9 +175,7 @@ function DateRangeDropdown({
       }
     }
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
+      if (event.key === "Escape") setOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
@@ -166,13 +185,115 @@ function DateRangeDropdown({
     };
   }, [open]);
 
-  const activeOption = DAY_OPTIONS.find((o) => o.value === value) ?? DAY_OPTIONS[1];
+  function selectPreset(p: Preset) {
+    setLocalPreset(p);
+    if (p !== "custom") {
+      onChange(p, "", "");
+      setOpen(false);
+    }
+  }
+
+  function applyCustom() {
+    if (localFrom && localTo) {
+      onChange("custom", localFrom, localTo);
+      setOpen(false);
+    }
+  }
+
+  const panelContent = (
+    <>
+      {PRESETS.map((p) => (
+        <button
+          key={p.key}
+          type="button"
+          role="option"
+          aria-selected={localPreset === p.key}
+          onClick={() => selectPreset(p.key)}
+          style={{
+            width: "100%",
+            padding: isMobile ? "13px 16px" : "10px 14px",
+            background: "none",
+            border: "none",
+            textAlign: "left",
+            fontSize: "14px",
+            cursor: "pointer",
+            color: localPreset === p.key ? "#0A0A0A" : "#525252",
+            fontWeight: localPreset === p.key ? 500 : 400,
+            backgroundColor: localPreset === p.key ? "#F5F5F5" : "transparent",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            minHeight: isMobile ? "52px" : "auto",
+          }}
+        >
+          {p.label}
+          {localPreset === p.key ? (
+            <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#0A0A0A", flexShrink: 0 }} />
+          ) : null}
+        </button>
+      ))}
+
+      {localPreset === "custom" ? (
+        <div style={{ padding: "14px 16px", borderTop: "1px solid #F5F5F5", display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div>
+            <label htmlFor="analytics-custom-from" style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: "5px" }}>
+              From
+            </label>
+            <input id="analytics-custom-from" type="date" value={localFrom} max={localTo || undefined} onChange={(e) => setLocalFrom(e.target.value)} style={dateInputStyle} />
+          </div>
+          <div>
+            <label htmlFor="analytics-custom-to" style={{ fontSize: "11px", fontWeight: 500, color: "#A3A3A3", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: "5px" }}>
+              To
+            </label>
+            <input id="analytics-custom-to" type="date" value={localTo} min={localFrom || undefined} onChange={(e) => setLocalTo(e.target.value)} style={dateInputStyle} />
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #E5E5E5", backgroundColor: "#fff", cursor: "pointer", fontSize: "13px", color: "#404040", minHeight: "44px" }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={applyCustom}
+              disabled={!localFrom || !localTo}
+              style={{
+                flex: 1,
+                padding: "10px",
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: localFrom && localTo ? "#0A0A0A" : "#E5E5E5",
+                color: localFrom && localTo ? "#fff" : "#A3A3A3",
+                cursor: localFrom && localTo ? "pointer" : "not-allowed",
+                fontSize: "13px",
+                fontWeight: 500,
+                minHeight: "44px",
+              }}
+            >
+              Apply
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
 
   return (
     <div ref={containerRef} style={{ position: "relative" }}>
       <button
         type="button"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => {
+          // Reset the panel's local (uncommitted) state to whatever is
+          // actually applied right as it opens, rather than syncing in an
+          // effect — the panel can otherwise show a stale preset/range from
+          // the last time it was open.
+          setLocalPreset(preset);
+          setLocalFrom(customFrom);
+          setLocalTo(customTo);
+          setOpen((prev) => !prev);
+        }}
         aria-haspopup="listbox"
         aria-expanded={open}
         style={{
@@ -187,69 +308,64 @@ function DateRangeDropdown({
           fontSize: "13px",
           color: "#404040",
           cursor: "pointer",
+          whiteSpace: "nowrap",
         }}
       >
-        <Calendar size={13} color="#737373" />
-        {activeOption.label}
+        <Calendar size={13} color="#737373" strokeWidth={1.5} />
+        {presetShortLabel(preset, customFrom, customTo)}
         <ChevronDown
-          size={13}
-          style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 150ms" }}
+          size={12}
+          style={{ color: "#A3A3A3", transform: open ? "rotate(180deg)" : "none", transition: "transform 150ms" }}
         />
       </button>
-      {open ? (
+
+      {/* Desktop: absolute dropdown */}
+      {open && !isMobile ? (
         <div
           role="listbox"
           style={{
-            position: isMobile ? "fixed" : "absolute",
-            top: isMobile ? "72px" : "calc(100% + 6px)",
-            right: isMobile ? "16px" : 0,
-            left: isMobile ? "16px" : "auto",
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            right: 0,
             zIndex: 200,
             backgroundColor: "#fff",
             border: "1px solid #E5E5E5",
             borderRadius: "12px",
             boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-            minWidth: isMobile ? undefined : "220px",
-            padding: "6px",
+            minWidth: "220px",
+            overflow: "hidden",
           }}
         >
-          {DAY_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              role="option"
-              aria-selected={option.value === value}
-              onClick={() => {
-                onChange(option.value);
-                setOpen(false);
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                width: "100%",
-                textAlign: "left",
-                padding: "8px 10px",
-                borderRadius: "8px",
-                border: "none",
-                backgroundColor: option.value === value ? "#F5F5F5" : "transparent",
-                fontSize: "13px",
-                color: "#171717",
-                cursor: "pointer",
-              }}
-            >
-              <span
-                style={{
-                  display: "inline-block",
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "9999px",
-                  backgroundColor: option.value === value ? "#0A0A0A" : "transparent",
-                }}
-              />
-              {option.label}
-            </button>
-          ))}
+          {panelContent}
+        </div>
+      ) : null}
+
+      {/* Mobile: bottom sheet */}
+      {open && isMobile ? (
+        <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div onClick={() => setOpen(false)} style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }} />
+          <div
+            role="listbox"
+            style={{
+              position: "fixed",
+              left: "16px",
+              right: "16px",
+              bottom: "16px",
+              backgroundColor: "#fff",
+              borderRadius: "16px",
+              boxShadow: "0 -4px 24px rgba(0,0,0,0.12)",
+              overflowY: "auto",
+              maxHeight: "80vh",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 2px" }}>
+              <div style={{ width: "36px", height: "4px", borderRadius: "9999px", backgroundColor: "#D4D4D4" }} />
+            </div>
+            <div style={{ padding: "10px 16px 12px", borderBottom: "1px solid #E5E5E5", fontSize: "14px", fontWeight: 500, color: "#171717" }}>
+              Time period
+            </div>
+            {panelContent}
+          </div>
         </div>
       ) : null}
     </div>
@@ -309,55 +425,66 @@ const axisTickStyle = { fontSize: 12, fill: "#737373" };
 export default function AnalyticsPage() {
   const isMobile = useMobileBreakpoint();
   const [tab, setTab] = useState<"business" | "technicians" | "brands" | "dealers">("business");
-  const [days, setDays] = useState(30);
+  const [preset, setPreset] = useState<Preset>("last_month");
+  const [customFrom, setCustomFrom] = useState<string>("");
+  const [customTo, setCustomTo] = useState<string>("");
   const [hoveredTechnicianId, setHoveredTechnicianId] = useState<string | null>(null);
   const [hoveredBrandId, setHoveredBrandId] = useState<string | null>(null);
   const [hoveredDealerId, setHoveredDealerId] = useState<string | null>(null);
 
+  const range = computeDateRange(preset, customFrom, customTo);
+  const rangeKey = `${range.dateFrom ?? ""}_${range.dateTo ?? ""}`;
+
+  function handleTimeframeChange(nextPreset: Preset, nextFrom: string, nextTo: string) {
+    setPreset(nextPreset);
+    setCustomFrom(nextFrom);
+    setCustomTo(nextTo);
+  }
+
   const overviewQuery = useQuery({
-    queryKey: ["analytics", "overview", days],
-    queryFn: () => fetchAnalyticsOverview(days),
+    queryKey: ["analytics", "overview", rangeKey],
+    queryFn: () => fetchAnalyticsOverview(range),
   });
 
   const dailyQuery = useQuery({
-    queryKey: ["analytics", "daily", days],
-    queryFn: () => fetchAnalyticsDaily(days),
+    queryKey: ["analytics", "daily", rangeKey],
+    queryFn: () => fetchAnalyticsDaily(range),
     enabled: tab === "business",
   });
 
   const techniciansQuery = useQuery({
-    queryKey: ["analytics", "technicians", days],
-    queryFn: () => fetchAnalyticsTechnicians(days),
+    queryKey: ["analytics", "technicians", rangeKey],
+    queryFn: () => fetchAnalyticsTechnicians(range),
     enabled: tab === "technicians",
   });
 
   const brandsQuery = useQuery({
-    queryKey: ["analytics", "brands", days],
-    queryFn: () => fetchAnalyticsBrands(days),
+    queryKey: ["analytics", "brands", rangeKey],
+    queryFn: () => fetchAnalyticsBrands(range),
     enabled: tab === "brands",
   });
 
   const dealersQuery = useQuery({
-    queryKey: ["analytics", "dealers", days],
-    queryFn: () => fetchAnalyticsDealers(days),
+    queryKey: ["analytics", "dealers", rangeKey],
+    queryFn: () => fetchAnalyticsDealers(range),
     enabled: tab === "dealers",
   });
 
   const overview = overviewQuery.data;
   const dailyData = dailyQuery.data ?? [];
 
-  // Month label for subtitle
-  const monthLabel = formatMonthYear(new Date().toISOString());
+  const subtitle = timeframeSubtitle(preset, customFrom, customTo);
+  const exportSuffix = presetShortLabel(preset, customFrom, customTo).replace(/[^a-zA-Z0-9]+/g, "-").toLowerCase();
 
   function handleExport() {
     if (tab === "business") {
-      exportToCsv(dailyData, `analytics-business-${days}d.csv`);
+      exportToCsv(dailyData, `analytics-business-${exportSuffix}.csv`);
     } else if (tab === "technicians") {
-      exportToCsv(techniciansQuery.data ?? [], `analytics-technicians-${days}d.csv`);
+      exportToCsv(techniciansQuery.data ?? [], `analytics-technicians-${exportSuffix}.csv`);
     } else if (tab === "brands") {
-      exportToCsv(brandsQuery.data ?? [], `analytics-brands-${days}d.csv`);
+      exportToCsv(brandsQuery.data ?? [], `analytics-brands-${exportSuffix}.csv`);
     } else {
-      exportToCsv(dealersQuery.data ?? [], `analytics-dealers-${days}d.csv`);
+      exportToCsv(dealersQuery.data ?? [], `analytics-dealers-${exportSuffix}.csv`);
     }
   }
 
@@ -388,11 +515,11 @@ export default function AnalyticsPage() {
             Analytics
           </h1>
           <p style={{ fontSize: "13px", color: "#737373", margin: "3px 0 0", fontWeight: 400 }}>
-            Last {days} days &middot; {monthLabel}
+            {subtitle}
           </p>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-          <DateRangeDropdown value={days} onChange={setDays} isMobile={isMobile} />
+          <TimeframeSelector preset={preset} customFrom={customFrom} customTo={customTo} onChange={handleTimeframeChange} isMobile={isMobile} />
           <ExportButton onClick={handleExport} />
         </div>
       </div>

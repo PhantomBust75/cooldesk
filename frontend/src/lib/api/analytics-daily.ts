@@ -16,8 +16,12 @@ function asString(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback;
 }
 
-export async function fetchAnalyticsDaily(days = 7): Promise<AnalyticsDailyItem[]> {
-  const rows = await apiClient.get<UnknownRecord[]>(`/analytics/business/daily?days=${days}`);
+export async function fetchAnalyticsDaily(range: { dateFrom?: string; dateTo?: string } = {}): Promise<AnalyticsDailyItem[]> {
+  const params = new URLSearchParams();
+  if (range.dateFrom) params.set('dateFrom', range.dateFrom);
+  if (range.dateTo) params.set('dateTo', range.dateTo);
+  const query = params.toString();
+  const rows = await apiClient.get<UnknownRecord[]>(`/analytics/business/daily${query ? `?${query}` : ''}`);
   return rows.map((row) => ({
     date: asString(row.date),
     revenue: asNumber(row.revenue),

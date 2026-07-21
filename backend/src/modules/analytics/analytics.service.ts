@@ -336,7 +336,8 @@ export class AnalyticsService {
   }
 
   async getBusinessDaily(
-    days: number,
+    dateFrom: string | undefined,
+    dateTo: string | undefined,
     ctx: RequestContext,
   ): Promise<Array<{ date: string; revenue: number; total: number; completed: number }>> {
     const result = await this.db.query<{
@@ -363,11 +364,12 @@ export class AnalyticsService {
        AND p.is_deleted = FALSE
       WHERE j.organization_id = $1
         AND j.is_deleted = FALSE
-        AND j.created_at >= CURRENT_DATE - ($2::text || ' days')::interval
+        AND ($2::timestamptz IS NULL OR j.created_at >= $2::timestamptz)
+        AND ($3::timestamptz IS NULL OR j.created_at <= $3::timestamptz)
       GROUP BY j.created_at::date
       ORDER BY date ASC
       `,
-      [ctx.organizationId, String(days)],
+      [ctx.organizationId, dateFrom ?? null, dateTo ?? null],
     );
 
     return result.rows.map((row) => ({
@@ -379,7 +381,8 @@ export class AnalyticsService {
   }
 
   async getBusinessOverview(
-    days: number,
+    dateFrom: string | undefined,
+    dateTo: string | undefined,
     ctx: RequestContext,
   ): Promise<Record<string, unknown>> {
     const result = await this.db.query<{
@@ -448,9 +451,10 @@ export class AnalyticsService {
        AND p.is_deleted = FALSE
       WHERE j.organization_id = $1
         AND j.is_deleted = FALSE
-        AND j.created_at >= NOW() - ($2::text || ' days')::interval
+        AND ($2::timestamptz IS NULL OR j.created_at >= $2::timestamptz)
+        AND ($3::timestamptz IS NULL OR j.created_at <= $3::timestamptz)
       `,
-      [ctx.organizationId, days],
+      [ctx.organizationId, dateFrom ?? null, dateTo ?? null],
     );
 
     const row = result.rows[0];
@@ -469,7 +473,8 @@ export class AnalyticsService {
   }
 
   async getTechnicianAnalytics(
-    days: number,
+    dateFrom: string | undefined,
+    dateTo: string | undefined,
     ctx: RequestContext,
   ): Promise<Record<string, unknown>[]> {
     const result = await this.db.query(
@@ -533,14 +538,16 @@ export class AnalyticsService {
           WHERE jj.technician_id = u.id
             AND jj.organization_id = $1
             AND cr.submitted_at IS NOT NULL
-            AND cr.submitted_at >= NOW() - ($2::text || ' days')::interval
+            AND ($2::timestamptz IS NULL OR cr.submitted_at >= $2::timestamptz)
+            AND ($3::timestamptz IS NULL OR cr.submitted_at <= $3::timestamptz)
         ) AS avg_star_rating
       FROM users u
       LEFT JOIN jobs j
         ON j.technician_id = u.id
        AND j.organization_id = $1
        AND j.is_deleted = FALSE
-       AND j.created_at >= NOW() - ($2::text || ' days')::interval
+       AND ($2::timestamptz IS NULL OR j.created_at >= $2::timestamptz)
+       AND ($3::timestamptz IS NULL OR j.created_at <= $3::timestamptz)
       LEFT JOIN (
         SELECT job_id, organization_id,
                SUM(amount) FILTER (WHERE status = 'collected') AS collected_amount
@@ -561,14 +568,15 @@ export class AnalyticsService {
       GROUP BY u.id, u.full_name
       ORDER BY jobs_completed DESC
       `,
-      [ctx.organizationId, days],
+      [ctx.organizationId, dateFrom ?? null, dateTo ?? null],
     );
 
     return result.rows as Record<string, unknown>[];
   }
 
   async getBrandAnalytics(
-    days: number,
+    dateFrom: string | undefined,
+    dateTo: string | undefined,
     ctx: RequestContext,
   ): Promise<Record<string, unknown>[]> {
     const result = await this.db.query(
@@ -611,7 +619,8 @@ export class AnalyticsService {
         ON j.brand_id = b.id
        AND j.organization_id = $1
        AND j.is_deleted = FALSE
-       AND j.created_at >= NOW() - ($2::text || ' days')::interval
+       AND ($2::timestamptz IS NULL OR j.created_at >= $2::timestamptz)
+       AND ($3::timestamptz IS NULL OR j.created_at <= $3::timestamptz)
       LEFT JOIN payments p
         ON p.job_id = j.id
        AND p.organization_id = j.organization_id
@@ -621,14 +630,15 @@ export class AnalyticsService {
       GROUP BY b.id, b.name
       ORDER BY total_jobs DESC
       `,
-      [ctx.organizationId, days],
+      [ctx.organizationId, dateFrom ?? null, dateTo ?? null],
     );
 
     return result.rows as Record<string, unknown>[];
   }
 
   async getDealerAnalytics(
-    days: number,
+    dateFrom: string | undefined,
+    dateTo: string | undefined,
     ctx: RequestContext,
   ): Promise<Record<string, unknown>[]> {
     const result = await this.db.query(
@@ -658,7 +668,8 @@ export class AnalyticsService {
         ON j.dealer_id = d.id
        AND j.organization_id = $1
        AND j.is_deleted = FALSE
-       AND j.created_at >= NOW() - ($2::text || ' days')::interval
+       AND ($2::timestamptz IS NULL OR j.created_at >= $2::timestamptz)
+       AND ($3::timestamptz IS NULL OR j.created_at <= $3::timestamptz)
       LEFT JOIN payments p
         ON p.job_id = j.id
        AND p.organization_id = j.organization_id
@@ -668,7 +679,7 @@ export class AnalyticsService {
       GROUP BY d.id, d.name
       ORDER BY total_jobs DESC
       `,
-      [ctx.organizationId, days],
+      [ctx.organizationId, dateFrom ?? null, dateTo ?? null],
     );
 
     return result.rows as Record<string, unknown>[];

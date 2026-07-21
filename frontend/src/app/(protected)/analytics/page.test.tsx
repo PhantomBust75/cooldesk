@@ -77,48 +77,85 @@ describe("AnalyticsPage", () => {
     expect(screen.getByText("32")).toBeInTheDocument();
   });
 
-  it("shows one shared date-range control and export button, not one per tab", async () => {
+  it("shows one shared timeframe control and export button, not one per tab", async () => {
     renderPage();
     await screen.findByRole("heading", { name: "Analytics" });
-    expect(screen.getAllByRole("button", { name: /Last 30 days/i })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /Last month/i })).toHaveLength(1);
     expect(screen.getAllByRole("button", { name: /Export/i })).toHaveLength(1);
 
     fireEvent.click(screen.getByRole("button", { name: "Technician scorecards" }));
-    expect(screen.getAllByRole("button", { name: /Last 30 days/i })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /Last month/i })).toHaveLength(1);
     expect(screen.getAllByRole("button", { name: /Export/i })).toHaveLength(1);
   });
 
-  it("opens the date-range dropdown, selects a new range, and closes it", async () => {
+  it("opens the timeframe dropdown, selects a new preset, and closes it", async () => {
     renderPage();
     await screen.findByRole("heading", { name: "Analytics" });
 
-    fireEvent.click(screen.getByRole("button", { name: /Last 30 days/i }));
-    expect(screen.getByRole("option", { name: "Last 7 days" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Last 90 days" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Last month/i }));
+    expect(screen.getByRole("option", { name: "Last week" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "All time" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("option", { name: "Last 7 days" }));
-    expect(await screen.findByRole("button", { name: /Last 7 days/i })).toBeInTheDocument();
-    expect(operationsApi.fetchAnalyticsOverview).toHaveBeenCalledWith(7);
-    expect(screen.queryByRole("option", { name: "Last 90 days" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("option", { name: "Last week" }));
+    expect(await screen.findByRole("button", { name: /Last week/i })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "All time" })).not.toBeInTheDocument();
+
+    const call = vi.mocked(operationsApi.fetchAnalyticsOverview).mock.calls.at(-1)![0];
+    expect(call?.dateFrom).toMatch(/T00:00:00\+05:00$/);
+    expect(call?.dateTo).toMatch(/T23:59:59\+05:00$/);
   });
 
-  it("closes the date-range dropdown on outside click without changing the range", async () => {
+  it("selects 'All time' and fetches with no date bounds at all", async () => {
     renderPage();
     await screen.findByRole("heading", { name: "Analytics" });
 
-    fireEvent.click(screen.getByRole("button", { name: /Last 30 days/i }));
-    expect(screen.getByRole("option", { name: "Last 7 days" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Last month/i }));
+    fireEvent.click(screen.getByRole("option", { name: "All time" }));
+
+    expect(await screen.findByRole("button", { name: /All time/i })).toBeInTheDocument();
+    const call = vi.mocked(operationsApi.fetchAnalyticsOverview).mock.calls.at(-1)![0];
+    expect(call).toEqual({});
+  });
+
+  it("picks a custom range via From/To inputs and Apply, then fetches with those exact bounds", async () => {
+    renderPage();
+    await screen.findByRole("heading", { name: "Analytics" });
+
+    fireEvent.click(screen.getByRole("button", { name: /Last month/i }));
+    fireEvent.click(screen.getByRole("option", { name: "Custom" }));
+
+    const applyButton = screen.getByRole("button", { name: "Apply" });
+    expect(applyButton).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("From"), { target: { value: "2026-07-01" } });
+    fireEvent.change(screen.getByLabelText("To"), { target: { value: "2026-07-15" } });
+    expect(applyButton).toBeEnabled();
+
+    fireEvent.click(applyButton);
+    expect(await screen.findByRole("button", { name: "2026-07-01 → 2026-07-15" })).toBeInTheDocument();
+    expect(operationsApi.fetchAnalyticsOverview).toHaveBeenCalledWith({
+      dateFrom: "2026-07-01T00:00:00+05:00",
+      dateTo: "2026-07-15T23:59:59+05:00",
+    });
+  });
+
+  it("closes the timeframe dropdown on outside click without changing the range", async () => {
+    renderPage();
+    await screen.findByRole("heading", { name: "Analytics" });
+
+    fireEvent.click(screen.getByRole("button", { name: /Last month/i }));
+    expect(screen.getByRole("option", { name: "Last week" })).toBeInTheDocument();
 
     fireEvent.mouseDown(document.body);
-    expect(screen.queryByRole("option", { name: "Last 7 days" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Last 30 days/i })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Last week" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Last month/i })).toBeInTheDocument();
   });
 
-  it("gives the date-range dropdown listbox/option semantics and closes it on Escape", async () => {
+  it("gives the timeframe dropdown listbox/option semantics and closes it on Escape", async () => {
     renderPage();
     await screen.findByRole("heading", { name: "Analytics" });
 
-    const trigger = screen.getByRole("button", { name: /Last 30 days/i });
+    const trigger = screen.getByRole("button", { name: /Last month/i });
     expect(trigger).toHaveAttribute("aria-haspopup", "listbox");
     expect(trigger).toHaveAttribute("aria-expanded", "false");
 
@@ -127,16 +164,16 @@ describe("AnalyticsPage", () => {
 
     const listbox = screen.getByRole("listbox");
     const options = within(listbox).getAllByRole("option");
-    expect(options).toHaveLength(3);
+    expect(options).toHaveLength(5);
     const selected = options.find((o) => o.getAttribute("aria-selected") === "true");
-    expect(selected).toHaveTextContent("Last 30 days");
+    expect(selected).toHaveTextContent("Last month");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("makes the mobile date-range dropdown panel span near-full viewport width, not just the trigger's width", async () => {
+  it("makes the mobile timeframe dropdown panel span near-full viewport width, not just the trigger's width", async () => {
     vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
       matches: true,
       media: query,
@@ -150,7 +187,7 @@ describe("AnalyticsPage", () => {
     renderPage();
     await screen.findByRole("heading", { name: "Analytics" });
 
-    fireEvent.click(screen.getByRole("button", { name: /Last 30 days/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Last month/i }));
     const panel = screen.getByRole("listbox");
     expect(panel).toHaveStyle({ position: "fixed", left: "16px", right: "16px" });
   });

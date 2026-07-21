@@ -296,8 +296,18 @@ export function updateSystemConfig(input: { key: string; value: string }): Promi
   return apiClient.patch<{ ok: true }>(`/settings/system-config/${input.key}`, { value: input.value });
 }
 
-export async function fetchAnalyticsOverview(days = 30): Promise<AnalyticsOverview> {
-  const payload = await apiClient.get<unknown>(`/analytics/business/overview?days=${days}`);
+export type AnalyticsDateRange = { dateFrom?: string; dateTo?: string };
+
+function analyticsRangeQuery(range: AnalyticsDateRange): string {
+  const params = new URLSearchParams();
+  if (range.dateFrom) params.set("dateFrom", range.dateFrom);
+  if (range.dateTo) params.set("dateTo", range.dateTo);
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
+export async function fetchAnalyticsOverview(range: AnalyticsDateRange = {}): Promise<AnalyticsOverview> {
+  const payload = await apiClient.get<unknown>(`/analytics/business/overview${analyticsRangeQuery(range)}`);
   const row = asRecord(payload);
 
   return {
@@ -310,12 +320,12 @@ export async function fetchAnalyticsOverview(days = 30): Promise<AnalyticsOvervi
   };
 }
 
-export function fetchAnalyticsBusiness(days = 30): Promise<AnalyticsOverview> {
-  return fetchAnalyticsOverview(days);
+export function fetchAnalyticsBusiness(range: AnalyticsDateRange = {}): Promise<AnalyticsOverview> {
+  return fetchAnalyticsOverview(range);
 }
 
-export async function fetchAnalyticsTechnicians(days = 30): Promise<AnalyticsTechnicianItem[]> {
-  const rows = await apiClient.get<UnknownRecord[]>(`/analytics/technicians?days=${days}`);
+export async function fetchAnalyticsTechnicians(range: AnalyticsDateRange = {}): Promise<AnalyticsTechnicianItem[]> {
+  const rows = await apiClient.get<UnknownRecord[]>(`/analytics/technicians${analyticsRangeQuery(range)}`);
   return rows.map((row) => ({
     technicianId: asString(row.technician_id),
     technicianName: asString(row.technician_name),
@@ -328,8 +338,8 @@ export async function fetchAnalyticsTechnicians(days = 30): Promise<AnalyticsTec
   }));
 }
 
-export async function fetchAnalyticsBrands(days = 30): Promise<AnalyticsBrandItem[]> {
-  const rows = await apiClient.get<UnknownRecord[]>(`/analytics/brands?days=${days}`);
+export async function fetchAnalyticsBrands(range: AnalyticsDateRange = {}): Promise<AnalyticsBrandItem[]> {
+  const rows = await apiClient.get<UnknownRecord[]>(`/analytics/brands${analyticsRangeQuery(range)}`);
   return rows.map((row) => ({
     brandId: asString(row.brand_id),
     brandName: asString(row.brand_name),
@@ -341,8 +351,8 @@ export async function fetchAnalyticsBrands(days = 30): Promise<AnalyticsBrandIte
   }));
 }
 
-export async function fetchAnalyticsDealers(days = 30): Promise<AnalyticsDealerItem[]> {
-  const rows = await apiClient.get<UnknownRecord[]>(`/analytics/dealers?days=${days}`);
+export async function fetchAnalyticsDealers(range: AnalyticsDateRange = {}): Promise<AnalyticsDealerItem[]> {
+  const rows = await apiClient.get<UnknownRecord[]>(`/analytics/dealers${analyticsRangeQuery(range)}`);
   return rows.map((row) => ({
     dealerId: asString(row.dealer_id),
     dealerName: asString(row.dealer_name),
