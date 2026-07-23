@@ -495,17 +495,33 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
   function handleCopyDetails() {
     const lines = [
-      `Job ${shortJobId}`,
       `Customer: ${detail.customerName}`,
       `Phone: ${detail.phone}`,
       `Address: ${detail.address}`,
-      `Brand: ${detail.brandName ?? "—"}`,
-      `Type: ${detail.type === "installation" ? "Installation" : "Complaint"}`,
-      `Status: ${detail.status.replace(/_/g, " ")}`,
-      `Technician: ${detail.assignedTechnicianName ?? "Unassigned"}`,
-      `Scheduled: ${detail.scheduledAt ? formatWeekdayDateTime(detail.scheduledAt) : "—"}`,
-      `Created: ${formatDateTimeWithZone(detail.createdAt)}`,
     ];
+    if (detail.brandName) lines.push(`Brand: ${detail.brandName}`);
+    lines.push(
+      `Type: ${detail.type === "installation" ? "Installation" : "Complaint"}`,
+    );
+    if (detail.scheduledAt) {
+      lines.push(`Scheduled: ${formatWeekdayDateTime(detail.scheduledAt)}`);
+    }
+    detail.units.forEach((unit, index) => {
+      const meta = [
+        unit.unitType,
+        unit.tonnage != null ? `${unit.tonnage} ton` : null,
+      ]
+        .filter(Boolean)
+        .join(", ");
+      lines.push(
+        `Unit ${index + 1}: ${unit.model ?? unit.label}${meta ? `, ${meta}` : ""}`,
+      );
+    });
+    const notes =
+      detail.type === "installation"
+        ? detail.installationNotes
+        : detail.issueDescription;
+    if (notes) lines.push(`Notes: ${notes}`);
     navigator.clipboard.writeText(lines.join("\n"));
     enqueueSnackbar("Job details copied", { variant: "success" });
     setCopiedAll(true);

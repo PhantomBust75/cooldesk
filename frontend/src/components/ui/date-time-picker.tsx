@@ -264,9 +264,9 @@ export function DateTimePicker({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState<boolean>(false);
-  const [popPos, setPopPos] = useState<{ top: number; left: number } | null>(
-    null,
-  );
+  const [popPos, setPopPos] = useState<
+    { top: number; left: number; maxHeight: number } | null
+  >(null);
 
   const parsed = useMemo(() => getZonedParts(value), [value]);
   const today = useMemo(() => getZonedParts(new Date().toISOString()), []);
@@ -307,6 +307,15 @@ export function DateTimePicker({
         ? Math.max(8, trigger.top - ESTIMATED_POPOVER_HEIGHT - 6)
         : trigger.bottom + 6,
       left,
+      // Room actually available on the chosen side, not the estimate — a
+      // trigger with little space on either side (e.g. mid-page on a short
+      // window) must cap the popover so it stays fully on-screen and
+      // scrolls internally, instead of extending past the viewport edge
+      // with its footer (Clear/Confirm) unreachable.
+      maxHeight: Math.max(
+        200,
+        openAbove ? spaceAbove - 14 : spaceBelow - 14,
+      ),
     });
   }, [open]);
 
@@ -322,10 +331,20 @@ export function DateTimePicker({
     const top = openAbove
       ? Math.max(8, trigger.top - popover.height - 6)
       : trigger.bottom + 6;
+    const maxHeight = Math.max(200, openAbove ? spaceAbove - 14 : spaceBelow - 14);
     setPopPos((current) =>
-      current && current.top === top ? current : { ...current!, top },
+      current && current.top === top && current.maxHeight === maxHeight
+        ? current
+        : { ...current!, top, maxHeight },
     );
-  }, [open, viewMonth, viewYear]);
+    // `popPos` must stay a dependency: on first open, this effect fires in
+    // the same pass as the estimate-based effect above, before the popover
+    // has mounted, so `popoverRef` is still null and it bails out. Once the
+    // estimate effect sets `popPos` and the popover actually renders, this
+    // effect needs to re-run to correct the estimate against the real
+    // measured height — otherwise a popover taller than the estimate stays
+    // stuck below the field, clipped off the bottom of the viewport.
+  }, [open, popPos, viewMonth, viewYear]);
 
   useEffect(() => {
     if (!open) return;
@@ -416,7 +435,7 @@ export function DateTimePicker({
                 zIndex: 1000,
                 width: `${POPOVER_WIDTH}px`,
                 maxWidth: "calc(100vw - 32px)",
-                maxHeight: "calc(100vh - 24px)",
+                maxHeight: `${popPos.maxHeight}px`,
                 overflowY: "auto",
                 backgroundColor: "#fff",
                 borderRadius: "16px",
