@@ -34,6 +34,7 @@ import {
   OfficeTransitionJobDto,
   PatchJobPaymentDto,
   PendingScheduleQueryDto,
+  QuickCompleteJobDto,
   QuickEntryJobDto,
   RescheduleJobDto,
   SchedulePendingJobDto,
@@ -391,6 +392,17 @@ export class JobsController {
       },
       req.context,
     );
+  }
+
+  @Post('office/jobs/:id/quick-complete')
+  @UseGuards(TenantGuard, RolesGuard)
+  @Roles('owner')
+  quickCompleteJob(
+    @Param('id') id: string,
+    @Body() body: QuickCompleteJobDto,
+    @Req() req: UserRequest,
+  ) {
+    return this.jobsService.quickCompleteJob(id, body, req.context);
   }
 
   @Post('office/jobs/:id/rollback')

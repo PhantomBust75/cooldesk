@@ -7,6 +7,7 @@ import {
   fetchJobRevisits,
   fetchJobTimeline,
   ownerOverrideJobStatus,
+  quickCompleteJob,
   reassignTechnician,
   rollbackJobStatus,
   transitionJobStatus,
@@ -33,6 +34,7 @@ import {
   Clock,
   Copy,
   History,
+  Loader2,
   MapPin,
   Phone,
   Plus,
@@ -189,6 +191,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
   const [reassignTechId, setReassignTechId] = useState<string>("");
   const [advanceStatusOpen, setAdvanceStatusOpen] = useState<boolean>(false);
   const [collectPaymentOpen, setCollectPaymentOpen] = useState<boolean>(false);
+  const [isQuickComplete, setIsQuickComplete] = useState<boolean>(false);
   const [paySelectedItems, setPaySelectedItems] = useState<Set<string>>(
     new Set(),
   );
@@ -350,8 +353,45 @@ export function JobDetail({ jobId }: { jobId: string }) {
     },
   });
 
+  const quickCompleteMutation = useMutation({
+    mutationFn: async (payload: {
+      paymentMethodId: string;
+      paymentAmount: number;
+      serviceItems: TransitionJobStatusInput["serviceItems"];
+      installedBrandId?: string;
+      installationCharge?: number;
+      paymentStatus: "collected" | "pending";
+    }) => {
+      if (!detailQuery.data) return;
+      await quickCompleteJob(jobId, {
+        expectedVersion: detailQuery.data.version,
+        paymentAmount: payload.paymentAmount,
+        paymentMethodId: payload.paymentMethodId,
+        serviceItems: payload.serviceItems,
+        installedBrandId: payload.installedBrandId,
+        installationCharge: payload.installationCharge,
+        paymentStatus: payload.paymentStatus,
+      });
+    },
+    onSuccess: async () => {
+      enqueueSnackbar("Job completed", { variant: "success" });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["jobs"] }),
+        queryClient.invalidateQueries({ queryKey: ["job-detail", jobId] }),
+        queryClient.invalidateQueries({ queryKey: ["job-timeline", jobId] }),
+      ]);
+    },
+    onError: (err: unknown) => {
+      enqueueSnackbar(
+        err instanceof Error ? err.message : "Failed to complete job.",
+        { variant: "error" },
+      );
+    },
+  });
+
   const closeCollectPayment = () => {
     setCollectPaymentOpen(false);
+    setIsQuickComplete(false);
     setPaySelectedItems(new Set());
     setPayItemQuantities(new Map());
     setPaySelectedMethodId("");
@@ -542,6 +582,14 @@ export function JobDetail({ jobId }: { jobId: string }) {
     technicianId: detail.assignedTechnicianId,
     scheduledAt: detail.scheduledAt,
   });
+
+  // Owner Quick-Complete: eligible once scheduled + assigned, through every
+  // subsequent state, until the job is terminal or frozen for cancellation.
+  const canQuickComplete =
+    Boolean(detail.assignedTechnicianId) &&
+    Boolean(detail.scheduledAt) &&
+    !TERMINAL_OR_CLOSED.has(detail.status) &&
+    detail.status !== "cancellation_requested";
 
   // Advance Status logic
   const singleNext = nextStatuses.length === 1 ? nextStatuses[0] : null;
@@ -1102,6 +1150,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                 const EVENT_LABELS: Record<string, string> = {
                   status_transition: "Status changed",
                   status_undo: "Status rolled back",
+                  owner_quick_complete: "Completed by owner (Quick-Complete)",
                   technician_assigned: "Technician assigned",
                   assignment: "Technician assigned",
                   scheduling_conflict_ack: "Scheduling conflict acknowledged",
@@ -1731,7 +1780,43 @@ export function JobDetail({ jobId }: { jobId: string }) {
             : null}
 
           {/* ── Owner / staff sidebar ── */}
+          {!isTechnician && isOwner ? (
+            <button
+              type="button"
+              onClick={() => {
+                setIsQuickComplete(true);
+                setCollectPaymentOpen(true);
+              }}
+              disabled={!canQuickComplete}
+              onMouseEnter={(e) => {
+                if (canQuickComplete) e.currentTarget.style.opacity = "0.88";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = canQuickComplete ? "1" : "0.4";
+              }}
+              style={{
+                width: "100%",
+                border: "none",
+                borderRadius: "10px",
+                backgroundColor: "rgb(5, 150, 105)",
+                color: "#fff",
+                padding: "13px 16px",
+                fontSize: "14px",
+                fontWeight: 600,
+                cursor: canQuickComplete ? "pointer" : "not-allowed",
+                opacity: canQuickComplete ? 1 : 0.4,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                transition: "opacity 120ms",
+              }}
+            >
+              <CheckCircle2 size={15} strokeWidth={2} /> Complete Job
+            </button>
+          ) : null}
           {!isTechnician &&
+            !isOwner &&
             (canAdvanceStatus ? (
               <>
                 {advanceStatusOpen && nextStatuses.length > 1 ? (
@@ -2206,6 +2291,10 @@ export function JobDetail({ jobId }: { jobId: string }) {
             (m) => m.isActive,
           );
           const isInstallation = detail.type === "installation";
+          const isPayFormLoading =
+            serviceItemsQuery.isLoading ||
+            paymentMethodsQuery.isLoading ||
+            (isInstallation && brandsQuery.isLoading);
 
           const selectedServiceItems = serviceItems.filter((si) =>
             paySelectedItems.has(si.id),
@@ -2270,8 +2359,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                 };
               });
             const builtItems = [...builtServiceItems, ...builtAdditional];
-            collectPaymentMutation.mutate({
-              toStatus: terminalStatus,
+            const paymentPayload = {
               paymentMethodId: paySelectedMethodId,
               paymentAmount: parseFloat(grandTotal.toFixed(2)),
               serviceItems: builtItems.length > 0 ? builtItems : undefined,
@@ -2280,7 +2368,15 @@ export function JobDetail({ jobId }: { jobId: string }) {
                 ? parseFloat(brandFee.toFixed(2))
                 : undefined,
               paymentStatus: payStatus,
-            });
+            };
+            if (isQuickComplete) {
+              quickCompleteMutation.mutate(paymentPayload);
+            } else {
+              collectPaymentMutation.mutate({
+                toStatus: terminalStatus,
+                ...paymentPayload,
+              });
+            }
             closeCollectPayment();
           };
 
@@ -2314,6 +2410,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
+                <style>{`@keyframes cd-spin { to { transform: rotate(360deg); } }`}</style>
                 {isMobile && (
                   <div
                     style={{
@@ -2392,6 +2489,29 @@ export function JobDetail({ jobId }: { jobId: string }) {
                     gap: "20px",
                   }}
                 >
+                  {isPayFormLoading ? (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "10px",
+                        padding: "40px 0",
+                        color: "#737373",
+                      }}
+                    >
+                      <Loader2
+                        size={22}
+                        strokeWidth={1.5}
+                        style={{ animation: "cd-spin 0.8s linear infinite" }}
+                      />
+                      <span style={{ fontSize: "13px" }}>
+                        Loading payment options…
+                      </span>
+                    </div>
+                  ) : (
+                    <>
                   {/* Brand — installation only */}
                   {isInstallation && (
                     <div>
@@ -2863,6 +2983,8 @@ export function JobDetail({ jobId }: { jobId: string }) {
                       })}
                     </div>
                   </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Footer */}
@@ -2916,22 +3038,34 @@ export function JobDetail({ jobId }: { jobId: string }) {
                     </button>
                     <button
                       type="button"
-                      disabled={!canConfirm || collectPaymentMutation.isPending}
+                      disabled={
+                        !canConfirm ||
+                        isPayFormLoading ||
+                        collectPaymentMutation.isPending ||
+                        quickCompleteMutation.isPending
+                      }
                       onClick={submitPayment}
                       style={{
                         flex: 1,
                         border: "none",
                         borderRadius: "10px",
-                        backgroundColor: canConfirm ? "#0A0A0A" : "#E5E5E5",
-                        color: canConfirm ? "#fff" : "#A3A3A3",
+                        backgroundColor:
+                          canConfirm && !isPayFormLoading
+                            ? "rgb(5, 150, 105)"
+                            : "#E5E5E5",
+                        color: canConfirm && !isPayFormLoading ? "#fff" : "#A3A3A3",
                         padding: "12px 16px",
                         fontSize: "14px",
                         fontWeight: 600,
                         minHeight: "44px",
-                        cursor: canConfirm ? "pointer" : "not-allowed",
+                        cursor:
+                          canConfirm && !isPayFormLoading
+                            ? "pointer"
+                            : "not-allowed",
                       }}
                     >
-                      {collectPaymentMutation.isPending
+                      {collectPaymentMutation.isPending ||
+                      quickCompleteMutation.isPending
                         ? "Processing…"
                         : canConfirm
                           ? "Confirm & Complete"

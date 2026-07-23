@@ -166,6 +166,22 @@ export type OwnerOverrideInput = {
   paymentDecision?: "retain" | "void";
 };
 
+export type QuickCompleteJobInput = {
+  expectedVersion: number;
+  paymentAmount: number;
+  paymentMethodId: string;
+  serviceItems?: Array<{
+    serviceItemId?: string;
+    name: string;
+    unitPrice: number;
+    quantity: number;
+    total: number;
+  }>;
+  installedBrandId?: string;
+  installationCharge?: number;
+  paymentStatus?: "collected" | "pending";
+};
+
 export type JobExportUnit = {
   model: string | null;
   unitType: string | null;

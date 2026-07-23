@@ -23,11 +23,13 @@ import {
   ListJobsQueryDto,
   MobileSyncActionDto,
   PendingScheduleQueryDto,
+  QuickCompleteJobDto,
   QuickEntryJobDto,
   RescheduleJobDto,
   SchedulePendingJobDto,
   ScheduleRevisitDto,
   SearchQueryDto,
+  ServiceItemLineDto,
   UndoJobActionDto,
   UpdateJobStatusDto,
 } from './jobs.dto';
@@ -48,6 +50,7 @@ type JobRow = {
   source: 'direct' | 'via_dealer';
   dealer_id: string | null;
   technician_id: string | null;
+  scheduled_at: string | null;
   version: number;
   is_deleted: boolean;
 };
@@ -1651,7 +1654,31 @@ export class JobsService {
 
       if (['completed', 'resolved', 'resolved_on_revisit'].includes(input.targetStatus)) {
         await this.assertMandatoryReviewLinkIfRequired(client, job.id, ctx.organizationId);
-        return this.completeOrResolveWithPayment(client, job, input, ctx);
+
+        if (typeof input.paymentAmount !== 'number') {
+          throw new BadRequestException('paymentAmount is required for completion/resolution');
+        }
+        if (!input.paymentMethodId) {
+          throw new BadRequestException('paymentMethodId is required for completion/resolution');
+        }
+
+        return this.completeOrResolveWithPayment(
+          client,
+          job,
+          {
+            targetStatus: input.targetStatus,
+            expectedVersion: input.expectedVersion,
+            paymentAmount: input.paymentAmount,
+            paymentMethodId: input.paymentMethodId,
+            paymentStatus: input.paymentStatus,
+            serviceItems: input.serviceItems,
+            installedBrandId: input.installedBrandId,
+            installationCharge: input.installationCharge,
+            reason: input.reason,
+            completedVia: 'technician_flow',
+          },
+          ctx,
+        );
       }
 
       if (input.targetStatus === 'needs_revisit' && !isRollback) {
@@ -2176,29 +2203,35 @@ export class JobsService {
   private async completeOrResolveWithPayment(
     client: PoolClient,
     job: JobRow,
-    input: UpdateJobStatusDto,
+    params: {
+      targetStatus: JobStatus;
+      expectedVersion: number;
+      paymentAmount: number;
+      paymentMethodId: string;
+      paymentStatus?: 'collected' | 'pending';
+      serviceItems?: ServiceItemLineDto[];
+      installedBrandId?: string;
+      installationCharge?: number;
+      reason?: string | null;
+      completedVia: 'technician_flow' | 'owner_quick_complete';
+    },
     ctx: RequestContext,
   ): Promise<{ ok: true; status: JobStatus; version: number }> {
-    if (typeof input.paymentAmount !== 'number') {
-      throw new BadRequestException('paymentAmount is required for completion/resolution');
+    await this.assertPaymentMethodBelongsToOrg(client, params.paymentMethodId, ctx.organizationId);
+
+    if (params.installedBrandId) {
+      await this.assertBrandBelongsToOrg(client, params.installedBrandId, ctx.organizationId);
     }
 
-    if (!input.paymentMethodId) {
-      throw new BadRequestException('paymentMethodId is required for completion/resolution');
-    }
-
-    await this.assertPaymentMethodBelongsToOrg(client, input.paymentMethodId, ctx.organizationId);
-
-    if (input.installedBrandId) {
-      await this.assertBrandBelongsToOrg(client, input.installedBrandId, ctx.organizationId);
-    }
-
-    const paymentStatus = input.paymentStatus ?? 'collected';
+    const paymentStatus = params.paymentStatus ?? 'collected';
 
     const updateResult = await client.query<{ status: JobStatus; version: number }>(
       `
       UPDATE jobs
       SET status = $3,
+          completed_via = $5,
+          completed_by = $6,
+          completed_at = NOW(),
           updated_at = NOW(),
           version = version + 1
       WHERE id = $1
@@ -2207,7 +2240,14 @@ export class JobsService {
         AND is_deleted = FALSE
       RETURNING status, version
       `,
-      [job.id, ctx.organizationId, input.targetStatus, input.expectedVersion],
+      [
+        job.id,
+        ctx.organizationId,
+        params.targetStatus,
+        params.expectedVersion,
+        params.completedVia,
+        ctx.userId,
+      ],
     );
 
     if (updateResult.rows.length === 0) {
@@ -2233,13 +2273,13 @@ export class JobsService {
         `,
         [
           job.id,
-          input.paymentAmount,
-          input.paymentMethodId,
+          params.paymentAmount,
+          params.paymentMethodId,
           paymentStatus,
           ctx.userId,
           ctx.organizationId,
-          input.installedBrandId ?? null,
-          input.installationCharge ?? null,
+          params.installedBrandId ?? null,
+          params.installationCharge ?? null,
         ],
       );
       paymentId = insertResult.rows[0].id;
@@ -2251,8 +2291,8 @@ export class JobsService {
       throw error;
     }
 
-    if (input.serviceItems?.length) {
-      for (const item of input.serviceItems) {
+    if (params.serviceItems?.length) {
+      for (const item of params.serviceItems) {
         await client.query(
           `INSERT INTO job_payment_items
             (organization_id, payment_id, job_id, service_item_id, name, unit_price, quantity, total)
@@ -2266,10 +2306,10 @@ export class JobsService {
       client,
       job.id,
       ctx,
-      'status_transition',
+      params.completedVia === 'owner_quick_complete' ? 'owner_quick_complete' : 'status_transition',
       { status: job.status },
-      { status: input.targetStatus },
-      input.reason ?? null,
+      { status: params.targetStatus },
+      params.reason ?? null,
     );
 
     await this.insertTimelineByUser(
@@ -2278,7 +2318,7 @@ export class JobsService {
       ctx,
       'payment_recorded',
       null,
-      { amount: input.paymentAmount, method_id: input.paymentMethodId },
+      { amount: params.paymentAmount, method_id: params.paymentMethodId },
       null,
     );
 
@@ -2287,6 +2327,56 @@ export class JobsService {
       status: updateResult.rows[0].status,
       version: updateResult.rows[0].version,
     };
+  }
+
+  async quickCompleteJob(
+    jobId: string,
+    input: QuickCompleteJobDto,
+    ctx: RequestContext,
+  ): Promise<{ ok: true; status: JobStatus; version: number }> {
+    return this.db.withTransaction(async (client) => {
+      const job = await this.getJobForUpdate(client, jobId, ctx.organizationId);
+
+      if (ctx.role !== 'owner') {
+        throw new ForbiddenException('Only the owner can quick-complete a job');
+      }
+
+      if (job.status === 'cancellation_requested') {
+        throw new ConflictException('Job is frozen while cancellation request is pending');
+      }
+
+      if (['completed', 'resolved', 'resolved_on_revisit', 'cancelled'].includes(job.status)) {
+        throw new ConflictException('Job is already completed or cancelled');
+      }
+
+      if (!job.technician_id || !job.scheduled_at) {
+        throw new BadRequestException(
+          'Job must be scheduled and have a technician assigned before it can be quick-completed',
+        );
+      }
+
+      await this.assertMandatoryReviewLinkIfRequired(client, job.id, ctx.organizationId);
+
+      const targetStatus: JobStatus = job.type === 'installation' ? 'completed' : 'resolved';
+
+      return this.completeOrResolveWithPayment(
+        client,
+        job,
+        {
+          targetStatus,
+          expectedVersion: input.expectedVersion,
+          paymentAmount: input.paymentAmount,
+          paymentMethodId: input.paymentMethodId,
+          paymentStatus: input.paymentStatus,
+          serviceItems: input.serviceItems,
+          installedBrandId: input.installedBrandId,
+          installationCharge: input.installationCharge,
+          reason: null,
+          completedVia: 'owner_quick_complete',
+        },
+        ctx,
+      );
+    });
   }
 
   private async assertPaymentMethodBelongsToOrg(
@@ -2542,7 +2632,7 @@ export class JobsService {
   ): Promise<JobRow> {
     const result = await client.query<JobRow>(
       `
-      SELECT id, organization_id, type, status, source, dealer_id, technician_id, version, is_deleted
+      SELECT id, organization_id, type, status, source, dealer_id, technician_id, scheduled_at, version, is_deleted
       FROM jobs
       WHERE id = $1
         AND organization_id = $2

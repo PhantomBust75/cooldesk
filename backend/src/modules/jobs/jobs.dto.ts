@@ -235,6 +235,38 @@ export class UpdateJobStatusDto {
   customRevisitReason?: string;
 }
 
+export class QuickCompleteJobDto {
+  @IsInt()
+  @Min(0)
+  expectedVersion!: number;
+
+  @IsNumber()
+  @Min(0)
+  paymentAmount!: number;
+
+  @IsUUID()
+  paymentMethodId!: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ServiceItemLineDto)
+  serviceItems?: ServiceItemLineDto[];
+
+  @IsOptional()
+  @IsUUID()
+  installedBrandId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  installationCharge?: number;
+
+  @IsOptional()
+  @IsEnum(['collected', 'pending'])
+  paymentStatus?: 'collected' | 'pending';
+}
+
 export class DealerCancellationRequestDto {
   @IsString()
   @IsNotEmpty()

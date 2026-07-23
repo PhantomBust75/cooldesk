@@ -790,11 +790,11 @@ export default function AnalyticsPage() {
                             {nullFmt(item.firstVisitResolutionRate, 1, "%")}
                           </td>
                           <td style={{ padding: "10px 12px", color: "#404040", fontVariantNumeric: "tabular-nums" }}>
-                            {item.avgResolutionMinutes != null ? `${item.avgResolutionMinutes} min` : "—"}
+                            {item.avgResolutionMinutes != null ? `${item.avgResolutionMinutes} min` : "No data"}
                           </td>
                           <td style={{ padding: "10px 12px", color: "#404040" }}>
                             {item.onTimeRate == null ? (
-                              "—"
+                              "No data"
                             ) : (
                               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                 <div

@@ -9,6 +9,7 @@ import type {
   JobListResult,
   JobTimelineItem,
   OwnerOverrideInput,
+  QuickCompleteJobInput,
   RollbackJobStatusInput,
   TransitionJobStatusInput,
   TransitionJobStatusResult,
@@ -301,6 +302,10 @@ export function rollbackJobStatus(jobId: string, input: RollbackJobStatusInput):
 
 export function ownerOverrideJobStatus(jobId: string, input: OwnerOverrideInput): Promise<TransitionJobStatusResult> {
   return apiClient.post<TransitionJobStatusResult>(`/office/jobs/${jobId}/override-status`, input);
+}
+
+export function quickCompleteJob(jobId: string, input: QuickCompleteJobInput): Promise<TransitionJobStatusResult> {
+  return apiClient.post<TransitionJobStatusResult>(`/office/jobs/${jobId}/quick-complete`, input);
 }
 
 export async function fetchJobRevisits(jobId: string): Promise<JobRevisitItem[]> {
