@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: cooldesk-backend
+    runtime: node
+    plan: starter
+    region: virginia
+    rootDir: backend
+    buildCommand: npm ci --include=dev && npm run build
+    preDeployCommand: npm run migrate
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - backend/**
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://frontend-mu-coral-29.vercel.app
+      - key: JWT_USER_SECRET
+        generateValue: true
+      - key: JWT_DEALER_SECRET
+        generateValue: true
+      - key: JWT_PLATFORM_SECRET
+        generateValue: true
